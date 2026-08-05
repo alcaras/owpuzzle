@@ -142,11 +142,13 @@
       }
     });
 
-    // river edges (viewer :161-171 — bright blue segments on hex borders)
+    // river edges (viewer :161-171 — bright blue segments on hex borders).
+    // Neighbour d lies at pixel angle -60*d (DIRS order E,NE,NW,W,SW,SE in a
+    // pointy-top layout), so the shared edge spans vertices at -60d +/- 30.
     tiles.forEach(function (t) {
       (t.river || []).forEach(function (d) {
         var x = cx(t), y = cy(t);
-        var a1 = Math.PI / 180 * (60 * d - 90), a2 = Math.PI / 180 * (60 * d - 30);
+        var a1 = Math.PI / 180 * (-60 * d - 30), a2 = Math.PI / 180 * (-60 * d + 30);
         S.push('<line x1="' + (x + SIZE * Math.cos(a1)) + '" y1="' + (y + SIZE * Math.sin(a1)) +
           '" x2="' + (x + SIZE * Math.cos(a2)) + '" y2="' + (y + SIZE * Math.sin(a2)) +
           '" stroke="#4696eb" stroke-width="' + (SIZE * 0.2) + '" stroke-linecap="round"/>');

@@ -53,17 +53,20 @@ var OWPUZZLES = [
     name: 'The Ford',
     author: 'owpuzzle',
     brief: 'Kill the warrior this turn. Your axeman has 3 orders.',
-    lesson: 'Melee attacks across a river are halved. Swing around the bank and strike from dry ground.',
+    lesson: 'Melee attacks across a river are halved (-50%). Crossing costs extra movement, but striking from the dry bank is worth it.',
     orders: 3,
     radius: 3,
     objective: { kind: 'killAll' },
-    // river guards the warrior's W, NW and SW approaches
+    // One continuous river, rim to rim. It wraps the warrior's W/NW/SW edges,
+    // so the only unhalved attack comes from the far bank.
     tiles: [
-      { q: 0, r: 0, river: [0] },    // E edge of (0,0) -> toward warrior
-      { q: 1, r: -1, river: [5] },   // SE edge of (1,-1)
-      { q: 0, r: 1, river: [1] },    // NE edge of (0,1)
-      { q: -1, r: 2, river: [1] },
-      { q: 1, r: -2, river: [5] },
+      { q: 1, r: 0, river: [2, 3, 4] },
+      { q: 1, r: -1, river: [0] },
+      { q: 2, r: -2, river: [5, 0] },
+      { q: 3, r: -3, river: [5] },
+      { q: 0, r: 1, river: [0] },
+      { q: 0, r: 2, river: [1, 0] },
+      { q: 0, r: 3, river: [1] },
       { q: -2, r: 1, vegetation: 'VEGETATION_TREES' },
       { q: -1, r: -2, vegetation: 'VEGETATION_TREES' },
       { q: 2, r: 1, height: 'HEIGHT_HILL' },
