@@ -12,7 +12,7 @@
 
   // ---------- library home ----------
   if (!puzzle) {
-    document.getElementById('day-label').textContent = 'Puzzle Library';
+    document.getElementById('day-label').textContent = 'COMBAT PUZZLES';
     document.getElementById('p-name').textContent = '';
     document.getElementById('p-brief').textContent =
       'Single-turn tactics puzzles. Find the winning line within your orders.';
@@ -35,20 +35,24 @@
     GROUPS.forEach(function (g) {
       var list = OWPUZZLES.filter(function (p) { return (p.difficulty || 2) === g.n; });
       if (!list.length) return;
-      html += '<h2 class="group">' + g.title + '</h2>';
+      html += '<h2 class="group">' + g.title + '</h2><div class="grid">';
       html += list.map(function (p) {
         var done = prog[p.id] && prog[p.id].solved;
-        var units = p.units.map(function (u) {
+        var heroU = p.units.filter(function (u) { return u.player === 0; })[0];
+        var hero = heroU && ICONS0[heroU.type];
+        var foes = p.units.filter(function (u) { return u.player === 1; }).map(function (u) {
           var ic = ICONS0[u.type];
-          return ic ? '<img class="p' + u.player + '" src="' + ic + '" alt="">' : '';
+          return ic ? '<img src="' + ic + '" alt="">' : '';
         }).join('');
         return '<a class="card' + (done ? ' solved' : '') + '" href="?p=' + p.id + '">' +
           (done ? '<span class="done">✓</span>' : '') +
-          '<div class="card-head"><h3>' + p.name + '</h3>' +
+          (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
+          '<div class="body"><div class="card-head"><h3>' + p.name + '</h3>' +
           '<span class="meta">' + p.orders + ' orders</span></div>' +
           '<p>' + p.brief + '</p>' +
-          '<div class="units">' + units + '</div></a>';
+          '<div class="foes"><span class="vs">VS</span>' + foes + '</div></div></a>';
       }).join('');
+      html += '</div>';
     });
     home.innerHTML = html;
     return; // no game to run
@@ -346,6 +350,11 @@
     if (d.iAttackModifier) out.push(fmtPct(d.iAttackModifier) + ' attack');
     if (d.iDefenseModifier) out.push(fmtPct(d.iDefenseModifier) + ' defense');
     if (d.bRout) out.push('rout: advances on kill, may strike again');
+    if (d.bPush) out.push('panic: pushes a surviving defender back one tile');
+    if (d.bStun) out.push('stuns the defender');
+    if (d.bLastStand) out.push('last stand: cannot be killed from above 1 HP');
+    if (d.bIgnoresDistance) out.push('no ranged damage falloff with distance');
+    if (d.bIgnoreZOC) out.push('ignores zones of control');
     (d.aeEffectUnitImmune || []).forEach(function (im) {
       out.push('immune to ' + im.replace('EFFECTUNIT_', '').toLowerCase());
     });
@@ -361,6 +370,15 @@
     });
     Object.keys(d.aiMeleeToClearTerrainTargetModifier || {}).forEach(function (t) {
       out.push(fmtPct(d.aiMeleeToClearTerrainTargetModifier[t]) + ' attacking open terrain');
+    });
+    Object.keys(d.aiTerrainFromModifier || {}).forEach(function (t) {
+      out.push(fmtPct(d.aiTerrainFromModifier[t]) + ' fighting on ' + t.replace('TERRAIN_', '').toLowerCase());
+    });
+    Object.keys(d.aiHeightFromModifier || {}).forEach(function (t) {
+      out.push(fmtPct(d.aiHeightFromModifier[t]) + ' fighting on ' + t.replace('HEIGHT_', '').toLowerCase() + 's');
+    });
+    Object.keys(d.aiVegetationFromModifier || {}).forEach(function (t) {
+      out.push(fmtPct(d.aiVegetationFromModifier[t]) + ' fighting in ' + t.replace('VEGETATION_', '').toLowerCase());
     });
     if (d.iRiverAttackModifier) out.push(fmtPct(d.iRiverAttackModifier) + ' attacking across river');
     if (d.iFlankingAttackModifier) out.push(fmtPct(d.iFlankingAttackModifier) + ' flanking');
@@ -652,7 +670,7 @@
 
   // ---------- header ----------
   var pnum = OWPUZZLES.indexOf(puzzle) + 1;
-  document.getElementById('day-label').textContent = 'Puzzle ' + pnum + ' of ' + OWPUZZLES.length;
+  document.getElementById('day-label').textContent = 'Combat Puzzles · ' + pnum + ' of ' + OWPUZZLES.length;
   document.getElementById('p-name').textContent = puzzle.name;
   document.getElementById('p-brief').textContent = puzzle.brief;
   document.getElementById('library').innerHTML = '';

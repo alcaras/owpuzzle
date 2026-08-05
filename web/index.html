@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Old World — Daily Combat Puzzle</title>
+<title>Old World — Combat Puzzles</title>
 <style>
   :root {
     --bg: #efe3cb;
@@ -119,35 +119,45 @@
   .library { font-size: 13px; margin: 10px 0 18px; color: var(--muted); text-align: center; }
   .library a { color: var(--accent); margin: 0 4px; }
   /* puzzle library (home) */
-  #home { width: 100%; max-width: 560px; padding: 10px 12px 24px; display: none; }
+  #home { width: 100%; max-width: 780px; padding: 10px 14px 30px; display: none; }
   #home.show { display: block; }
-  #home .progress { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 10px; }
-  #home .progress b { color: var(--accent); }
+  #home .progress { text-align: center; font-size: 13.5px; color: var(--muted); margin-bottom: 4px; }
+  #home .progress b { color: var(--accent); font-size: 16px; }
   #home h2.group {
-    font-size: 13px; letter-spacing: 2px; text-transform: uppercase;
-    color: var(--muted); margin: 18px 2px 8px; border-bottom: 1px solid var(--edge);
-    padding-bottom: 4px;
+    font-size: 12.5px; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--muted); margin: 22px 2px 10px; border-bottom: 1px solid var(--edge);
+    padding-bottom: 5px;
   }
-  .card { position: relative; }
+  #home .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+  }
+  .card { position: relative; display: flex; gap: 12px; align-items: flex-start; margin: 0; }
+  .card:hover { border-color: var(--accent); }
+  .card .hero {
+    flex: 0 0 auto; width: 54px; height: 54px; border-radius: 50%;
+    background: rgb(110,160,210); padding: 4px; box-sizing: border-box;
+    border: 2px solid #2c2416;
+  }
+  .card .body { min-width: 0; }
   .card .done {
-    position: absolute; top: 10px; right: 12px; font-size: 18px; color: #5f9e4c;
+    position: absolute; top: 8px; right: 10px; font-size: 17px; color: #5f9e4c;
   }
   .card.solved { border-color: #5f9e4c; }
-  .card .meta { margin-right: 22px; }
+  .card .meta { margin-right: 20px; }
+  .card .foes { margin-top: 6px; display: flex; gap: 4px; align-items: center; }
+  .card .foes img { width: 22px; height: 22px; border-radius: 50%; padding: 2px; background: rgb(150,60,60); }
+  .card .foes .vs { font-size: 11px; color: var(--muted); margin-right: 2px; letter-spacing: 1px; }
   .card {
-    display: block; background: var(--panel); border: 1.5px solid var(--edge);
-    border-radius: 12px; padding: 12px 16px; margin-bottom: 12px;
+    background: var(--panel); border: 1.5px solid var(--edge);
+    border-radius: 12px; padding: 12px 14px;
     text-decoration: none; color: var(--ink);
   }
   .card:active { background: #eadfc8; }
   .card .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-  .card h3 { margin: 0; font-size: 17px; color: var(--accent); }
+  .card h3 { margin: 0; font-size: 16.5px; color: var(--accent); }
   .card .meta { font-size: 12px; color: var(--muted); white-space: nowrap; }
-  .card p { margin: 6px 0 0; font-size: 13.5px; }
-  .card .units { margin-top: 8px; display: flex; gap: 6px; }
-  .card .units img { width: 30px; height: 30px; border-radius: 50%; padding: 2px; }
-  .card .units img.p0 { background: rgb(110,160,210); }
-  .card .units img.p1 { background: rgb(150,60,60); }
+  .card p { margin: 5px 0 0; font-size: 13px; }
   .back-link { font-size: 13px; margin-top: 4px; }
   .back-link a { color: var(--accent); text-decoration: none; }
   /* hex styling */
@@ -161,7 +171,7 @@
 <body>
   <header>
     <h1>OLD WORLD</h1>
-    <div class="day">Daily Combat Puzzle · <span id="day-label"></span></div>
+    <div class="day"><span id="day-label"></span></div>
     <div class="puzzle-title" id="p-name"></div>
     <div class="brief" id="p-brief"></div>
     <div class="back-link" id="back-link"></div>
