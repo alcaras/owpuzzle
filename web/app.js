@@ -16,7 +16,7 @@
     document.getElementById('p-name').textContent = '';
     document.getElementById('p-brief').textContent =
       'Single-turn tactics puzzles. Find the winning line within your orders.';
-    ['board-wrap'].forEach(function (id) { document.getElementById(id).style.display = 'none'; });
+    document.getElementById('main-row').style.display = 'none';
     document.querySelector('.hud').style.display = 'none';
     document.querySelector('.controls').style.display = 'none';
     var home = document.getElementById('home');
@@ -114,7 +114,7 @@
       var k = E.key(t.q, t.r);
       var cls = 'hex' + (reachKeys[k] ? ' reach' : '');
       S.push('<polygon class="' + cls + '" points="' + hexPoints(x, y) + '" fill="' + fill +
-        '" stroke="' + BOARD_BG + '" stroke-width="1"' +
+        '" stroke="' + BOARD_BG + '" stroke-width="1" data-t="' + t.q + ',' + t.r + '"' +
         (reachKeys[k] ? ' data-move="' + t.q + ',' + t.r + '"' : '') + '/>');
 
       // hills: light band over dark band, clipped to the hex (viewer :146-148)
@@ -138,8 +138,26 @@
         jg ? 'rgba(14,50,16,.95)' : sc ? 'rgba(96,110,60,.95)' : 'rgba(24,68,26,.95)');
       if (t.improvement === 'IMPROVEMENT_FORT') decorate(S, x, y, '🏰');
       if (reachKeys[k]) {
-        S.push('<circle cx="' + x + '" cy="' + y + '" r="6" fill="#ffffff" opacity="0.7" pointer-events="none"/>');
+        var fm = sel && E.nextStepOrderCost(sel) > 1;
+        S.push('<circle cx="' + x + '" cy="' + y + '" r="' + (fm ? 7.5 : 6) + '" fill="' + (fm ? '#ffb020' : '#ffffff') + '" opacity="0.8" pointer-events="none"/>');
+        if (fm) S.push('<text x="' + x + '" y="' + (y + 0.5) + '" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="bold" fill="#14161c" pointer-events="none">2</text>');
       }
+    });
+
+    // roads: brown segments from center toward each adjacent road tile
+    tiles.forEach(function (t) {
+      if (!t.road) return;
+      var x = cx(t), y = cy(t);
+      var any = false;
+      E.DIRS.forEach(function (d) {
+        var n = E.tileAt(state, t.q + d.q, t.r + d.r);
+        if (!n || !n.road) return;
+        any = true;
+        var nx = cx(n), ny = cy(n);
+        S.push('<line x1="' + x + '" y1="' + y + '" x2="' + ((x + nx) / 2) + '" y2="' + ((y + ny) / 2) +
+          '" stroke="rgba(160,120,70,.9)" stroke-width="' + (SIZE * 0.16) + '" stroke-linecap="round" pointer-events="none"/>');
+      });
+      if (!any) S.push('<circle cx="' + x + '" cy="' + y + '" r="' + (SIZE * 0.14) + '" fill="rgba(160,120,70,.9)" pointer-events="none"/>');
     });
 
     // river edges (viewer :161-171 — bright blue segments on hex borders).
@@ -178,6 +196,13 @@
       // HP pips, Old World style: two rows of boxes, one box per HP.
       // On attack preview, the boxes that would be lost turn red.
       drawHpPips(S, x, y, u.hp, E.hpMax(u), pv ? pv.damage : 0);
+      // promotion badges: one gold star per promotion, like the game's
+      // promotion pips on the unit plate
+      (u.promotions || []).forEach(function (_, pi) {
+        S.push('<text x="' + (x + SIZE * 0.46) + '" y="' + (y - SIZE * 0.3 + pi * 13) +
+          '" text-anchor="middle" font-size="14" fill="#ffd23e" stroke="' + BOARD_BG +
+          '" stroke-width="2.5" paint-order="stroke" pointer-events="none">★</text>');
+      });
       // fatigue pips for blue
       if (u.player === 0) {
         var lim = E.fatigueLimit(u);
@@ -204,6 +229,14 @@
       el.addEventListener('click', function () {
         var qr = el.getAttribute('data-move').split(',');
         act({ type: 'move', unit: selected, q: +qr[0], r: +qr[1] });
+      });
+    });
+    // hovering an empty tile shows its terrain card
+    Array.prototype.forEach.call(wrap.querySelectorAll('[data-t]'), function (el) {
+      el.addEventListener('pointerenter', function () {
+        if (!CAN_HOVER) return;
+        var qr = el.getAttribute('data-t').split(',');
+        if (!E.unitAt(state, +qr[0], +qr[1])) showTileInfo(+qr[0], +qr[1]);
       });
     });
     Array.prototype.forEach.call(wrap.querySelectorAll('[data-unit]'), function (el) {
@@ -312,12 +345,64 @@
   }
   function fmtPct(v) { return (v > 0 ? '+' : '') + v + '%'; }
 
+  // ---------- terrain description (shared by tile + unit cards) ----------
+  function terrainName(t) {
+    var bits = [];
+    if (t.height === 'HEIGHT_MOUNTAIN' || t.height === 'HEIGHT_VOLCANO') bits.push('mountain');
+    else if (t.height === 'HEIGHT_HILL') bits.push('hill');
+    if (t.vegetation) bits.push(t.vegetation.replace('VEGETATION_', '').toLowerCase().replace('_', ' '));
+    bits.push(t.terrain.replace('TERRAIN_', '').toLowerCase());
+    if (t.improvement) bits.push(t.improvement.replace('IMPROVEMENT_', '').toLowerCase());
+    if (t.road) bits.push('road');
+    return bits.join(' · ');
+  }
+  function terrainLines(t) {
+    var out = [];
+    var impassable = t.height === 'HEIGHT_MOUNTAIN' || t.height === 'HEIGHT_VOLCANO' ||
+      t.terrain === 'TERRAIN_WATER';
+    if (impassable) { out.push('impassable to land units'); return out; }
+    var cost = (E.DATA.terrain[t.terrain] && E.DATA.terrain[t.terrain].iMovementCost) || 9;
+    cost += (E.DATA.height[t.height] && E.DATA.height[t.height].iMovementCost) || 0;
+    if (t.vegetation) cost += (E.DATA.vegetation[t.vegetation] && E.DATA.vegetation[t.vegetation].iMovementCost) || 0;
+    if (t.road) cost = 6;
+    out.push('movement cost: ' + (cost / 9).toFixed(1).replace('.0', '') + (cost === 9 ? ' move' : ' moves'));
+    var veg = t.vegetation && E.DATA.vegetation[t.vegetation];
+    if (veg && veg.aiDefendEffectUnit) {
+      Object.keys(veg.aiDefendEffectUnit).forEach(function (e) {
+        out.push('-' + veg.aiDefendEffectUnit[e] + '% for ' + e.replace('EFFECTUNIT_', '').toLowerCase() + ' attacks into this tile');
+      });
+    }
+    if (t.improvement && E.DATA.improvements[t.improvement] && E.DATA.improvements[t.improvement].iDefenseModifier) {
+      out.push('+' + E.DATA.improvements[t.improvement].iDefenseModifier + '% defense for the occupant');
+    }
+    if (t.river && t.river.length) {
+      out.push('river on ' + t.river.length + ' edge' + (t.river.length > 1 ? 's' : '') +
+        ' (melee across a river: -50%; crossing costs extra movement)');
+    }
+    return out;
+  }
+
+  function showTileInfo(q, r) {
+    var t = E.tileAt(state, q, r);
+    if (!t) return;
+    var p = document.getElementById('preview-panel');
+    p.innerHTML =
+      '<h4>Terrain</h4>' +
+      '<div class="who">' + terrainName(t) + '</div>' +
+      terrainLines(t).map(function (l) { return '<div class="modline"><span>' + l + '</span></div>'; }).join('');
+    p.classList.add('show');
+  }
+
   function showUnitInfo(uid) {
     var u = E.unitById(state, uid);
     if (!u || u.hp <= 0) return;
     var inf = E.DATA.units[u.type];
     var p = document.getElementById('preview-panel');
     var ic = ICONS[u.type];
+    var promoNames = (u.promotions || []).map(function (pr) {
+      var eff = (E.DATA.promotions[pr] && E.DATA.promotions[pr].effect) || pr;
+      return '★ ' + eff.replace(/^(EFFECTUNIT_|PROMOTION_)/, '').toLowerCase().replace(/_/g, ' ');
+    });
     var lines = [];
     E.effectsOf(u).forEach(function (e) {
       describeEffect(e).forEach(function (t) { lines.push(t); });
@@ -332,6 +417,7 @@
       '<h4>' + (u.player === 0 ? 'Your unit' : 'Enemy unit') + '</h4>' +
       '<div class="who">' + (ic ? '<img class="p' + u.player + '" src="' + ic + '" alt="">' : '') +
       shortName(u) + '</div>' +
+      (promoNames.length ? '<div class="note" style="color:#ffd23e;margin:0 0 4px">' + promoNames.join(' · ') + '</div>' : '') +
       '<div class="result"><span>Strength</span><b>' + inf.iStrength + '</b></div>' +
       '<div class="result"><span>Hit points</span><b>' + u.hp + ' / ' + E.hpMax(u) + '</b></div>' +
       '<div class="result"><span>Movement</span><b>' + inf.iMovement + '</b></div>' +
@@ -394,6 +480,9 @@
       var pvs = E.attackTargets(state, sel);
       var msg = shortName(sel) + ' selected — tap a highlighted tile to move' +
         (pvs.length ? ', or a marked enemy to attack' : '');
+      if (E.canMove(state, sel) && E.nextStepOrderCost(sel) > 1) {
+        msg += '. FATIGUED: further moves are a FORCE MARCH costing 2 orders each (orange dots).';
+      }
       st.textContent = msg;
     } else {
       st.textContent = 'Tap one of your (blue) units.';
