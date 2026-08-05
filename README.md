@@ -58,10 +58,25 @@ Source of truth is the game's shipped C# reference source
   CIRCLE, SPLASH patterns at a % of full damage (spearman pierce = 25%).
 - **Distance/terrain**: ranged −20%/hex beyond 1; melee −50% across rivers;
   trees −50% for ranged attackers; forts +50 defense; fortify +5/turn.
-- **Movement**: terrain iMovementCost is the base per-tile cost (9 = 1 move
-  point of iMovement), hills/vegetation add, roads override to 6, river
-  crossing +6; enemy ZOC ends movement.
+- **Movement & orders** (Unit.cs:7440-7748): a move step = up to full
+  movement, 1 order; steps past the fatigue limit are force-march at double
+  order cost, capped at 2x the limit. Attacks cost 1 order flat and never
+  fatigue the unit. Any cooldown (including ROUT) blocks movement — routed
+  units may only attack again. ZOC (Unit.cs:7685): only ZOC->ZOC steps are
+  forbidden (entering ZOC does not stop movement), and ZOC does not project
+  across rivers. Terrain iMovementCost is the base per-tile cost (9 = 1
+  move), hills/vegetation add, roads override to 6, river crossing +6.
 - Deliberately excluded for puzzles: criticals (random), cities, events, XP.
+
+## Grounded against the real engine
+
+`tools/ground.sh "<sunits>" "<splan>"` runs a scenario through the actual
+game engine (owearlysim/engine-harness) and prints per-strike results.
+Verified matches (2026-08-05): overrun chain counters 1/2/2 + no advance on
+the final kill + routed-unit move rejected; horseman vs archer = 9 (mounted
++25% vs open terrain applies); archer at range 2 vs spearman = 4; spearman
+vs axeman = 4 with pierce 1 to the unit behind; ranged defenders never
+counter; melee counter = 1.
 
 ## Puzzle format
 

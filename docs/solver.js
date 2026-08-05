@@ -9,7 +9,7 @@
 
   function stateHash(s) {
     return s.orders + '|' + s.units.map(function (u) {
-      return [u.id, u.q, u.r, u.hp, u.cooldown || '-', u.fatigue, u.fortifyTurns].join(',');
+      return [u.id, u.q, u.r, u.hp, u.cooldown || '-', u.steps, u.fortifyTurns].join(',');
     }).join(';');
   }
 

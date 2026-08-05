@@ -44,7 +44,38 @@
   .order-pip { display: inline-block; width: 12px; height: 12px; border-radius: 50%;
     background: var(--accent); margin-left: 3px; vertical-align: middle; }
   .order-pip.spent { background: #d8c8ac; }
-  #board-wrap { width: 100%; max-width: 560px; padding: 4px; }
+  #main-row {
+    display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;
+    gap: 10px; width: 100%; max-width: 900px;
+  }
+  #board-wrap { width: 100%; max-width: 560px; padding: 4px; flex: 1 1 340px; }
+  #preview-panel {
+    display: none; flex: 0 1 300px; max-width: 320px; min-width: 250px;
+    background: #14161c; color: #e8e4d8; border-radius: 10px;
+    padding: 12px 14px; font-size: 13px; margin: 4px;
+    font-family: system-ui, sans-serif;
+  }
+  #preview-panel.show { display: block; }
+  #preview-panel h4 {
+    margin: 0 0 8px; font-size: 13px; letter-spacing: 1px; text-transform: uppercase;
+    color: #ffb020; display: flex; align-items: center; gap: 6px;
+  }
+  #preview-panel .vs { display: flex; gap: 10px; }
+  #preview-panel .col { flex: 1; }
+  #preview-panel .col .who { display: flex; align-items: center; gap: 5px; font-weight: 600; margin-bottom: 3px; }
+  #preview-panel .col .who img { width: 22px; height: 22px; border-radius: 50%; }
+  #preview-panel .who img.p0 { background: rgb(110,160,210); }
+  #preview-panel .who img.p1 { background: rgb(150,60,60); }
+  #preview-panel .big { font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  #preview-panel .modline { display: flex; justify-content: space-between; color: #b9b4a4; font-size: 12px; }
+  #preview-panel .modline .v.pos { color: #7fb069; }
+  #preview-panel .modline .v.neg { color: #e06c5b; }
+  #preview-panel hr { border: none; border-top: 1px solid #3a3d46; margin: 8px 0; }
+  #preview-panel .result { display: flex; justify-content: space-between; font-size: 13px; }
+  #preview-panel .result b.kill { color: #ff5040; }
+  #preview-panel .result b.dmg { color: #ffb020; }
+  #preview-panel .note { color: #b9b4a4; font-size: 12px; margin-top: 5px; }
+  #preview-panel .arm { margin-top: 8px; text-align: center; color: #ffb020; font-size: 12px; }
   svg { width: 100%; height: auto; display: block; touch-action: manipulation; }
   .controls { display: flex; gap: 10px; margin: 6px 0 4px; }
   button {
@@ -107,7 +138,10 @@
   <div class="hud">
     <div class="orders">Orders: <span id="orders-pips"></span></div>
   </div>
-  <div id="board-wrap"></div>
+  <div id="main-row">
+    <div id="board-wrap"></div>
+    <div id="preview-panel"></div>
+  </div>
   <div class="controls">
     <button id="btn-undo">Undo</button>
     <button id="btn-reset">Reset</button>

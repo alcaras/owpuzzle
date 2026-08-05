@@ -181,7 +181,7 @@
         var lim = E.fatigueLimit(u);
         for (var i = 0; i < lim; i++) {
           S.push('<circle cx="' + (x - (lim - 1) * 5.5 / 2 + i * 5.5) + '" cy="' + (y - SIZE * 0.72) + '" r="2.2" fill="' +
-            (i < u.fatigue ? '#ffffff33' : '#ffb020') + '"/>');
+            (i < u.steps ? '#ffffff33' : '#ffb020') + '"/>');
         }
       }
       // damage preview on targets — the viewer's attack-flash language:
@@ -205,13 +205,69 @@
       });
     });
     Array.prototype.forEach.call(wrap.querySelectorAll('[data-unit]'), function (el) {
+      var uid = +el.getAttribute('data-unit');
       el.addEventListener('click', function (ev) {
         ev.stopPropagation();
-        onUnitTap(+el.getAttribute('data-unit'));
+        onUnitTap(uid);
       });
+      // hover preview (desktop): full breakdown panel for legal targets
+      if (targetIds[uid]) {
+        el.addEventListener('pointerenter', function () { showPreviewPanel(uid); });
+        el.addEventListener('pointerleave', function () { if (armedTarget !== uid) hidePreviewPanel(); });
+      }
     });
 
     renderHud();
+  }
+
+  // ---------- attack preview panel (game-style breakdown) ----------
+  var CAN_HOVER = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+  var armedTarget = null; // touch: first tap arms + previews, second attacks
+
+  function modLines(mods) {
+    return mods.map(function (m) {
+      return '<div class="modline"><span>' + m.label + '</span>' +
+        '<span class="v ' + (m.pct > 0 ? 'pos' : 'neg') + '">' +
+        (m.pct > 0 ? '+' : '') + m.pct + '%</span></div>';
+    }).join('');
+  }
+
+  function showPreviewPanel(defId) {
+    if (selected == null || finished) return;
+    var ex;
+    try { ex = E.explainAttack(state, selected, defId); } catch (e) { return; }
+    var attU = E.unitById(state, selected), defU = E.unitById(state, defId);
+    var p = document.getElementById('preview-panel');
+    function chip(u) {
+      var ic = ICONS[u.type];
+      return (ic ? '<img class="p' + u.player + '" src="' + ic + '" alt="">' : '') +
+        shortName(u);
+    }
+    p.innerHTML =
+      '<h4>⚔ Attack Preview</h4>' +
+      '<div class="vs">' +
+      '<div class="col"><div class="who">' + chip(attU) + '</div>' +
+      '<div class="big">' + ex.att.total + '</div>' +
+      '<div class="modline"><span>base strength</span><span>' + ex.att.base + '</span></div>' +
+      modLines(ex.att.mods) + '</div>' +
+      '<div class="col"><div class="who">' + chip(defU) + '</div>' +
+      '<div class="big">' + ex.def.total + '</div>' +
+      '<div class="modline"><span>base strength</span><span>' + ex.def.base + '</span></div>' +
+      modLines(ex.def.mods) + '</div>' +
+      '</div><hr>' +
+      '<div class="result"><span>Damage</span><b class="' + (ex.kills ? 'kill' : 'dmg') + '">' +
+      ex.damage + (ex.kills ? ' ☠ kill' : '') + ' / ' + defU.hp + ' HP</b></div>' +
+      '<div class="result"><span>Counterattack</span><b>' + ex.counter + '</b></div>' +
+      (ex.collateral.length ? ex.collateral.map(function (c) {
+        var v = E.unitById(state, c.id);
+        return '<div class="result"><span>splash: ' + shortName(v) + '</span><b>' + c.damage + '</b></div>';
+      }).join('') : '') +
+      (ex.rout ? '<div class="note">Rout: overruns and may attack again</div>' : '') +
+      (armedTarget === defId && !CAN_HOVER ? '<div class="arm">tap again to attack</div>' : '');
+    p.classList.add('show');
+  }
+  function hidePreviewPanel() {
+    document.getElementById('preview-panel').classList.remove('show');
   }
 
   // Old World's unit health readout: two rows of boxes, one box per HP.
@@ -278,13 +334,22 @@
     var u = E.unitById(state, id);
     if (u.player === 0) {
       selected = (selected === id) ? null : id;
+      armedTarget = null;
+      hidePreviewPanel();
       render();
       return;
     }
-    // enemy: attack if selected unit can
+    // enemy: attack if selected unit can. On touch (no hover), the first tap
+    // shows the breakdown and arms the target; the second tap strikes.
     if (selected != null) {
       var can = E.attackTargets(state, E.unitById(state, selected)).some(function (t) { return t.id === id; });
-      if (can) act({ type: 'attack', unit: selected, target: id });
+      if (!can) return;
+      if (!CAN_HOVER && armedTarget !== id) {
+        armedTarget = id;
+        showPreviewPanel(id);
+        return;
+      }
+      act({ type: 'attack', unit: selected, target: id });
     }
   }
 
@@ -294,6 +359,8 @@
       var keepSel = a.unit;
       state = E.applyAction(state, a);
       actionsUsed++;
+      armedTarget = null;
+      hidePreviewPanel();
       var u = E.unitById(state, keepSel);
       selected = (u && u.hp > 0 && E.canAct(state, u)) ? keepSel : null;
       checkEnd();
@@ -335,6 +402,8 @@
     actionsUsed--;
     finished = false;
     selected = null;
+    armedTarget = null;
+    hidePreviewPanel();
     document.getElementById('result').classList.remove('show');
     render();
   });
@@ -346,6 +415,8 @@
     selected = null;
     finished = false;
     actionsUsed = 0;
+    armedTarget = null;
+    hidePreviewPanel();
     document.getElementById('result').classList.remove('show');
     render();
   }

@@ -42,7 +42,7 @@
   // state = {
   //   tiles: { "q,r": {q,r,terrain,height,vegetation,improvement,river:[dir..],owner} },
   //   units: [ {id,player,type,hp,promotions:[],effects? (derived),fortifyTurns,
-  //             cooldown:null|'ATTACK'|'ROUT'|'ATTACKED',fatigue,name} ],
+  //             cooldown:null|'ATTACK'|'ROUT'|'ATTACKED',steps,name} ],
   //   orders: int,
   //   log: [string]
   // }
@@ -189,74 +189,99 @@
 
   // ================= Strength =================
 
+  function prettyEffect(e) {
+    return e.replace('EFFECTUNIT_', '').toLowerCase().replace(/_/g, ' ')
+      .replace(/(\d)$/, ' $1').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+  function prettyTrait(t) {
+    return t.replace('UNITTRAIT_', '').toLowerCase();
+  }
+
   // Port of Unit.attackUnitStrength (Unit.cs:8726) — puzzle-relevant subset.
-  function attackStrength(state, att, fromTile, toTile, defUnit) {
+  // Pass `out` (array) to collect a labelled modifier breakdown.
+  function attackStrength(state, att, fromTile, toTile, defUnit, out) {
     if (!canDamage(att)) return 0;
-    var mod = sumEffect(att, 'iStrengthModifier') + sumEffect(att, 'iAttackModifier');
+    var mod = 0;
+    function add(label, v) {
+      if (!v) return;
+      mod += v;
+      if (out) out.push({ label: label, pct: v });
+    }
+    function addPerEffect(field, suffix) {
+      effectsOf(att).forEach(function (e) {
+        var d = DATA.effects[e];
+        if (d && d[field]) add(prettyEffect(e) + (suffix || ''), d[field]);
+      });
+    }
+    addPerEffect('iStrengthModifier');
+    addPerEffect('iAttackModifier', ' (attack)');
 
     var from = tileAt(state, fromTile.q, fromTile.r);
     var to = toTile ? tileAt(state, toTile.q, toTile.r) : null;
 
     if (from && to) {
       if (isMelee(att) && isWaterTile(from) !== isWaterTile(to)) {
-        mod += G.LAND_WATER_MODIFIER + sumEffect(att, 'iWaterLandAttackModifier');
+        add('attacking across water', G.LAND_WATER_MODIFIER + sumEffect(att, 'iWaterLandAttackModifier'));
       }
       var flank = sumEffect(att, 'iFlankingAttackModifier');
-      if (flank !== 0 && flankingAttack(state, att, from, to)) mod += flank;
+      if (flank !== 0 && flankingAttack(state, att, from, to)) add('flanking', flank);
 
       var adjSame = sumEffect(att, 'iAdjacentSameAttackModifier') + sumEffect(att, 'iAdjacentSameModifier');
-      if (adjSame !== 0 && adjacentFriendSame(state, att, from)) mod += adjSame;
+      if (adjSame !== 0 && adjacentFriendSame(state, att, from)) add('adjacent same unit', adjSame);
     }
 
     if (to) {
       // fort / defensive improvement helps defender => improvement "to" modifier on attacker side
       if (to.improvement && defUnit) {
-        mod += sumEffectPair(att, 'aiImprovementToModifier', to.improvement);
+        add('vs ' + to.improvement.replace('IMPROVEMENT_', '').toLowerCase(),
+          sumEffectPair(att, 'aiImprovementToModifier', to.improvement));
       }
       if (isClearTile(to) && isMelee(att)) {
         effectsOf(att).forEach(function (e) {
           var d = DATA.effects[e];
           if (d && d.aiMeleeToClearTerrainTargetModifier) {
             Object.keys(d.aiMeleeToClearTerrainTargetModifier).forEach(function (tt) {
-              if (isTerrainTarget(to, tt)) mod += d.aiMeleeToClearTerrainTargetModifier[tt];
+              if (isTerrainTarget(to, tt)) add('attacking open terrain', d.aiMeleeToClearTerrainTargetModifier[tt]);
             });
           }
         });
       }
       if (isUrbanTile(to)) {
-        mod += sumEffect(att, 'iUrbanAttackModifier');
+        add('attacking urban', sumEffect(att, 'iUrbanAttackModifier'));
       } else if (to.vegetation && !ignoresVegetationDefense(att, to.vegetation)) {
         // vegetation protects vs certain attacker classes (trees vs ranged: -50)
         var veg = DATA.vegetation[to.vegetation];
         if (veg && veg.aiDefendEffectUnit) {
           effectsOf(att).forEach(function (e) {
-            if (veg.aiDefendEffectUnit[e]) mod += -veg.aiDefendEffectUnit[e];
+            if (veg.aiDefendEffectUnit[e])
+              add('target in ' + to.vegetation.replace('VEGETATION_', '').toLowerCase(), -veg.aiDefendEffectUnit[e]);
           });
         }
       }
     }
 
     if (defUnit) {
-      if (isDamaged(defUnit)) mod += sumEffect(att, 'iDamagedThemModifier');
-      if (defUnit.general) mod += sumEffect(att, 'iVsGeneralModifier');
+      if (isDamaged(defUnit)) add('vs damaged', sumEffect(att, 'iDamagedThemModifier'));
+      if (defUnit.general) add('vs general', sumEffect(att, 'iVsGeneralModifier'));
       // attacker effects vs defender traits
       (info(defUnit).traits || []).forEach(function (tr) {
-        mod += sumEffectPair(att, 'aiUnitTraitModifier', tr);
-        mod += sumEffectPair(att, 'aiUnitTraitModifierAttack', tr);
-        if (isMelee(att)) mod += sumEffectPair(att, 'aiUnitTraitModifierMelee', tr);
+        add('vs ' + prettyTrait(tr), sumEffectPair(att, 'aiUnitTraitModifier', tr));
+        add('vs ' + prettyTrait(tr), sumEffectPair(att, 'aiUnitTraitModifierAttack', tr));
+        if (isMelee(att)) add('vs ' + prettyTrait(tr), sumEffectPair(att, 'aiUnitTraitModifierMelee', tr));
       });
     }
 
     if (from) {
-      if (from.vegetation) mod += sumEffectPair(att, 'aiVegetationFromModifier', from.vegetation);
-      mod += sumEffectPair(att, 'aiTerrainFromModifier', from.terrain);
-      mod += sumEffectPair(att, 'aiHeightFromModifier', from.height);
+      if (from.vegetation) add('fighting from ' + from.vegetation.replace('VEGETATION_', '').toLowerCase(),
+        sumEffectPair(att, 'aiVegetationFromModifier', from.vegetation));
+      add('terrain', sumEffectPair(att, 'aiTerrainFromModifier', from.terrain));
+      add('height', sumEffectPair(att, 'aiHeightFromModifier', from.height));
 
       if (to) {
         if (isMelee(att) && riverBetween(state, from, to)) {
-          mod += sumEffect(att, 'iRiverAttackModifier');
+          add('attacking across river', sumEffect(att, 'iRiverAttackModifier'));
         }
-        mod += distanceModifier(att, from, to);
+        add('distance', distanceModifier(att, from, to));
       }
     }
 
@@ -279,43 +304,77 @@
   }
 
   // Port of Unit.defendUnitStrength (Unit.cs:9044).
-  function defendStrength(state, def, toTile, attUnit) {
-    var mod = sumEffect(def, 'iStrengthModifier') + sumEffect(def, 'iDefenseModifier');
+  // Pass `out` (array) to collect a labelled modifier breakdown.
+  function defendStrength(state, def, toTile, attUnit, out) {
+    var mod = 0;
+    function add(label, v) {
+      if (!v) return;
+      mod += v;
+      if (out) out.push({ label: label, pct: v });
+    }
+    function addPerEffect(field, suffix) {
+      effectsOf(def).forEach(function (e) {
+        var d = DATA.effects[e];
+        if (d && d[field]) add(prettyEffect(e) + (suffix || ''), d[field]);
+      });
+    }
+    addPerEffect('iStrengthModifier');
+    addPerEffect('iDefenseModifier', ' (defense)');
     var to = tileAt(state, toTile.q, toTile.r);
 
     var adjSame = sumEffect(def, 'iAdjacentSameModifier');
-    if (adjSame !== 0 && adjacentFriendSame(state, def, to)) mod += adjSame;
+    if (adjSame !== 0 && adjacentFriendSame(state, def, to)) add('adjacent same unit', adjSame);
 
     // tileDefenseModifier (Unit.cs:8982)
     if (to) {
       if (def.q === to.q && def.r === to.r) {
-        mod += (def.fortifyTurns || 0) * G.FORTIFY_BONUS_PER;
+        add('fortified', (def.fortifyTurns || 0) * G.FORTIFY_BONUS_PER);
       }
-      if (isUrbanTile(to)) mod += sumEffect(def, 'iUrbanDefenseModifier');
-      if (to.vegetation) mod += sumEffectPair(def, 'aiVegetationFromModifier', to.vegetation);
-      mod += sumEffectPair(def, 'aiTerrainFromModifier', to.terrain);
-      mod += sumEffectPair(def, 'aiHeightFromModifier', to.height);
+      if (isUrbanTile(to)) add('urban', sumEffect(def, 'iUrbanDefenseModifier'));
+      if (to.vegetation) add('in ' + to.vegetation.replace('VEGETATION_', '').toLowerCase(),
+        sumEffectPair(def, 'aiVegetationFromModifier', to.vegetation));
+      add('terrain', sumEffectPair(def, 'aiTerrainFromModifier', to.terrain));
+      add('height', sumEffectPair(def, 'aiHeightFromModifier', to.height));
       if (to.improvement) {
         var imp = DATA.improvements[to.improvement];
         if (imp) {
+          var impName = to.improvement.replace('IMPROVEMENT_', '').toLowerCase();
           // neutral-or-friendly tile only; puzzles: apply if tile owner is null or defender's
-          if (to.owner == null || to.owner === def.player) mod += (imp.iDefenseModifier || 0);
-          if (to.owner === def.player) mod += (imp.iDefenseModifierFriendly || 0);
+          if (to.owner == null || to.owner === def.player) add(impName, imp.iDefenseModifier || 0);
+          if (to.owner === def.player) add(impName + ' (friendly)', imp.iDefenseModifierFriendly || 0);
         }
       }
     }
 
     if (attUnit) {
-      if (isDamaged(attUnit)) mod += sumEffect(def, 'iDamagedThemModifier');
-      if (attUnit.general) mod += sumEffect(def, 'iVsGeneralModifier');
+      if (isDamaged(attUnit)) add('vs damaged', sumEffect(def, 'iDamagedThemModifier'));
+      if (attUnit.general) add('vs general', sumEffect(def, 'iVsGeneralModifier'));
       (info(attUnit).traits || []).forEach(function (tr) {
-        mod += sumEffectPair(def, 'aiUnitTraitModifier', tr);
-        mod += sumEffectPair(def, 'aiUnitTraitModifierDefense', tr);
-        if (isMelee(def)) mod += sumEffectPair(def, 'aiUnitTraitModifierMelee', tr);
+        add('vs ' + prettyTrait(tr), sumEffectPair(def, 'aiUnitTraitModifier', tr));
+        add('vs ' + prettyTrait(tr), sumEffectPair(def, 'aiUnitTraitModifierDefense', tr));
+        if (isMelee(def)) add('vs ' + prettyTrait(tr), sumEffectPair(def, 'aiUnitTraitModifierMelee', tr));
       });
     }
 
     return Math.max(1, modify(baseStrength(def), mod));
+  }
+
+  // Full attack preview with the game-style breakdown: both strengths with
+  // labelled modifiers, damage, counter, kill/rout flags.
+  function explainAttack(state, attId, defId) {
+    var att = unitById(state, attId), def = unitById(state, defId);
+    var from = { q: att.q, r: att.r }, to = { q: def.q, r: def.r };
+    var attMods = [], defMods = [];
+    var aStr = attackStrength(state, att, from, to, def, attMods);
+    var dStr = defendStrength(state, def, to, att, defMods);
+    var pv = previewAttack(state, attId, defId);
+    return {
+      att: { name: att.type, base: baseStrength(att), mods: attMods, total: aStr },
+      def: { name: def.type, base: baseStrength(def), mods: defMods, total: dStr },
+      rawDamage: getAttackDamage(aStr, dStr, 100),
+      damage: pv.damage, counter: pv.counter, kills: pv.kills, rout: pv.rout,
+      collateral: pv.collateral,
+    };
   }
 
   // ================= Damage =================
@@ -413,30 +472,38 @@
     return cost;
   }
 
+  // Tile (q,r) is in hostile ZOC for unit u: an adjacent enemy with ZOC,
+  // across a non-river edge (Tile.isHostileZOC, Tile.cs:10061 — ZOC does not
+  // project across rivers).
   function inEnemyZOC(state, u, q, r) {
+    if (hasEffectFlag(u, 'bIgnoreZOC')) return false;
     for (var d = 0; d < 6; d++) {
+      if (riverBetween(state, { q: q, r: r }, { q: q + DIRS[d].q, r: r + DIRS[d].r })) continue;
       var o = unitAt(state, q + DIRS[d].q, r + DIRS[d].r);
       if (o && o.player !== u.player && info(o).bZOC) return true;
     }
     return false;
   }
 
-  // Reachable tiles for one move action. Returns [{q,r,cost}]
+  // Reachable tiles for one move step. Returns [{q,r,cost}].
+  // ZOC rule (Unit.isValidMovementDirection, Unit.cs:7685): a step from one
+  // hostile-ZOC tile to another hostile-ZOC tile is forbidden; entering ZOC
+  // does NOT stop movement.
   function reachableTiles(state, u) {
-    if (!canAct(state, u)) return [];
-    var start = { q: u.q, r: u.r };
+    if (!canMove(state, u)) return [];
     var best = {}; best[key(u.q, u.r)] = 0;
     var frontier = [{ q: u.q, r: u.r, left: movementPoints(u) }];
-    var ignoreZOC = hasEffectFlag(u, 'bIgnoreZOC');
     var out = {};
     while (frontier.length) {
       var cur = frontier.pop();
+      var curZOC = inEnemyZOC(state, u, cur.q, cur.r);
       for (var d = 0; d < 6; d++) {
         var nq = cur.q + DIRS[d].q, nr = cur.r + DIRS[d].r;
         var t = tileAt(state, nq, nr);
         if (!t) continue;
         var occ = unitAt(state, nq, nr);
         if (occ) continue; // one unit per tile; can't pass through anyone (simplified)
+        if (curZOC && inEnemyZOC(state, u, nq, nr)) continue; // ZOC -> ZOC step
         var c = moveCostInto(state, u, cur, { q: nq, r: nr });
         if (c > cur.left) continue;
         var k = key(nq, nr);
@@ -444,26 +511,46 @@
         if (best[k] != null && best[k] <= spent) continue;
         best[k] = spent;
         out[k] = { q: nq, r: nr, cost: spent };
-        var leftAfter = cur.left - c;
-        // entering enemy ZOC ends movement
-        if (!ignoreZOC && inEnemyZOC(state, u, nq, nr)) continue;
-        frontier.push({ q: nq, r: nr, left: leftAfter });
+        frontier.push({ q: nq, r: nr, left: cur.left - c });
       }
     }
     return Object.keys(out).map(function (k2) { return out[k2]; });
   }
 
-  function canAct(state, u) {
+  // Order cost of the unit's NEXT move step: 1, or 1+UNIT_FATIGUE_COST when
+  // force-marching past the fatigue limit (Unit.getNumOrdersForSteps).
+  function nextStepOrderCost(u) {
+    return u.steps >= fatigueLimit(u) ? 1 + G.UNIT_FATIGUE_COST : 1;
+  }
+
+  // Movement: any cooldown (including ROUT) blocks it; force march allows
+  // steps beyond the fatigue limit at double order cost, up to 2x the limit
+  // (Unit.canActMove, Unit.cs:7440).
+  function canMove(state, u) {
+    if (u.hp <= 0) return false;
+    if (u.cooldown) return false;
+    if (u.steps + 1 > fatigueLimit(u) * 2) return false;
+    if (state.orders < nextStepOrderCost(u)) return false;
+    return true;
+  }
+
+  // Attacking: cooldown must be NONE or ROUT (Unit.canAct bAttackOnly,
+  // Unit.cs:7493); costs 1 order flat; fatigue does not apply to attacks.
+  function canAttack(state, u) {
     if (u.hp <= 0) return false;
     if (u.cooldown && u.cooldown !== 'ROUT') return false;
-    if (u.fatigue >= fatigueLimit(u)) return false;
-    if (state.orders <= 0) return false;
+    if (state.orders < 1) return false;
     return true;
+  }
+
+  // a unit that can do something this turn (for UI exhaustion display)
+  function canAct(state, u) {
+    return canMove(state, u) || (canAttack(state, u) && canDamage(u));
   }
 
   // Attackable targets from the unit's current tile.
   function attackTargets(state, u) {
-    if (!canAct(state, u) || !canDamage(u)) return [];
+    if (!canAttack(state, u) || !canDamage(u)) return [];
     var out = [];
     var r = rangeMax(u);
     state.units.forEach(function (t) {
@@ -552,11 +639,12 @@
     var reach = reachableTiles(s, u);
     var ok = reach.some(function (t) { return t.q === q && t.r === r; });
     if (!ok) throw new Error('illegal move');
+    var cost = nextStepOrderCost(u); // force-march steps cost double
     u.q = q; u.r = r;
-    u.fatigue += 1;
+    u.steps += 1;
     u.fortifyTurns = 0;
-    s.orders -= 1;
-    s.log.push(nameOf(u) + ' moves');
+    s.orders -= cost;
+    s.log.push(nameOf(u) + ' moves' + (cost > 1 ? ' (force march, ' + cost + ' orders)' : ''));
     return s;
   }
 
@@ -564,7 +652,7 @@
   function doAttack(state, attId, defId) {
     var s = cloneState(state);
     var att = unitById(s, attId), def = unitById(s, defId);
-    if (!canAct(s, att)) throw new Error('unit cannot act');
+    if (!canAttack(s, att)) throw new Error('unit cannot attack');
     var legal = attackTargets(s, att).some(function (t) { return t.id === defId; });
     if (!legal) throw new Error('illegal attack');
 
@@ -619,18 +707,16 @@
       att.cooldown = 'ATTACK';
     }
 
-    att.fatigue += 1;
     att.fortifyTurns = 0;
-    s.orders -= 1;
+    s.orders -= 1; // attacks cost 1 order flat and never fatigue the unit
     return s;
   }
 
   function doFortify(state, unitId) {
     var s = cloneState(state);
     var u = unitById(s, unitId);
-    if (!canAct(s, u) || !info(u).bFortify) throw new Error('cannot fortify');
+    if (!canMove(s, u) || !info(u).bFortify) throw new Error('cannot fortify');
     u.fortifyTurns = Math.min(G.MAX_FORTIFY_TURNS, (u.fortifyTurns || 0) + 1);
-    u.fatigue += 1;
     u.cooldown = 'ATTACK'; // fortifying ends the unit's activity for the turn
     s.orders -= 1;
     s.log.push(nameOf(u) + ' fortifies');
@@ -663,7 +749,6 @@
     var acts = [];
     state.units.forEach(function (u) {
       if (u.player !== 0) return;
-      if (!canAct(state, u)) return;
       attackTargets(state, u).forEach(function (t) {
         acts.push({ type: 'attack', unit: u.id, target: t.id });
       });
@@ -702,7 +787,7 @@
         id: i, player: u.player, type: u.type, q: u.q, r: u.r,
         hp: u.hp != null ? u.hp : DATA.units[u.type].iHPMax,
         promotions: u.promotions || [], fortifyTurns: u.fortifyTurns || 0,
-        cooldown: null, fatigue: 0, general: !!u.general, name: u.name || null,
+        cooldown: null, steps: 0, general: !!u.general, name: u.name || null,
       };
     });
     return { tiles: tiles, units: units, orders: p.orders, objective: p.objective, log: [] };
@@ -712,11 +797,14 @@
     DATA: DATA, DIRS: DIRS, key: key, hexDistance: hexDistance, dirBetween: dirBetween,
     modify: modify, tileAt: tileAt, unitAt: unitAt, unitById: unitById,
     effectsOf: effectsOf, isMelee: isMelee, rangeMax: rangeMax, hpMax: hpMax,
-    canAct: canAct, canDamage: canDamage, fatigueLimit: fatigueLimit,
+    canAct: canAct, canMove: canMove, canAttack: canAttack,
+    nextStepOrderCost: nextStepOrderCost,
+    canDamage: canDamage, fatigueLimit: fatigueLimit,
     movementPoints: movementPoints, reachableTiles: reachableTiles,
     attackTargets: attackTargets, attackStrength: attackStrength,
     defendStrength: defendStrength, attackUnitDamage: attackUnitDamage,
     counterAttackDamage: counterAttackDamage, previewAttack: previewAttack,
+    explainAttack: explainAttack,
     doMove: doMove, doAttack: doAttack, doFortify: doFortify,
     legalActions: legalActions, applyAction: applyAction,
     checkObjective: checkObjective, loadPuzzle: loadPuzzle, cloneState: cloneState,
