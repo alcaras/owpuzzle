@@ -121,6 +121,19 @@
   /* puzzle library (home) */
   #home { width: 100%; max-width: 560px; padding: 10px 12px 24px; display: none; }
   #home.show { display: block; }
+  #home .progress { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  #home .progress b { color: var(--accent); }
+  #home h2.group {
+    font-size: 13px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); margin: 18px 2px 8px; border-bottom: 1px solid var(--edge);
+    padding-bottom: 4px;
+  }
+  .card { position: relative; }
+  .card .done {
+    position: absolute; top: 10px; right: 12px; font-size: 18px; color: #5f9e4c;
+  }
+  .card.solved { border-color: #5f9e4c; }
+  .card .meta { margin-right: 22px; }
   .card {
     display: block; background: var(--panel); border: 1.5px solid var(--edge);
     border-radius: 12px; padding: 12px 16px; margin-bottom: 12px;
@@ -156,6 +169,7 @@
   <div id="home"></div>
   <div class="hud">
     <div class="orders">Orders: <span id="orders-pips"></span></div>
+    <div class="orders" id="training-span" style="display:none"></div>
   </div>
   <div id="main-row">
     <div id="board-wrap"></div>
@@ -164,6 +178,8 @@
   <div class="controls">
     <button id="btn-undo">Undo</button>
     <button id="btn-reset">Reset</button>
+    <button id="btn-march" class="primary" style="display:none">Force March (−100 training)</button>
+    <button id="btn-setup" class="primary" style="display:none">Set Up</button>
   </div>
   <div id="status"></div>
   <div id="result">

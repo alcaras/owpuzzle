@@ -8,8 +8,9 @@
         : (typeof require !== 'undefined') ? require('./engine.js') : null;
 
   function stateHash(s) {
-    return s.orders + '|' + s.units.map(function (u) {
-      return [u.id, u.q, u.r, u.hp, u.cooldown || '-', u.steps, u.fortifyTurns].join(',');
+    return s.orders + '|' + (s.training || 0) + '|' + s.units.map(function (u) {
+      return [u.id, u.q, u.r, u.hp, u.cooldown || '-', u.steps, u.fortifyTurns,
+        u.march ? 'M' : '', u.unlimbered ? 'U' : ''].join(',');
     }).join(';');
   }
 

@@ -22,17 +22,35 @@
     var home = document.getElementById('home');
     home.classList.add('show');
     var ICONS0 = (typeof OWICONS !== 'undefined') ? OWICONS : {};
-    home.innerHTML = OWPUZZLES.map(function (p, i) {
-      var units = p.units.map(function (u) {
-        var ic = ICONS0[u.type];
-        return ic ? '<img class="p' + u.player + '" src="' + ic + '" alt="">' : '';
+    var prog = {};
+    try { prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}'); } catch (e) {}
+    var solvedCount = OWPUZZLES.filter(function (p) { return prog[p.id] && prog[p.id].solved; }).length;
+    var GROUPS = [
+      { n: 1, title: 'Basics — one unit, one rule' },
+      { n: 2, title: 'Tactics — combined arms' },
+      { n: 3, title: 'Battlefields — real positions' },
+    ];
+    var html = '<div class="progress">Solved <b>' + solvedCount + '</b> of ' + OWPUZZLES.length +
+      (solvedCount === OWPUZZLES.length && solvedCount > 0 ? ' — the whole library! ⚔️' : '') + '</div>';
+    GROUPS.forEach(function (g) {
+      var list = OWPUZZLES.filter(function (p) { return (p.difficulty || 2) === g.n; });
+      if (!list.length) return;
+      html += '<h2 class="group">' + g.title + '</h2>';
+      html += list.map(function (p) {
+        var done = prog[p.id] && prog[p.id].solved;
+        var units = p.units.map(function (u) {
+          var ic = ICONS0[u.type];
+          return ic ? '<img class="p' + u.player + '" src="' + ic + '" alt="">' : '';
+        }).join('');
+        return '<a class="card' + (done ? ' solved' : '') + '" href="?p=' + p.id + '">' +
+          (done ? '<span class="done">✓</span>' : '') +
+          '<div class="card-head"><h3>' + p.name + '</h3>' +
+          '<span class="meta">' + p.orders + ' orders</span></div>' +
+          '<p>' + p.brief + '</p>' +
+          '<div class="units">' + units + '</div></a>';
       }).join('');
-      return '<a class="card" href="?p=' + p.id + '">' +
-        '<div class="card-head"><h3>' + (i + 1) + '. ' + p.name + '</h3>' +
-        '<span class="meta">' + p.orders + ' orders</span></div>' +
-        '<p>' + p.brief + '</p>' +
-        '<div class="units">' + units + '</div></a>';
-    }).join('');
+    });
+    home.innerHTML = html;
     return; // no game to run
   }
   document.getElementById('back-link').innerHTML = '<a href="./">← all puzzles</a>';
@@ -196,12 +214,17 @@
       // HP pips, Old World style: two rows of boxes, one box per HP.
       // On attack preview, the boxes that would be lost turn red.
       drawHpPips(S, x, y, u.hp, E.hpMax(u), pv ? pv.damage : 0);
-      // promotion badges: one gold star per promotion, like the game's
-      // promotion pips on the unit plate
-      (u.promotions || []).forEach(function (_, pi) {
-        S.push('<text x="' + (x + SIZE * 0.46) + '" y="' + (y - SIZE * 0.3 + pi * 13) +
-          '" text-anchor="middle" font-size="14" fill="#ffd23e" stroke="' + BOARD_BG +
-          '" stroke-width="2.5" paint-order="stroke" pointer-events="none">★</text>');
+      // promotion badges: the promotion's in-game icon on a gold disc
+      (u.promotions || []).forEach(function (pr, pi) {
+        var effName = (E.DATA.promotions[pr] && E.DATA.promotions[pr].effect) || pr;
+        var pic = ICONS['EFFECT_' + effName.replace('EFFECTUNIT_', '')];
+        var bx = x + SIZE * 0.46, by = y - SIZE * 0.36 + pi * 16;
+        if (pic) {
+          S.push('<circle cx="' + bx + '" cy="' + by + '" r="8.5" fill="#ffd23e" stroke="' + BOARD_BG + '" stroke-width="1.2" pointer-events="none"/>');
+          S.push('<image href="' + pic + '" x="' + (bx - 6.5) + '" y="' + (by - 6.5) + '" width="13" height="13" pointer-events="none"/>');
+        } else {
+          S.push('<text x="' + bx + '" y="' + by + '" text-anchor="middle" dominant-baseline="middle" font-size="14" fill="#ffd23e" stroke="' + BOARD_BG + '" stroke-width="2.5" paint-order="stroke" pointer-events="none">★</text>');
+        }
       });
       // fatigue pips for blue
       if (u.player === 0) {
@@ -305,7 +328,9 @@
     p.classList.add('show');
   }
   function hidePreviewPanel() {
-    document.getElementById('preview-panel').classList.remove('show');
+    var p = document.getElementById('preview-panel');
+    p.classList.remove('show');
+    p.innerHTML = '';
   }
 
   // ---------- unit card (hover any unit) ----------
@@ -401,11 +426,16 @@
     var ic = ICONS[u.type];
     var promoNames = (u.promotions || []).map(function (pr) {
       var eff = (E.DATA.promotions[pr] && E.DATA.promotions[pr].effect) || pr;
-      return '★ ' + eff.replace(/^(EFFECTUNIT_|PROMOTION_)/, '').toLowerCase().replace(/_/g, ' ');
+      var nm = eff.replace(/^(EFFECTUNIT_|PROMOTION_)/, '').toLowerCase().replace(/_/g, ' ');
+      var pic = ICONS['EFFECT_' + eff.replace('EFFECTUNIT_', '')];
+      return (pic ? '<img src="' + pic + '" style="width:16px;height:16px;vertical-align:-3px"> ' : '★ ') + nm;
     });
     var lines = [];
     E.effectsOf(u).forEach(function (e) {
-      describeEffect(e).forEach(function (t) { lines.push(t); });
+      var pic = ICONS['EFFECT_' + e.replace('EFFECTUNIT_', '')];
+      describeEffect(e).forEach(function (t) {
+        lines.push((pic ? '<img src="' + pic + '" style="width:14px;height:14px;vertical-align:-2.5px;margin-right:3px">' : '') + t);
+      });
     });
     if (inf.bZOC) lines.push('exerts zone of control');
     var stateBits = [];
@@ -473,6 +503,16 @@
       pips += '<span class="order-pip' + (i < puzzle.orders - state.orders ? ' spent' : '') + '"></span>';
     }
     document.getElementById('orders-pips').innerHTML = '<b>' + state.orders + '</b>' + pips;
+    var tr = document.getElementById('training-span');
+    if (puzzle.training) {
+      tr.style.display = '';
+      tr.innerHTML = 'Training: <b>' + state.training + '</b>';
+    } else tr.style.display = 'none';
+    var selU = selected != null ? E.unitById(state, selected) : null;
+    var bm = document.getElementById('btn-march');
+    bm.style.display = (selU && !finished && E.canMarch(state, selU) && selU.steps >= E.fatigueLimit(selU)) ? '' : 'none';
+    var bu = document.getElementById('btn-setup');
+    bu.style.display = (selU && !finished && E.canUnlimber(state, selU)) ? '' : 'none';
     var st = document.getElementById('status');
     if (finished) { st.textContent = ''; return; }
     var sel = selected != null ? E.unitById(state, selected) : null;
@@ -554,6 +594,16 @@
       : 'The objective was not met. Study the field and try again.';
     document.getElementById('result-lesson').textContent = won && puzzle.lesson ? puzzle.lesson : '';
     window.__won = won;
+    if (won) {
+      try {
+        var prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}');
+        var used = puzzle.orders - state.orders;
+        if (!prog[puzzle.id] || !prog[puzzle.id].solved || used < prog[puzzle.id].orders) {
+          prog[puzzle.id] = { solved: true, orders: used, ts: Date.now() };
+          localStorage.setItem('owpuzzle-progress', JSON.stringify(prog));
+        }
+      } catch (e) {}
+    }
   }
 
   // ---------- controls ----------
@@ -567,6 +617,12 @@
     hidePreviewPanel();
     document.getElementById('result').classList.remove('show');
     render();
+  });
+  document.getElementById('btn-march').addEventListener('click', function () {
+    if (selected != null) act({ type: 'march', unit: selected });
+  });
+  document.getElementById('btn-setup').addEventListener('click', function () {
+    if (selected != null) act({ type: 'unlimber', unit: selected });
   });
   document.getElementById('btn-reset').addEventListener('click', reset);
   document.getElementById('btn-again').addEventListener('click', reset);

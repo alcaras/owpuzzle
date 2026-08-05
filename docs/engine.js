@@ -325,6 +325,8 @@
     var adjSame = sumEffect(def, 'iAdjacentSameModifier');
     if (adjSame !== 0 && adjacentFriendSame(state, def, to)) add('adjacent same unit', adjSame);
 
+    if (def.unlimbered) add('set up (unlimbered)', G.UNLIMBERED_DEFENSE_MODIFIER);
+
     // tileDefenseModifier (Unit.cs:8982)
     if (to) {
       if (def.q === to.q && def.r === to.r) {
@@ -529,9 +531,47 @@
   function canMove(state, u) {
     if (u.hp <= 0) return false;
     if (u.cooldown) return false;
-    if (u.steps + 1 > fatigueLimit(u) * 2) return false;
+    if (u.steps + 1 > fatigueLimit(u)) {
+      if (!u.march) return false;                      // must MARCH first (Unit.cs:7451)
+      if (u.steps + 1 > fatigueLimit(u) * 2) return false;
+    }
     if (state.orders < nextStepOrderCost(u)) return false;
     return true;
+  }
+
+  // March (Unit.cs:11018-11080): explicit activation, costs UNIT_MARCH_COST
+  // training from the stockpile, no orders; unlocks force-march steps.
+  function canMarch(state, u) {
+    if (u.hp <= 0 || u.cooldown || u.march) return false;
+    if (state.training < G.UNIT_MARCH_COST) return false;
+    return true;
+  }
+  function doMarch(state, unitId) {
+    var st = cloneState(state);
+    var u = unitById(st, unitId);
+    if (!canMarch(st, u)) throw new Error('cannot march');
+    st.training -= G.UNIT_MARCH_COST;
+    u.march = true;
+    st.log.push(nameOf(u) + ' force marches (-' + G.UNIT_MARCH_COST + ' training)');
+    return st;
+  }
+
+  // Unlimber (Unit.cs:11082): siege must set up before firing; costs 1 order.
+  // Moving packs the engine back up.
+  function canUnlimber(state, u) {
+    if (u.hp <= 0 || u.cooldown) return false;
+    if (!info(u).bUnlimber || u.unlimbered) return false;
+    if (state.orders < 1) return false;
+    return true;
+  }
+  function doUnlimber(state, unitId) {
+    var st = cloneState(state);
+    var u = unitById(st, unitId);
+    if (!canUnlimber(st, u)) throw new Error('cannot unlimber');
+    u.unlimbered = true;
+    st.orders -= 1;
+    st.log.push(nameOf(u) + ' sets up');
+    return st;
   }
 
   // Attacking: cooldown must be NONE or ROUT (Unit.canAct bAttackOnly,
@@ -539,6 +579,7 @@
   function canAttack(state, u) {
     if (u.hp <= 0) return false;
     if (u.cooldown && u.cooldown !== 'ROUT') return false;
+    if (info(u).bUnlimber && !u.unlimbered) return false; // siege must set up first
     if (state.orders < 1) return false;
     return true;
   }
@@ -642,6 +683,7 @@
     var cost = nextStepOrderCost(u); // force-march steps cost double
     u.q = q; u.r = r;
     u.steps += 1;
+    if (u.unlimbered) u.unlimbered = false;
     u.fortifyTurns = 0;
     s.orders -= cost;
     s.log.push(nameOf(u) + ' moves' + (cost > 1 ? ' (force march, ' + cost + ' orders)' : ''));
@@ -679,6 +721,20 @@
     if (killed) msg += ' — killed!';
     s.log.push(msg);
 
+    // push (elephants: PANIC bPush): surviving adjacent defender is shoved to
+    // the tile directly beyond the attack line if it is free and passable
+    if (!killed && adjacent && hasEffectFlag(att, 'bPush')) {
+      var pd = dirBetween(from, defTile);
+      if (pd >= 0) {
+        var pt = { q: defTile.q + DIRS[pd].q, r: defTile.r + DIRS[pd].r };
+        if (tileAt(s, pt.q, pt.r) && !unitAt(s, pt.q, pt.r) &&
+            moveCostInto(s, def, defTile, pt) !== Infinity) {
+          def.q = pt.q; def.r = pt.r;
+          s.log.push(nameOf(def) + ' is pushed back!');
+        }
+      }
+    }
+
     // defender loses a fortification turn when melee-attacked (Unit.cs:9643)
     if (isMelee(att) && !killed && def.fortifyTurns > 0 && adjacent) def.fortifyTurns -= 1;
 
@@ -686,7 +742,9 @@
     // ROUT (and the advance) requires a FURTHER hostile attackable from the
     // tile the unit ends on (canTargetFrom, Unit.cs:8413) — a lone kill gives
     // a plain attack cooldown and no advance.
-    var routEff = killed && adjacent && isMelee(att) ? routEffectVs(att, def) : null;
+    // rout does NOT require melee — an adjacent ranged kill (palton cavalry)
+    // routs and advances too (harness-verified)
+    var routEff = killed && adjacent ? routEffectVs(att, def) : null;
     var routed = false;
     if (routEff && att.hp > 0) {
       var blocked = unitAt(s, defTile.q, defTile.r);
@@ -760,6 +818,8 @@
       reachableTiles(state, u).forEach(function (t) {
         acts.push({ type: 'move', unit: u.id, q: t.q, r: t.r });
       });
+      if (canMarch(state, u) && u.steps >= fatigueLimit(u)) acts.push({ type: 'march', unit: u.id });
+      if (canUnlimber(state, u)) acts.push({ type: 'unlimber', unit: u.id });
     });
     return acts;
   }
@@ -768,6 +828,8 @@
     if (a.type === 'attack') return doAttack(state, a.unit, a.target);
     if (a.type === 'move') return doMove(state, a.unit, a.q, a.r);
     if (a.type === 'fortify') return doFortify(state, a.unit);
+    if (a.type === 'march') return doMarch(state, a.unit);
+    if (a.type === 'unlimber') return doUnlimber(state, a.unit);
     throw new Error('unknown action ' + a.type);
   }
 
@@ -793,9 +855,11 @@
         hp: u.hp != null ? u.hp : DATA.units[u.type].iHPMax,
         promotions: u.promotions || [], fortifyTurns: u.fortifyTurns || 0,
         cooldown: null, steps: 0, general: !!u.general, name: u.name || null,
+        march: false, unlimbered: DATA.units[u.type].bUnlimber ? !!u.unlimbered : undefined,
       };
     });
-    return { tiles: tiles, units: units, orders: p.orders, objective: p.objective, log: [] };
+    return { tiles: tiles, units: units, orders: p.orders, training: p.training || 0,
+      objective: p.objective, log: [] };
   }
 
   var api = {
@@ -803,6 +867,7 @@
     modify: modify, tileAt: tileAt, unitAt: unitAt, unitById: unitById,
     effectsOf: effectsOf, isMelee: isMelee, rangeMax: rangeMax, hpMax: hpMax,
     canAct: canAct, canMove: canMove, canAttack: canAttack,
+    canMarch: canMarch, doMarch: doMarch, canUnlimber: canUnlimber, doUnlimber: doUnlimber,
     nextStepOrderCost: nextStepOrderCost,
     canDamage: canDamage, fatigueLimit: fatigueLimit,
     movementPoints: movementPoints, reachableTiles: reachableTiles,
