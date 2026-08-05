@@ -7,6 +7,14 @@ ID at T and no ID at T+1 died (or was disbanded); a unit whose ID survives
 under a different owner was captured. Only units with iStrength > 0 count
 toward the "strength lost" score.
 
+FOG OF WAR: a save is rendered for one observer (Game/PlayerTurn) and holds
+only the enemy units that observer can see, so a roster diff across two saves
+attributes every enemy unit that walked out of vision to the graveyard. Only
+the observer's own roster is complete, so a loss is counted only when the
+victim is the observer of both saves. Each record carries log_unit_lost, the
+number of UNIT_LOST entries in the victim's own turn log at T+1, as an
+independent check on the diff.
+
 Writes mined/drops.json: one record per (game, turn, victim player) with a
 nonzero loss, sorted by strength lost.
 """
@@ -71,10 +79,15 @@ def main():
                 series._snaps.pop(t, None)
                 prev_snap, prev_turn = b, t1
 
+                # only the observer's own roster survives the fog
+                observer = a.player_turn
+                if observer != b.player_turn:
+                    continue
+
                 owner_b = {u.id: u.player for u in b.units.values()}
                 by_player: dict[int, dict] = {}
                 for u in a.units.values():
-                    if u.player < 0:
+                    if u.player != observer:
                         continue
                     st = strength.get(u.type, 0)
                     rec = by_player.setdefault(
@@ -88,11 +101,15 @@ def main():
                     lost = sum(s for _, s, _, _ in rec["killed"] if s > 0)
                     if lost <= 0:
                         continue
+                    log_lost = sum(1 for e in b.players[pid].turn_log
+                                   if e.type == "UNIT_LOST") if pid in b.players else -1
                     records.append({
                         "game": a.game_name or gdir.name,
                         "dir": str(gdir),
                         "turn": t,
                         "victim_player": pid,
+                        "observer": observer,
+                        "log_unit_lost": log_lost,
                         "victim_name": a.players[pid].name if pid in a.players else "",
                         "strength_lost": lost,
                         "strength_before": rec["str_total"],

@@ -1,0 +1,8819 @@
+[
+ {
+  "game": "Auro v alcaras",
+  "turn": 105,
+  "victim_player": 1,
+  "victim_name": "Auro",
+  "strength_lost": 870,
+  "strength_lost_turn_total": 1010,
+  "units_lost": [
+   "UNIT_BIREME",
+   "UNIT_SPEARMAN",
+   "UNIT_TRIREME",
+   "UNIT_TRIREME",
+   "UNIT_ONAGER",
+   "UNIT_SPEARMAN",
+   "UNIT_BALLISTA",
+   "UNIT_BALLISTA",
+   "UNIT_WORKER",
+   "UNIT_PIKEMAN",
+   "UNIT_LONGBOWMAN",
+   "UNIT_SLINGER",
+   "UNIT_BALLISTA",
+   "UNIT_BALLISTA",
+   "UNIT_HORSEMAN"
+  ],
+  "units": [
+   {
+    "type": "UNIT_TRIREME",
+    "player": 1,
+    "hp": 20,
+    "q": -2,
+    "r": 4
+   },
+   {
+    "type": "UNIT_BIREME",
+    "player": 1,
+    "hp": 20,
+    "q": 0,
+    "r": 3
+   },
+   {
+    "type": "UNIT_HASTATUS",
+    "player": 1,
+    "hp": 20,
+    "q": -4,
+    "r": 2
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 1,
+    "hp": 20,
+    "q": 0,
+    "r": 2
+   },
+   {
+    "type": "UNIT_TRIREME",
+    "player": 1,
+    "hp": 20,
+    "q": 1,
+    "r": 2
+   },
+   {
+    "type": "UNIT_TRIREME",
+    "player": 1,
+    "hp": 19,
+    "q": 2,
+    "r": 2
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 1,
+    "hp": 15,
+    "q": -1,
+    "r": 1
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 1,
+    "r": 1
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 0,
+    "hp": 11,
+    "q": 2,
+    "r": 1
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 1,
+    "hp": 19,
+    "q": -1,
+    "r": 0
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 1,
+    "hp": 19,
+    "q": 1,
+    "r": 0
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 0,
+    "hp": 20,
+    "q": 2,
+    "r": 0
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 4,
+    "r": 0
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 1,
+    "hp": 20,
+    "q": -3,
+    "r": -1
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 1,
+    "hp": 20,
+    "q": -1,
+    "r": -1
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 1,
+    "hp": 18,
+    "q": 1,
+    "r": -1
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 1,
+    "hp": 20,
+    "q": 2,
+    "r": -1
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 0,
+    "hp": 5,
+    "q": 3,
+    "r": -1
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 17,
+    "q": 4,
+    "r": -1
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 20,
+    "q": -2,
+    "r": -2
+   },
+   {
+    "type": "UNIT_SLINGER",
+    "player": 1,
+    "hp": 20,
+    "q": -1,
+    "r": -2
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 1,
+    "hp": 20,
+    "q": 0,
+    "r": -2
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 1,
+    "hp": 20,
+    "q": 2,
+    "r": -2
+   },
+   {
+    "type": "UNIT_HORSEMAN",
+    "player": 1,
+    "hp": 17,
+    "q": 3,
+    "r": -2
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 12,
+    "q": 4,
+    "r": -2
+   },
+   {
+    "type": "UNIT_DROMON",
+    "player": 0,
+    "hp": 19,
+    "q": 0,
+    "r": -3
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 0,
+    "hp": 15,
+    "q": 3,
+    "r": -3
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 15,
+    "q": 4,
+    "r": -3
+   },
+   {
+    "type": "UNIT_DROMON",
+    "player": 0,
+    "hp": 17,
+    "q": 4,
+    "r": -4
+   }
+  ],
+  "tiles": [
+   {
+    "q": -4,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 1,
+    "terrain": "TERRAIN_MARSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 2,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": 0,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": 0,
+    "terrain": "TERRAIN_MARSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 2,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -3,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 4,
+    "r": -3,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   }
+  ],
+  "_meta": {
+   "archive": "/Users/dominik/Library/CloudStorage/Dropbox/cc/owsaves/mp-archive/Auro v alcaras",
+   "map_width": 92,
+   "center_offset_xy": [
+    31,
+    14
+   ],
+   "combat_units_per_player": {
+    "1": 18,
+    "0": 11
+   },
+   "cities_in_scene": [
+    {
+     "player": 1,
+     "name": "Petra",
+     "capital": false
+    }
+   ],
+   "victim_strength_before": 3770,
+   "victim_frac_lost": 0.268,
+   "units_lost_elsewhere": 2,
+   "observer": 1,
+   "enemy_units_next_turn": [
+    {
+     "type": "UNIT_DROMON",
+     "player": 0,
+     "hp": 19,
+     "q": 1,
+     "r": 3
+    },
+    {
+     "type": "UNIT_LONGBOWMAN",
+     "player": 0,
+     "hp": 14,
+     "q": -1,
+     "r": 2
+    },
+    {
+     "type": "UNIT_AMAZON_CAVALRY_2",
+     "player": 0,
+     "hp": 20,
+     "q": 0,
+     "r": 2
+    },
+    {
+     "type": "UNIT_PIKEMAN",
+     "player": 0,
+     "hp": 16,
+     "q": 1,
+     "r": 1
+    },
+    {
+     "type": "UNIT_BALLISTA",
+     "player": 0,
+     "hp": 11,
+     "q": 2,
+     "r": 1
+    },
+    {
+     "type": "UNIT_LONGBOWMAN",
+     "player": 0,
+     "hp": 20,
+     "q": 3,
+     "r": 1
+    },
+    {
+     "type": "UNIT_BALLISTA",
+     "player": 0,
+     "hp": 20,
+     "q": 2,
+     "r": 0
+    },
+    {
+     "type": "UNIT_PIKEMAN",
+     "player": 0,
+     "hp": 19,
+     "q": 4,
+     "r": 0
+    },
+    {
+     "type": "UNIT_TURRETED_ELEPHANT",
+     "player": 0,
+     "hp": 10,
+     "q": 1,
+     "r": -1
+    },
+    {
+     "type": "UNIT_TURRETED_ELEPHANT",
+     "player": 0,
+     "hp": 19,
+     "q": 2,
+     "r": -1
+    },
+    {
+     "type": "UNIT_LONGBOWMAN",
+     "player": 0,
+     "hp": 5,
+     "q": 3,
+     "r": -1
+    },
+    {
+     "type": "UNIT_BALLISTA",
+     "player": 0,
+     "hp": 17,
+     "q": 0,
+     "r": -2
+    },
+    {
+     "type": "UNIT_LONGBOWMAN",
+     "player": 0,
+     "hp": 8,
+     "q": 2,
+     "r": -2
+    },
+    {
+     "type": "UNIT_BALLISTA",
+     "player": 0,
+     "hp": 20,
+     "q": 3,
+     "r": -2
+    },
+    {
+     "type": "UNIT_LONGBOWMAN",
+     "player": 0,
+     "hp": 15,
+     "q": 3,
+     "r": -3
+    },
+    {
+     "type": "UNIT_PIKEMAN",
+     "player": 0,
+     "hp": 14,
+     "q": 4,
+     "r": -3
+    },
+    {
+     "type": "UNIT_DROMON",
+     "player": 0,
+     "hp": 17,
+     "q": 4,
+     "r": -4
+    }
+   ],
+   "log_unit_lost": 17,
+   "noncombat_lost": [],
+   "captured": [],
+   "player_names": {
+    "0": "alcaras",
+    "1": "Auro"
+   }
+  }
+ },
+ {
+  "game": "Auro v alcaras",
+  "turn": 107,
+  "victim_player": 1,
+  "victim_name": "Auro",
+  "strength_lost": 780,
+  "strength_lost_turn_total": 840,
+  "units_lost": [
+   "UNIT_TRIREME",
+   "UNIT_WAR_ELEPHANT",
+   "UNIT_PIKEMAN",
+   "UNIT_LEGIONARY",
+   "UNIT_BALLISTA",
+   "UNIT_SWORDSMAN",
+   "UNIT_BALLISTA",
+   "UNIT_HASTATUS",
+   "UNIT_LEGIONARY",
+   "UNIT_PIKEMAN",
+   "UNIT_LEGIONARY"
+  ],
+  "units": [
+   {
+    "type": "UNIT_TRIREME",
+    "player": 1,
+    "hp": 20,
+    "q": 0,
+    "r": 3
+   },
+   {
+    "type": "UNIT_BIREME",
+    "player": 1,
+    "hp": 20,
+    "q": 0,
+    "r": 2
+   },
+   {
+    "type": "UNIT_TRIREME",
+    "player": 1,
+    "hp": 20,
+    "q": 1,
+    "r": 2
+   },
+   {
+    "type": "UNIT_DROMON",
+    "player": 0,
+    "hp": 15,
+    "q": 2,
+    "r": 2
+   },
+   {
+    "type": "UNIT_WAR_ELEPHANT",
+    "player": 1,
+    "hp": 20,
+    "q": 0,
+    "r": 1
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 1,
+    "hp": 19,
+    "q": 1,
+    "r": 1
+   },
+   {
+    "type": "UNIT_AMAZON_CAVALRY_2",
+    "player": 0,
+    "hp": 18,
+    "q": 2,
+    "r": 1
+   },
+   {
+    "type": "UNIT_HASTATUS",
+    "player": 1,
+    "hp": 19,
+    "q": -3,
+    "r": 0
+   },
+   {
+    "type": "UNIT_LEGIONARY",
+    "player": 1,
+    "hp": 9,
+    "q": -1,
+    "r": 0
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 1,
+    "hp": 20,
+    "q": 0,
+    "r": 0
+   },
+   {
+    "type": "UNIT_SWORDSMAN",
+    "player": 1,
+    "hp": 20,
+    "q": 1,
+    "r": 0
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 0,
+    "hp": 11,
+    "q": 3,
+    "r": 0
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 1,
+    "hp": 20,
+    "q": -3,
+    "r": -1
+   },
+   {
+    "type": "UNIT_HASTATUS",
+    "player": 1,
+    "hp": 11,
+    "q": -2,
+    "r": -1
+   },
+   {
+    "type": "UNIT_LEGIONARY",
+    "player": 1,
+    "hp": 14,
+    "q": 0,
+    "r": -1
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 0,
+    "hp": 16,
+    "q": 1,
+    "r": -1
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 0,
+    "hp": 7,
+    "q": 2,
+    "r": -1
+   },
+   {
+    "type": "UNIT_TURRETED_ELEPHANT",
+    "player": 0,
+    "hp": 10,
+    "q": 3,
+    "r": -1
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 0,
+    "hp": 20,
+    "q": 4,
+    "r": -1
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 1,
+    "hp": 15,
+    "q": -2,
+    "r": -2
+   },
+   {
+    "type": "UNIT_LEGIONARY",
+    "player": 1,
+    "hp": 19,
+    "q": 0,
+    "r": -2
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 0,
+    "hp": 17,
+    "q": 1,
+    "r": -2
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 0,
+    "hp": 5,
+    "q": 2,
+    "r": -2
+   },
+   {
+    "type": "UNIT_AMAZON_CAVALRY_2",
+    "player": 0,
+    "hp": 20,
+    "q": 3,
+    "r": -2
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 0,
+    "hp": 20,
+    "q": 4,
+    "r": -2
+   },
+   {
+    "type": "UNIT_WARLORD_2",
+    "player": 0,
+    "hp": 14,
+    "q": -1,
+    "r": -3
+   },
+   {
+    "type": "UNIT_WARLORD_2",
+    "player": 0,
+    "hp": 20,
+    "q": 1,
+    "r": -3
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 2,
+    "r": -3
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 0,
+    "hp": 8,
+    "q": 4,
+    "r": -3
+   },
+   {
+    "type": "UNIT_DROMON",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": -4
+   },
+   {
+    "type": "UNIT_DROMON",
+    "player": 0,
+    "hp": 17,
+    "q": 1,
+    "r": -4
+   }
+  ],
+  "tiles": [
+   {
+    "q": -4,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -3,
+    "r": 1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": 1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -3,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -2,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 0,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": 0,
+    "terrain": "TERRAIN_MARSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 4,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 2,
+    "r": -2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": -2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 4,
+    "r": -2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": -3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -3,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   }
+  ],
+  "_meta": {
+   "archive": "/Users/dominik/Library/CloudStorage/Dropbox/cc/owsaves/mp-archive/Auro v alcaras",
+   "map_width": 92,
+   "center_offset_xy": [
+    30,
+    13
+   ],
+   "combat_units_per_player": {
+    "1": 14,
+    "0": 17
+   },
+   "cities_in_scene": [
+    {
+     "player": -1,
+     "name": "Petra",
+     "capital": false
+    }
+   ],
+   "victim_strength_before": 2800,
+   "victim_frac_lost": 0.3,
+   "units_lost_elsewhere": 1,
+   "observer": 1,
+   "enemy_units_next_turn": [
+    {
+     "type": "UNIT_DROMON",
+     "player": 0,
+     "hp": 6,
+     "q": 1,
+     "r": 3
+    },
+    {
+     "type": "UNIT_DROMON",
+     "player": 0,
+     "hp": 13,
+     "q": 2,
+     "r": 2
+    },
+    {
+     "type": "UNIT_BALLISTA",
+     "player": 0,
+     "hp": 20,
+     "q": -2,
+     "r": 1
+    },
+    {
+     "type": "UNIT_AMAZON_CAVALRY_2",
+     "player": 0,
+     "hp": 20,
+     "q": -1,
+     "r": 1
+    },
+    {
+     "type": "UNIT_PIKEMAN",
+     "player": 0,
+     "hp": 19,
+     "q": 1,
+     "r": 1
+    },
+    {
+     "type": "UNIT_BALLISTA",
+     "player": 0,
+     "hp": 10,
+     "q": 2,
+     "r": 1
+    },
+    {
+     "type": "UNIT_PIKEMAN",
+     "player": 0,
+     "hp": 19,
+     "q": 0,
+     "r": 0
+    },
+    {
+     "type": "UNIT_BALLISTA",
+     "player": 0,
+     "hp": 20,
+     "q": 1,
+     "r": 0
+    },
+    {
+     "type": "UNIT_LONGBOWMAN",
+     "player": 0,
+     "hp": 7,
+     "q": 3,
+     "r": 0
+    },
+    {
+     "type": "UNIT_MANGONEL",
+     "player": 0,
+     "hp": 20,
+     "q": 4,
+     "r": 0
+    },
+    {
+     "type": "UNIT_SWORDSMAN",
+     "player": 0,
+     "hp": 20,
+     "q": 1,
+     "r": -1
+    },
+    {
+     "type": "UNIT_TURRETED_ELEPHANT",
+     "player": 0,
+     "hp": 9,
+     "q": 2,
+     "r": -1
+    },
+    {
+     "type": "UNIT_MANGONEL",
+     "player": 0,
+     "hp": 20,
+     "q": 3,
+     "r": -1
+    },
+    {
+     "type": "UNIT_BALLISTA",
+     "player": 0,
+     "hp": 13,
+     "q": 2,
+     "r": -2
+    },
+    {
+     "type": "UNIT_MANGONEL",
+     "player": 0,
+     "hp": 17,
+     "q": 3,
+     "r": -2
+    },
+    {
+     "type": "UNIT_WARLORD_2",
+     "player": 0,
+     "hp": 5,
+     "q": 1,
+     "r": -3
+    },
+    {
+     "type": "UNIT_MANGONEL",
+     "player": 0,
+     "hp": 20,
+     "q": 4,
+     "r": -3
+    },
+    {
+     "type": "UNIT_DROMON",
+     "player": 0,
+     "hp": 20,
+     "q": 0,
+     "r": -4
+    },
+    {
+     "type": "UNIT_DROMON",
+     "player": 0,
+     "hp": 16,
+     "q": 1,
+     "r": -4
+    }
+   ],
+   "log_unit_lost": 11,
+   "noncombat_lost": [],
+   "captured": [],
+   "player_names": {
+    "0": "alcaras",
+    "1": "Auro"
+   }
+  }
+ },
+ {
+  "game": "alcaras v ThePurpleBullMoose",
+  "turn": 101,
+  "victim_player": 1,
+  "victim_name": "ThePurpleBullMoose",
+  "strength_lost": 570,
+  "strength_lost_turn_total": 570,
+  "units_lost": [
+   "UNIT_PHALANGITE",
+   "UNIT_PHALANGITE",
+   "UNIT_LONGBOWMAN",
+   "UNIT_WAR_ELEPHANT",
+   "UNIT_ONAGER",
+   "UNIT_SPEARMAN",
+   "UNIT_WORKER",
+   "UNIT_WORKER",
+   "UNIT_SPEARMAN",
+   "UNIT_SPEARMAN"
+  ],
+  "units": [
+   {
+    "type": "UNIT_MANGONEL",
+    "player": 0,
+    "hp": 20,
+    "q": -4,
+    "r": 4
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 0,
+    "hp": 20,
+    "q": -3,
+    "r": 4
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -3,
+    "r": 4
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 0,
+    "hp": 18,
+    "q": -2,
+    "r": 4
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -2,
+    "r": 4
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -1,
+    "r": 4
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 0,
+    "hp": 16,
+    "q": 0,
+    "r": 4
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 12,
+    "q": 0,
+    "r": 4
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 0,
+    "hp": 16,
+    "q": -2,
+    "r": 3
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -2,
+    "r": 3
+   },
+   {
+    "type": "UNIT_PHALANGITE",
+    "player": 1,
+    "hp": 2,
+    "q": -1,
+    "r": 3
+   },
+   {
+    "type": "UNIT_SCOUT",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": 3
+   },
+   {
+    "type": "UNIT_PHALANGITE",
+    "player": 1,
+    "hp": 20,
+    "q": 1,
+    "r": 3
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -2,
+    "r": 2
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 13,
+    "q": -1,
+    "r": 2
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 18,
+    "q": 0,
+    "r": 2
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 17,
+    "q": 1,
+    "r": 2
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 20,
+    "q": 2,
+    "r": 2
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -3,
+    "r": 1
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 12,
+    "q": -1,
+    "r": 1
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 20,
+    "q": 0,
+    "r": 1
+   },
+   {
+    "type": "UNIT_WAR_ELEPHANT",
+    "player": 1,
+    "hp": 20,
+    "q": 1,
+    "r": 1
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -3,
+    "r": 0
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 0,
+    "hp": 20,
+    "q": -1,
+    "r": 0
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 1,
+    "hp": 20,
+    "q": 0,
+    "r": 0
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 1,
+    "hp": 20,
+    "q": 1,
+    "r": 0
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 1,
+    "hp": 20,
+    "q": 2,
+    "r": 0
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -3,
+    "r": -1
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 1,
+    "hp": 13,
+    "q": -2,
+    "r": -1
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 1,
+    "hp": 13,
+    "q": -2,
+    "r": -2
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 1,
+    "hp": 20,
+    "q": -1,
+    "r": -2
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 1,
+    "hp": 20,
+    "q": -1,
+    "r": -3
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 20,
+    "q": 0,
+    "r": -3
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 1,
+    "hp": 20,
+    "q": 3,
+    "r": -3
+   }
+  ],
+  "tiles": [
+   {
+    "q": -4,
+    "r": 4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3,
+     4
+    ],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 3,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     5
+    ],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3
+    ],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 2,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3,
+     4
+    ],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 2,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": -2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3,
+     4
+    ],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": -2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 2,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -3,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -3,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3,
+     4
+    ],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -3,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [
+     5
+    ],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [
+     3
+    ],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -4,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   }
+  ],
+  "_meta": {
+   "archive": "/Users/dominik/Library/CloudStorage/Dropbox/cc/owsaves/mp-archive/alcaras v ThePurpleBullMoose",
+   "map_width": 58,
+   "center_offset_xy": [
+    52,
+    36
+   ],
+   "combat_units_per_player": {
+    "0": 16,
+    "1": 18
+   },
+   "cities_in_scene": [
+    {
+     "player": 1,
+     "name": "Pella",
+     "capital": true
+    }
+   ],
+   "victim_strength_before": 1200,
+   "victim_frac_lost": 0.475,
+   "units_lost_elsewhere": 0,
+   "observer": 1,
+   "enemy_units_next_turn": [
+    {
+     "type": "UNIT_MANGONEL",
+     "player": 0,
+     "hp": 20,
+     "q": -4,
+     "r": 4
+    },
+    {
+     "type": "UNIT_WORKER",
+     "player": 0,
+     "hp": 18,
+     "q": -3,
+     "r": 4
+    },
+    {
+     "type": "UNIT_WORKER",
+     "player": 0,
+     "hp": 16,
+     "q": -2,
+     "r": 4
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 9,
+     "q": 0,
+     "r": 4
+    },
+    {
+     "type": "UNIT_WORKER",
+     "player": 0,
+     "hp": 11,
+     "q": -2,
+     "r": 3
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 18,
+     "q": -2,
+     "r": 3
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 18,
+     "q": -1,
+     "r": 3
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 20,
+     "q": 0,
+     "r": 3
+    },
+    {
+     "type": "UNIT_SCOUT",
+     "player": 0,
+     "hp": 20,
+     "q": 1,
+     "r": 3
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 20,
+     "q": 1,
+     "r": 3
+    },
+    {
+     "type": "UNIT_SPEARMAN",
+     "player": 0,
+     "hp": 20,
+     "q": -1,
+     "r": 2
+    },
+    {
+     "type": "UNIT_SPEARMAN",
+     "player": 0,
+     "hp": 20,
+     "q": 0,
+     "r": 2
+    },
+    {
+     "type": "UNIT_MEDJAY_ARCHER",
+     "player": 0,
+     "hp": 20,
+     "q": -4,
+     "r": 1
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 20,
+     "q": -3,
+     "r": 1
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 20,
+     "q": 1,
+     "r": 1
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 20,
+     "q": -3,
+     "r": 0
+    },
+    {
+     "type": "UNIT_SPEARMAN",
+     "player": 0,
+     "hp": 19,
+     "q": -2,
+     "r": 0
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 20,
+     "q": 2,
+     "r": 0
+    },
+    {
+     "type": "UNIT_SPEARMAN",
+     "player": 0,
+     "hp": 11,
+     "q": -3,
+     "r": -1
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 20,
+     "q": -2,
+     "r": -2
+    }
+   ],
+   "log_unit_lost": 10,
+   "noncombat_lost": [],
+   "captured": [],
+   "player_names": {
+    "0": "alcaras",
+    "1": "ThePurpleBullMoose"
+   }
+  }
+ },
+ {
+  "game": "alcaras v ThePurpleBullMoose",
+  "turn": 102,
+  "victim_player": 1,
+  "victim_name": "ThePurpleBullMoose",
+  "strength_lost": 520,
+  "strength_lost_turn_total": 520,
+  "units_lost": [
+   "UNIT_LONGBOWMAN",
+   "UNIT_LONGBOWMAN",
+   "UNIT_ONAGER",
+   "UNIT_LONGBOWMAN",
+   "UNIT_LONGBOWMAN",
+   "UNIT_LONGBOWMAN",
+   "UNIT_ONAGER"
+  ],
+  "units": [
+   {
+    "type": "UNIT_WORKER",
+    "player": 0,
+    "hp": 11,
+    "q": -2,
+    "r": 4
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 18,
+    "q": -2,
+    "r": 4
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 18,
+    "q": -1,
+    "r": 4
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": 4
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -1,
+    "r": 3
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": 3
+   },
+   {
+    "type": "UNIT_MEDJAY_ARCHER",
+    "player": 0,
+    "hp": 20,
+    "q": -4,
+    "r": 2
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -3,
+    "r": 2
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 11,
+    "q": 0,
+    "r": 2
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 1,
+    "r": 2
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -3,
+    "r": 1
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 0,
+    "hp": 19,
+    "q": -2,
+    "r": 1
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 8,
+    "q": -1,
+    "r": 1
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 1,
+    "hp": 15,
+    "q": 0,
+    "r": 1
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 2,
+    "r": 1
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 0,
+    "hp": 11,
+    "q": -3,
+    "r": 0
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 11,
+    "q": 1,
+    "r": 0
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -3,
+    "r": -1
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -2,
+    "r": -1
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 12,
+    "q": -1,
+    "r": -1
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -2,
+    "r": -2
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 12,
+    "q": -1,
+    "r": -2
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 16,
+    "q": 0,
+    "r": -2
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 1,
+    "hp": 16,
+    "q": 3,
+    "r": -2
+   },
+   {
+    "type": "UNIT_CROSSBOWMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -1,
+    "r": -3
+   }
+  ],
+  "tiles": [
+   {
+    "q": -4,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 4,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": 2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     5
+    ],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3
+    ],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 2,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3,
+     4
+    ],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 2,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -2,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3,
+     4
+    ],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 2,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": -2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3,
+     4
+    ],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [
+     5
+    ],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [
+     3
+    ],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -3,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [
+     3,
+     4
+    ],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES_CUT",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   }
+  ],
+  "_meta": {
+   "archive": "/Users/dominik/Library/CloudStorage/Dropbox/cc/owsaves/mp-archive/alcaras v ThePurpleBullMoose",
+   "map_width": 58,
+   "center_offset_xy": [
+    52,
+    37
+   ],
+   "combat_units_per_player": {
+    "0": 17,
+    "1": 8
+   },
+   "cities_in_scene": [
+    {
+     "player": 1,
+     "name": "Pella",
+     "capital": true
+    }
+   ],
+   "victim_strength_before": 630,
+   "victim_frac_lost": 0.825,
+   "units_lost_elsewhere": 0,
+   "observer": 1,
+   "enemy_units_next_turn": [
+    {
+     "type": "UNIT_WORKER",
+     "player": 0,
+     "hp": 12,
+     "q": -2,
+     "r": 4
+    },
+    {
+     "type": "UNIT_SPEARMAN",
+     "player": 0,
+     "hp": 16,
+     "q": -1,
+     "r": 3
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 9,
+     "q": 0,
+     "r": 3
+    },
+    {
+     "type": "UNIT_WORKER",
+     "player": 0,
+     "hp": 20,
+     "q": -4,
+     "r": 2
+    },
+    {
+     "type": "UNIT_MANGONEL",
+     "player": 0,
+     "hp": 20,
+     "q": -4,
+     "r": 1
+    },
+    {
+     "type": "UNIT_MANGONEL",
+     "player": 0,
+     "hp": 20,
+     "q": -3,
+     "r": 1
+    },
+    {
+     "type": "UNIT_SPEARMAN",
+     "player": 0,
+     "hp": 19,
+     "q": -2,
+     "r": 1
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 20,
+     "q": 0,
+     "r": 1
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 12,
+     "q": 2,
+     "r": 1
+    },
+    {
+     "type": "UNIT_MANGONEL",
+     "player": 0,
+     "hp": 20,
+     "q": -3,
+     "r": 0
+    },
+    {
+     "type": "UNIT_MEDJAY_ARCHER",
+     "player": 0,
+     "hp": 20,
+     "q": -1,
+     "r": 0
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 20,
+     "q": 0,
+     "r": 0
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 19,
+     "q": 1,
+     "r": 0
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 18,
+     "q": 2,
+     "r": 0
+    },
+    {
+     "type": "UNIT_SPEARMAN",
+     "player": 0,
+     "hp": 20,
+     "q": -3,
+     "r": -1
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 20,
+     "q": 0,
+     "r": -1
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 16,
+     "q": 2,
+     "r": -1
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 20,
+     "q": 3,
+     "r": -1
+    },
+    {
+     "type": "UNIT_SPEARMAN",
+     "player": 0,
+     "hp": 20,
+     "q": -2,
+     "r": -2
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 16,
+     "q": 1,
+     "r": -2
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 18,
+     "q": 3,
+     "r": -2
+    },
+    {
+     "type": "UNIT_CROSSBOWMAN",
+     "player": 0,
+     "hp": 20,
+     "q": 4,
+     "r": -3
+    },
+    {
+     "type": "UNIT_SPEARMAN",
+     "player": 0,
+     "hp": 11,
+     "q": 1,
+     "r": -4
+    }
+   ],
+   "log_unit_lost": 7,
+   "noncombat_lost": [],
+   "captured": [],
+   "player_names": {
+    "0": "alcaras",
+    "1": "ThePurpleBullMoose"
+   }
+  }
+ },
+ {
+  "game": "MapGoons FFA 2",
+  "turn": 111,
+  "victim_player": 3,
+  "victim_name": "Godlovesus",
+  "strength_lost": 400,
+  "strength_lost_turn_total": 400,
+  "units_lost": [
+   "UNIT_ARCHER",
+   "UNIT_ARCHER",
+   "UNIT_MACEMAN",
+   "UNIT_PALTON_CAVALRY",
+   "UNIT_MACEMAN",
+   "UNIT_PALTON_CAVALRY",
+   "UNIT_PALTON_CAVALRY"
+  ],
+  "units": [
+   {
+    "type": "UNIT_ARCHER",
+    "player": 3,
+    "hp": 20,
+    "q": -4,
+    "r": 3
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 3,
+    "hp": 20,
+    "q": -3,
+    "r": 2
+   },
+   {
+    "type": "UNIT_ARCHER",
+    "player": 3,
+    "hp": 20,
+    "q": -1,
+    "r": 2
+   },
+   {
+    "type": "UNIT_MACEMAN",
+    "player": 3,
+    "hp": 20,
+    "q": -2,
+    "r": 1
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 3,
+    "hp": 20,
+    "q": 0,
+    "r": 1
+   },
+   {
+    "type": "UNIT_PALTON_CAVALRY",
+    "player": 3,
+    "hp": 20,
+    "q": 2,
+    "r": 1
+   },
+   {
+    "type": "UNIT_MILITIA",
+    "player": 7,
+    "hp": 20,
+    "q": -4,
+    "r": 0
+   },
+   {
+    "type": "UNIT_MACEMAN",
+    "player": 3,
+    "hp": 20,
+    "q": 1,
+    "r": 0
+   },
+   {
+    "type": "UNIT_PALTON_CAVALRY",
+    "player": 3,
+    "hp": 20,
+    "q": 2,
+    "r": 0
+   },
+   {
+    "type": "UNIT_MACEMAN",
+    "player": 7,
+    "hp": 20,
+    "q": -3,
+    "r": -1
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 3,
+    "hp": 20,
+    "q": 0,
+    "r": -1
+   },
+   {
+    "type": "UNIT_PALTON_CAVALRY",
+    "player": 3,
+    "hp": 20,
+    "q": 3,
+    "r": -1
+   },
+   {
+    "type": "UNIT_PALTON_CAVALRY",
+    "player": 3,
+    "hp": 20,
+    "q": 2,
+    "r": -3
+   },
+   {
+    "type": "UNIT_HORSEMAN",
+    "player": 7,
+    "hp": 20,
+    "q": 2,
+    "r": -4
+   }
+  ],
+  "tiles": [
+   {
+    "q": -4,
+    "r": 4,
+    "terrain": "TERRAIN_MARSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [
+     3
+    ],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 3,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -3,
+    "r": 3,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3,
+     4
+    ],
+    "road": true
+   },
+   {
+    "q": -2,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3,
+     4
+    ],
+    "road": true
+   },
+   {
+    "q": -2,
+    "r": 2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": 2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3,
+     4
+    ],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3,
+     4,
+     5
+    ],
+    "road": true
+   },
+   {
+    "q": -4,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     5
+    ],
+    "road": true
+   },
+   {
+    "q": -2,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [
+     3
+    ],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [
+     4
+    ],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [
+     3,
+     4
+    ],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [
+     3,
+     4
+    ],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 4,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -3,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3
+    ],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   }
+  ],
+  "_meta": {
+   "archive": "/Users/dominik/Library/CloudStorage/Dropbox/cc/owsaves/mp-archive/MapGoons FFA 2",
+   "map_width": 90,
+   "center_offset_xy": [
+    46,
+    19
+   ],
+   "combat_units_per_player": {
+    "3": 11,
+    "7": 3
+   },
+   "cities_in_scene": [
+    {
+     "player": 3,
+     "name": "Akkad",
+     "capital": false
+    }
+   ],
+   "victim_strength_before": 1170,
+   "victim_frac_lost": 0.342,
+   "units_lost_elsewhere": 0,
+   "observer": 3,
+   "enemy_units_next_turn": [
+    {
+     "type": "UNIT_ARCHER",
+     "player": 5,
+     "hp": 20,
+     "q": -4,
+     "r": 3
+    },
+    {
+     "type": "UNIT_ARCHER",
+     "player": 5,
+     "hp": 20,
+     "q": -3,
+     "r": 3
+    },
+    {
+     "type": "UNIT_LEGIONARY",
+     "player": 5,
+     "hp": 20,
+     "q": -4,
+     "r": 2
+    },
+    {
+     "type": "UNIT_ARCHER",
+     "player": 5,
+     "hp": 19,
+     "q": -2,
+     "r": 2
+    },
+    {
+     "type": "UNIT_SPEARMAN",
+     "player": 5,
+     "hp": 20,
+     "q": 1,
+     "r": 2
+    },
+    {
+     "type": "UNIT_PIKEMAN",
+     "player": 7,
+     "hp": 20,
+     "q": -3,
+     "r": 1
+    },
+    {
+     "type": "UNIT_LEGIONARY",
+     "player": 5,
+     "hp": 20,
+     "q": -2,
+     "r": 1
+    },
+    {
+     "type": "UNIT_SPEARMAN",
+     "player": 5,
+     "hp": 20,
+     "q": 1,
+     "r": 1
+    },
+    {
+     "type": "UNIT_HORSEMAN",
+     "player": 7,
+     "hp": 12,
+     "q": 2,
+     "r": 1
+    },
+    {
+     "type": "UNIT_CAMEL_ARCHER",
+     "player": 5,
+     "hp": 20,
+     "q": 3,
+     "r": 1
+    },
+    {
+     "type": "UNIT_HORSEMAN",
+     "player": 7,
+     "hp": 20,
+     "q": -4,
+     "r": 0
+    },
+    {
+     "type": "UNIT_HORSEMAN",
+     "player": 7,
+     "hp": 20,
+     "q": -3,
+     "r": 0
+    },
+    {
+     "type": "UNIT_HORSEMAN",
+     "player": 7,
+     "hp": 20,
+     "q": -2,
+     "r": 0
+    },
+    {
+     "type": "UNIT_HORSE_ARCHER",
+     "player": 7,
+     "hp": 20,
+     "q": -1,
+     "r": 0
+    },
+    {
+     "type": "UNIT_MACEMAN",
+     "player": 7,
+     "hp": 11,
+     "q": -3,
+     "r": -1
+    },
+    {
+     "type": "UNIT_HORSEMAN",
+     "player": 5,
+     "hp": 20,
+     "q": -2,
+     "r": -1
+    },
+    {
+     "type": "UNIT_HORSEMAN",
+     "player": 7,
+     "hp": 20,
+     "q": -1,
+     "r": -1
+    },
+    {
+     "type": "UNIT_PIKEMAN",
+     "player": 7,
+     "hp": 20,
+     "q": 2,
+     "r": -2
+    },
+    {
+     "type": "UNIT_ARCHER",
+     "player": 7,
+     "hp": 20,
+     "q": -1,
+     "r": -3
+    },
+    {
+     "type": "UNIT_ARCHER",
+     "player": 7,
+     "hp": 20,
+     "q": 2,
+     "r": -3
+    },
+    {
+     "type": "UNIT_ONAGER",
+     "player": 7,
+     "hp": 20,
+     "q": 0,
+     "r": -4
+    },
+    {
+     "type": "UNIT_PIKEMAN",
+     "player": 7,
+     "hp": 15,
+     "q": 2,
+     "r": -4
+    },
+    {
+     "type": "UNIT_PIKEMAN",
+     "player": 7,
+     "hp": 19,
+     "q": 4,
+     "r": -4
+    }
+   ],
+   "log_unit_lost": 7,
+   "noncombat_lost": [],
+   "captured": [],
+   "player_names": {
+    "0": "alcaras",
+    "1": "atvrager",
+    "2": "cts",
+    "3": "Godlovesus",
+    "4": "Lobstering!",
+    "5": "Pachito",
+    "6": "professorcurly",
+    "7": "tbg",
+    "8": "Verdant"
+   }
+  }
+ },
+ {
+  "game": "alcaras v Blaj",
+  "turn": 108,
+  "victim_player": 0,
+  "victim_name": "alcaras",
+  "strength_lost": 370,
+  "strength_lost_turn_total": 790,
+  "units_lost": [
+   "UNIT_BALLISTA",
+   "UNIT_PIKEMAN",
+   "UNIT_TURRETED_ELEPHANT",
+   "UNIT_PIKEMAN",
+   "UNIT_PIKEMAN"
+  ],
+  "units": [
+   {
+    "type": "UNIT_WORKER",
+    "player": 0,
+    "hp": 20,
+    "q": -4,
+    "r": 4
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 0,
+    "hp": 20,
+    "q": -3,
+    "r": 4
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -2,
+    "r": 4
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 0,
+    "hp": 20,
+    "q": -4,
+    "r": 3
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 0,
+    "hp": 20,
+    "q": -2,
+    "r": 3
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 0,
+    "hp": 20,
+    "q": -2,
+    "r": 3
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 0,
+    "hp": 20,
+    "q": -1,
+    "r": 3
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 20,
+    "q": -1,
+    "r": 3
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": 3
+   },
+   {
+    "type": "UNIT_MANGONEL",
+    "player": 0,
+    "hp": 20,
+    "q": -3,
+    "r": 2
+   },
+   {
+    "type": "UNIT_TURRETED_ELEPHANT",
+    "player": 0,
+    "hp": 20,
+    "q": -2,
+    "r": 2
+   },
+   {
+    "type": "UNIT_MANGONEL",
+    "player": 0,
+    "hp": 20,
+    "q": -1,
+    "r": 2
+   },
+   {
+    "type": "UNIT_MANGONEL",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": 2
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 1,
+    "r": 2
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": 1
+   },
+   {
+    "type": "UNIT_MANGONEL",
+    "player": 0,
+    "hp": 20,
+    "q": 1,
+    "r": 1
+   },
+   {
+    "type": "UNIT_TURRETED_ELEPHANT",
+    "player": 0,
+    "hp": 20,
+    "q": -3,
+    "r": 0
+   },
+   {
+    "type": "UNIT_MANGONEL",
+    "player": 0,
+    "hp": 20,
+    "q": -1,
+    "r": 0
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": 0
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": 0
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 1,
+    "r": 0
+   },
+   {
+    "type": "UNIT_ZOROASTRIANISM_DISCIPLE",
+    "player": 0,
+    "hp": 11,
+    "q": 2,
+    "r": 0
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 8,
+    "q": 2,
+    "r": 0
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 1,
+    "hp": 20,
+    "q": 3,
+    "r": 0
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 1,
+    "hp": 19,
+    "q": 4,
+    "r": 0
+   },
+   {
+    "type": "UNIT_TURRETED_ELEPHANT",
+    "player": 0,
+    "hp": 20,
+    "q": -3,
+    "r": -1
+   },
+   {
+    "type": "UNIT_TURRETED_ELEPHANT",
+    "player": 0,
+    "hp": 20,
+    "q": -2,
+    "r": -1
+   },
+   {
+    "type": "UNIT_MANGONEL",
+    "player": 0,
+    "hp": 20,
+    "q": -1,
+    "r": -1
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": -1
+   },
+   {
+    "type": "UNIT_MANGONEL",
+    "player": 0,
+    "hp": 18,
+    "q": 1,
+    "r": -1
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 17,
+    "q": 2,
+    "r": -1
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 0,
+    "hp": 14,
+    "q": 3,
+    "r": -1
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 1,
+    "hp": 19,
+    "q": 4,
+    "r": -1
+   },
+   {
+    "type": "UNIT_MANGONEL",
+    "player": 0,
+    "hp": 20,
+    "q": -1,
+    "r": -2
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": -2
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 1,
+    "r": -2
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 18,
+    "q": 3,
+    "r": -2
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 0,
+    "hp": 10,
+    "q": 4,
+    "r": -2
+   },
+   {
+    "type": "UNIT_MANGONEL",
+    "player": 0,
+    "hp": 20,
+    "q": -1,
+    "r": -3
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": -3
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 0,
+    "hp": 20,
+    "q": 1,
+    "r": -3
+   },
+   {
+    "type": "UNIT_MANGONEL",
+    "player": 0,
+    "hp": 20,
+    "q": 1,
+    "r": -3
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 1,
+    "hp": 19,
+    "q": 4,
+    "r": -3
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": -4
+   },
+   {
+    "type": "UNIT_PIKEMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": -4
+   },
+   {
+    "type": "UNIT_WAR_ELEPHANT",
+    "player": 1,
+    "hp": 20,
+    "q": 1,
+    "r": -4
+   }
+  ],
+  "tiles": [
+   {
+    "q": -4,
+    "r": 4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     5
+    ],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3
+    ],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 4,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": 4,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 4,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 3,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -3,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     5
+    ],
+    "road": true
+   },
+   {
+    "q": -2,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": 3,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": 3,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": 3,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -3,
+    "r": 2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -2,
+    "r": 2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": 2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": 2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": 2,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 2,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": 1,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 2,
+    "r": 1,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": 1,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -4,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 0,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 4,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 4,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [
+     3
+    ],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3,
+     4
+    ],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [
+     3,
+     4
+    ],
+    "road": false
+   }
+  ],
+  "_meta": {
+   "archive": "/Users/dominik/Library/CloudStorage/Dropbox/cc/owsaves/mp-archive/alcaras v Blaj",
+   "map_width": 92,
+   "center_offset_xy": [
+    40,
+    19
+   ],
+   "combat_units_per_player": {
+    "0": 41,
+    "1": 5
+   },
+   "cities_in_scene": [
+    {
+     "player": 0,
+     "name": "Carthago Nova",
+     "capital": false
+    }
+   ],
+   "victim_strength_before": 7020,
+   "victim_frac_lost": 0.113,
+   "units_lost_elsewhere": 6,
+   "observer": 0,
+   "enemy_units_next_turn": [],
+   "log_unit_lost": 10,
+   "noncombat_lost": [],
+   "captured": [],
+   "player_names": {
+    "0": "alcaras",
+    "1": "Blaj"
+   }
+  }
+ },
+ {
+  "game": "alcaras v JCT",
+  "turn": 86,
+  "victim_player": 1,
+  "victim_name": "JCT",
+  "strength_lost": 280,
+  "strength_lost_turn_total": 310,
+  "units_lost": [
+   "UNIT_SLINGER",
+   "UNIT_ONAGER",
+   "UNIT_SPEARMAN",
+   "UNIT_ARMOURED_ELEPHANT",
+   "UNIT_CHARIOT"
+  ],
+  "units": [
+   {
+    "type": "UNIT_AXEMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 0,
+    "r": 4
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 1,
+    "hp": 19,
+    "q": -2,
+    "r": 3
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 1,
+    "hp": 18,
+    "q": -2,
+    "r": 3
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 1,
+    "hp": 18,
+    "q": -1,
+    "r": 3
+   },
+   {
+    "type": "UNIT_SLINGER",
+    "player": 1,
+    "hp": 20,
+    "q": -3,
+    "r": 2
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 1,
+    "hp": 17,
+    "q": -2,
+    "r": 2
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 1,
+    "hp": 17,
+    "q": -2,
+    "r": 2
+   },
+   {
+    "type": "UNIT_ARCHER",
+    "player": 1,
+    "hp": 20,
+    "q": -3,
+    "r": 1
+   },
+   {
+    "type": "UNIT_ASSAULT_ELEPHANT",
+    "player": 1,
+    "hp": 20,
+    "q": -2,
+    "r": 1
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 1,
+    "hp": 20,
+    "q": -1,
+    "r": 1
+   },
+   {
+    "type": "UNIT_AXEMAN",
+    "player": 0,
+    "hp": 12,
+    "q": 3,
+    "r": 1
+   },
+   {
+    "type": "UNIT_BALLISTA",
+    "player": 1,
+    "hp": 20,
+    "q": -2,
+    "r": 0
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 1,
+    "hp": 20,
+    "q": -1,
+    "r": 0
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 1,
+    "hp": 16,
+    "q": 0,
+    "r": 0
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 1,
+    "hp": 18,
+    "q": 1,
+    "r": 0
+   },
+   {
+    "type": "UNIT_ARMOURED_ELEPHANT",
+    "player": 1,
+    "hp": 13,
+    "q": 3,
+    "r": 0
+   },
+   {
+    "type": "UNIT_AXEMAN",
+    "player": 0,
+    "hp": 19,
+    "q": 4,
+    "r": 0
+   },
+   {
+    "type": "UNIT_ARCHER",
+    "player": 1,
+    "hp": 20,
+    "q": -3,
+    "r": -1
+   },
+   {
+    "type": "UNIT_CHARIOT",
+    "player": 1,
+    "hp": 20,
+    "q": -2,
+    "r": -1
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 1,
+    "hp": 19,
+    "q": 2,
+    "r": -1
+   },
+   {
+    "type": "UNIT_KUSHAN_CAVALRY",
+    "player": 0,
+    "hp": 18,
+    "q": 4,
+    "r": -1
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 1,
+    "hp": 19,
+    "q": 0,
+    "r": -2
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 1,
+    "hp": 18,
+    "q": 1,
+    "r": -2
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 1,
+    "hp": 16,
+    "q": 2,
+    "r": -2
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 1,
+    "hp": 8,
+    "q": 2,
+    "r": -2
+   },
+   {
+    "type": "UNIT_ARMOURED_ELEPHANT",
+    "player": 1,
+    "hp": 20,
+    "q": -1,
+    "r": -3
+   }
+  ],
+  "tiles": [
+   {
+    "q": -4,
+    "r": 4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": 3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -4,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 1,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 0,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 0,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 2,
+    "r": 0,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -2,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": -1,
+    "terrain": "TERRAIN_MARSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 2,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -2,
+    "terrain": "TERRAIN_MARSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 2,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 0,
+    "r": -3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 1,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_LAKE",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_JUNGLE",
+    "river": [],
+    "road": false
+   }
+  ],
+  "_meta": {
+   "archive": "/Users/dominik/Library/CloudStorage/Dropbox/cc/owsaves/mp-archive/alcaras v JCT",
+   "map_width": 46,
+   "center_offset_xy": [
+    24,
+    20
+   ],
+   "combat_units_per_player": {
+    "0": 4,
+    "1": 22
+   },
+   "cities_in_scene": [],
+   "victim_strength_before": 2580,
+   "victim_frac_lost": 0.12,
+   "units_lost_elsewhere": 1,
+   "observer": 1,
+   "enemy_units_next_turn": [
+    {
+     "type": "UNIT_CHARIOT",
+     "player": 0,
+     "hp": 16,
+     "q": 0,
+     "r": 4
+    },
+    {
+     "type": "UNIT_AXEMAN",
+     "player": 0,
+     "hp": 20,
+     "q": 2,
+     "r": 1
+    },
+    {
+     "type": "UNIT_AXEMAN",
+     "player": 0,
+     "hp": 10,
+     "q": 3,
+     "r": 1
+    },
+    {
+     "type": "UNIT_AXEMAN",
+     "player": 0,
+     "hp": 17,
+     "q": 4,
+     "r": 0
+    },
+    {
+     "type": "UNIT_AXEMAN",
+     "player": 0,
+     "hp": 20,
+     "q": 4,
+     "r": -1
+    }
+   ],
+   "log_unit_lost": 6,
+   "noncombat_lost": [],
+   "captured": [],
+   "player_names": {
+    "0": "alcaras",
+    "1": "JCT"
+   }
+  }
+ },
+ {
+  "game": "alcaras v NestorLN 2024 g1",
+  "turn": 115,
+  "victim_player": 1,
+  "victim_name": "NestorLN",
+  "strength_lost": 260,
+  "strength_lost_turn_total": 760,
+  "units_lost": [
+   "UNIT_LONGBOWMAN",
+   "UNIT_SWORDSMAN",
+   "UNIT_CATAPHRACT"
+  ],
+  "units": [
+   {
+    "type": "UNIT_DROMON",
+    "player": 1,
+    "hp": 20,
+    "q": 0,
+    "r": 4
+   },
+   {
+    "type": "UNIT_LONGBOWMAN",
+    "player": 1,
+    "hp": 18,
+    "q": -3,
+    "r": 1
+   },
+   {
+    "type": "UNIT_SWORDSMAN",
+    "player": 1,
+    "hp": 11,
+    "q": -1,
+    "r": 1
+   },
+   {
+    "type": "UNIT_CATAPHRACT",
+    "player": 0,
+    "hp": 19,
+    "q": -1,
+    "r": 0
+   },
+   {
+    "type": "UNIT_CATAPHRACT",
+    "player": 0,
+    "hp": 20,
+    "q": -1,
+    "r": -2
+   },
+   {
+    "type": "UNIT_CATAPHRACT",
+    "player": 1,
+    "hp": 20,
+    "q": 1,
+    "r": -2
+   },
+   {
+    "type": "UNIT_CATAPHRACT",
+    "player": 0,
+    "hp": 18,
+    "q": 0,
+    "r": -3
+   },
+   {
+    "type": "UNIT_CATAPHRACT",
+    "player": 1,
+    "hp": 20,
+    "q": 4,
+    "r": -3
+   },
+   {
+    "type": "UNIT_CATAPHRACT",
+    "player": 0,
+    "hp": 14,
+    "q": 0,
+    "r": -4
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 1,
+    "hp": 18,
+    "q": 1,
+    "r": -4
+   }
+  ],
+  "tiles": [
+   {
+    "q": -4,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 1,
+    "terrain": "TERRAIN_MARSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 1,
+    "terrain": "TERRAIN_MARSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 1,
+    "terrain": "TERRAIN_MARSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 0,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 0,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 0,
+    "terrain": "TERRAIN_MARSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 0,
+    "terrain": "TERRAIN_MARSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -1,
+    "terrain": "TERRAIN_MARSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3
+    ],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [
+     5
+    ],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [
+     4,
+     5
+    ],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [
+     4,
+     5
+    ],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [
+     3
+    ],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [
+     3
+    ],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -2,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [
+     5
+    ],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [
+     3
+    ],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3,
+     4
+    ],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -4,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 2,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES_CUT",
+    "river": [
+     5
+    ],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     4
+    ],
+    "road": true
+   },
+   {
+    "q": 4,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   }
+  ],
+  "_meta": {
+   "archive": "/Users/dominik/Library/CloudStorage/Dropbox/cc/owsaves/mp-archive/alcaras v NestorLN 2024 g1",
+   "map_width": 74,
+   "center_offset_xy": [
+    32,
+    8
+   ],
+   "combat_units_per_player": {
+    "1": 6,
+    "0": 4
+   },
+   "cities_in_scene": [
+    {
+     "player": 1,
+     "name": "Kahat",
+     "capital": false
+    }
+   ],
+   "victim_strength_before": 4590,
+   "victim_frac_lost": 0.166,
+   "units_lost_elsewhere": 6,
+   "observer": 1,
+   "enemy_units_next_turn": [
+    {
+     "type": "UNIT_CATAPHRACT",
+     "player": 0,
+     "hp": 18,
+     "q": -1,
+     "r": 0
+    },
+    {
+     "type": "UNIT_BEJA_ARCHER",
+     "player": 0,
+     "hp": 20,
+     "q": -1,
+     "r": -3
+    },
+    {
+     "type": "UNIT_BEJA_ARCHER",
+     "player": 0,
+     "hp": 18,
+     "q": 0,
+     "r": -4
+    }
+   ],
+   "log_unit_lost": 9,
+   "noncombat_lost": [],
+   "captured": [],
+   "player_names": {
+    "0": "alcaras",
+    "1": "NestorLN"
+   }
+  }
+ },
+ {
+  "game": "alcaras v Marauder",
+  "turn": 66,
+  "victim_player": 1,
+  "victim_name": "Marauder",
+  "strength_lost": 250,
+  "strength_lost_turn_total": 250,
+  "units_lost": [
+   "UNIT_ARCHER",
+   "UNIT_AXEMAN",
+   "UNIT_ARCHER",
+   "UNIT_SPEARMAN",
+   "UNIT_CHARIOT"
+  ],
+  "units": [
+   {
+    "type": "UNIT_SLINGER",
+    "player": 0,
+    "hp": 20,
+    "q": 2,
+    "r": 2
+   },
+   {
+    "type": "UNIT_ARCHER",
+    "player": 1,
+    "hp": 12,
+    "q": 0,
+    "r": 1
+   },
+   {
+    "type": "UNIT_AXEMAN",
+    "player": 1,
+    "hp": 13,
+    "q": 1,
+    "r": 1
+   },
+   {
+    "type": "UNIT_SLINGER",
+    "player": 0,
+    "hp": 20,
+    "q": 2,
+    "r": 1
+   },
+   {
+    "type": "UNIT_SLINGER",
+    "player": 0,
+    "hp": 20,
+    "q": 3,
+    "r": 1
+   },
+   {
+    "type": "UNIT_SCOUT",
+    "player": 1,
+    "hp": 18,
+    "q": 0,
+    "r": 0
+   },
+   {
+    "type": "UNIT_ARCHER",
+    "player": 1,
+    "hp": 13,
+    "q": 0,
+    "r": 0
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 0,
+    "hp": 20,
+    "q": 2,
+    "r": 0
+   },
+   {
+    "type": "UNIT_SLINGER",
+    "player": 0,
+    "hp": 20,
+    "q": 3,
+    "r": 0
+   },
+   {
+    "type": "UNIT_SPEARMAN",
+    "player": 1,
+    "hp": 17,
+    "q": 0,
+    "r": -1
+   },
+   {
+    "type": "UNIT_AFRICAN_ELEPHANT",
+    "player": 0,
+    "hp": 11,
+    "q": 2,
+    "r": -1
+   },
+   {
+    "type": "UNIT_CLUBTHROWER_2",
+    "player": 0,
+    "hp": 20,
+    "q": 3,
+    "r": -1
+   },
+   {
+    "type": "UNIT_WARRIOR",
+    "player": 0,
+    "hp": 20,
+    "q": 4,
+    "r": -1
+   },
+   {
+    "type": "UNIT_ARCHER",
+    "player": 1,
+    "hp": 20,
+    "q": 1,
+    "r": -2
+   },
+   {
+    "type": "UNIT_CLUBTHROWER_2",
+    "player": 0,
+    "hp": 20,
+    "q": 4,
+    "r": -2
+   },
+   {
+    "type": "UNIT_WORKER",
+    "player": 1,
+    "hp": 20,
+    "q": 0,
+    "r": -3
+   },
+   {
+    "type": "UNIT_CHARIOT",
+    "player": 1,
+    "hp": 20,
+    "q": 1,
+    "r": -3
+   },
+   {
+    "type": "UNIT_ARCHER",
+    "player": 1,
+    "hp": 20,
+    "q": 3,
+    "r": -3
+   },
+   {
+    "type": "UNIT_AXEMAN",
+    "player": 1,
+    "hp": 18,
+    "q": 2,
+    "r": -4
+   },
+   {
+    "type": "UNIT_MILITIA",
+    "player": 1,
+    "hp": 18,
+    "q": 3,
+    "r": -4
+   }
+  ],
+  "tiles": [
+   {
+    "q": -4,
+    "r": 4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     4
+    ],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -4,
+    "r": 1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 3,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -4,
+    "r": 0,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 0,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": 4,
+    "r": 0,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     3,
+     4
+    ],
+    "road": true
+   },
+   {
+    "q": -3,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -1,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     4,
+     5
+    ],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     4,
+     5
+    ],
+    "road": true
+   },
+   {
+    "q": 4,
+    "r": -1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [
+     4
+    ],
+    "road": true
+   },
+   {
+    "q": -2,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -2,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -3,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_MOUNTAIN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -4,
+    "terrain": "TERRAIN_TEMPERATE",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   }
+  ],
+  "_meta": {
+   "archive": "/Users/dominik/Library/CloudStorage/Dropbox/cc/owsaves/mp-archive/alcaras v Marauder",
+   "map_width": 46,
+   "center_offset_xy": [
+    26,
+    9
+   ],
+   "combat_units_per_player": {
+    "0": 9,
+    "1": 11
+   },
+   "cities_in_scene": [
+    {
+     "player": 0,
+     "name": "Lixus",
+     "capital": false
+    }
+   ],
+   "victim_strength_before": 1320,
+   "victim_frac_lost": 0.189,
+   "units_lost_elsewhere": 0,
+   "observer": 1,
+   "enemy_units_next_turn": [
+    {
+     "type": "UNIT_SLINGER",
+     "player": 0,
+     "hp": 20,
+     "q": 2,
+     "r": 2
+    },
+    {
+     "type": "UNIT_AFRICAN_ELEPHANT",
+     "player": 0,
+     "hp": 17,
+     "q": 0,
+     "r": 1
+    },
+    {
+     "type": "UNIT_MILITIA",
+     "player": 0,
+     "hp": 20,
+     "q": 1,
+     "r": 1
+    },
+    {
+     "type": "UNIT_SLINGER",
+     "player": 0,
+     "hp": 20,
+     "q": 2,
+     "r": 1
+    },
+    {
+     "type": "UNIT_SLINGER",
+     "player": 0,
+     "hp": 20,
+     "q": 3,
+     "r": 1
+    },
+    {
+     "type": "UNIT_WAR_ELEPHANT",
+     "player": 0,
+     "hp": 20,
+     "q": 0,
+     "r": 0
+    },
+    {
+     "type": "UNIT_WARRIOR",
+     "player": 0,
+     "hp": 19,
+     "q": 2,
+     "r": 0
+    },
+    {
+     "type": "UNIT_SLINGER",
+     "player": 0,
+     "hp": 20,
+     "q": 3,
+     "r": 0
+    },
+    {
+     "type": "UNIT_SLINGER",
+     "player": 0,
+     "hp": 20,
+     "q": 3,
+     "r": -1
+    },
+    {
+     "type": "UNIT_SPEARMAN",
+     "player": 0,
+     "hp": 12,
+     "q": 4,
+     "r": -1
+    },
+    {
+     "type": "UNIT_CLUBTHROWER_2",
+     "player": 0,
+     "hp": 14,
+     "q": 4,
+     "r": -2
+    }
+   ],
+   "log_unit_lost": 5,
+   "noncombat_lost": [],
+   "captured": [],
+   "player_names": {
+    "0": "alcaras",
+    "1": "Marauder"
+   }
+  }
+ },
+ {
+  "game": "avN",
+  "turn": 68,
+  "victim_player": 1,
+  "victim_name": "Ninja",
+  "strength_lost": 240,
+  "strength_lost_turn_total": 270,
+  "units_lost": [
+   "UNIT_ARCHER",
+   "UNIT_BEJA_ARCHER",
+   "UNIT_CHARIOT",
+   "UNIT_BIREME"
+  ],
+  "units": [
+   {
+    "type": "UNIT_ARCHER",
+    "player": 1,
+    "hp": 20,
+    "q": 0,
+    "r": 2
+   },
+   {
+    "type": "UNIT_ARCHER",
+    "player": 1,
+    "hp": 20,
+    "q": 1,
+    "r": 2
+   },
+   {
+    "type": "UNIT_SLINGER",
+    "player": 0,
+    "hp": 20,
+    "q": -4,
+    "r": 1
+   },
+   {
+    "type": "UNIT_ONAGER",
+    "player": 0,
+    "hp": 20,
+    "q": -3,
+    "r": 1
+   },
+   {
+    "type": "UNIT_BEJA_ARCHER",
+    "player": 1,
+    "hp": 20,
+    "q": 0,
+    "r": 1
+   },
+   {
+    "type": "UNIT_JUDAISM_DISCIPLE",
+    "player": 0,
+    "hp": 20,
+    "q": 1,
+    "r": 1
+   },
+   {
+    "type": "UNIT_ARCHER",
+    "player": 1,
+    "hp": 20,
+    "q": 2,
+    "r": 1
+   },
+   {
+    "type": "UNIT_CHARIOT",
+    "player": 1,
+    "hp": 18,
+    "q": 0,
+    "r": 0
+   },
+   {
+    "type": "UNIT_PALTON_CAVALRY",
+    "player": 0,
+    "hp": 11,
+    "q": 1,
+    "r": 0
+   },
+   {
+    "type": "UNIT_PALTON_CAVALRY",
+    "player": 0,
+    "hp": 20,
+    "q": 2,
+    "r": 0
+   },
+   {
+    "type": "UNIT_BIREME",
+    "player": 1,
+    "hp": 20,
+    "q": 1,
+    "r": -1
+   },
+   {
+    "type": "UNIT_BIREME",
+    "player": 1,
+    "hp": 20,
+    "q": 4,
+    "r": -3
+   }
+  ],
+  "tiles": [
+   {
+    "q": -4,
+    "r": 4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 4,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 3,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 2,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -2,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 2,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_FLAT",
+    "vegetation": "VEGETATION_SCRUB",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -3,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -2,
+    "r": 1,
+    "terrain": "TERRAIN_URBAN",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": true
+   },
+   {
+    "q": -1,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": 1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -4,
+    "r": 0,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": 0,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": 0,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": 0,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": 0,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": 0,
+    "terrain": "TERRAIN_ARID",
+    "height": "HEIGHT_FLAT",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": 0,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": 0,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": "VEGETATION_TREES",
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -3,
+    "r": -1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -1,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -1,
+    "terrain": "TERRAIN_LUSH",
+    "height": "HEIGHT_HILL",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -2,
+    "r": -2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -2,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": -1,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -3,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 0,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_COAST",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 1,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 2,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 3,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   },
+   {
+    "q": 4,
+    "r": -4,
+    "terrain": "TERRAIN_WATER",
+    "height": "HEIGHT_OCEAN",
+    "vegetation": null,
+    "river": [],
+    "road": false
+   }
+  ],
+  "_meta": {
+   "archive": "/Users/dominik/Library/CloudStorage/Dropbox/cc/owsaves/mp-archive/avN",
+   "map_width": 46,
+   "center_offset_xy": [
+    19,
+    16
+   ],
+   "combat_units_per_player": {
+    "1": 7,
+    "0": 5
+   },
+   "cities_in_scene": [
+    {
+     "player": 0,
+     "name": "Saddarvazeh",
+     "capital": false
+    }
+   ],
+   "victim_strength_before": 2020,
+   "victim_frac_lost": 0.134,
+   "units_lost_elsewhere": 1,
+   "observer": 1,
+   "enemy_units_next_turn": [
+    {
+     "type": "UNIT_SLINGER",
+     "player": 0,
+     "hp": 20,
+     "q": -2,
+     "r": 3
+    },
+    {
+     "type": "UNIT_PALTON_CAVALRY",
+     "player": 0,
+     "hp": 20,
+     "q": 0,
+     "r": 3
+    },
+    {
+     "type": "UNIT_SLINGER",
+     "player": 0,
+     "hp": 20,
+     "q": -2,
+     "r": 2
+    },
+    {
+     "type": "UNIT_SLINGER",
+     "player": 0,
+     "hp": 20,
+     "q": -1,
+     "r": 2
+    },
+    {
+     "type": "UNIT_PALTON_CAVALRY",
+     "player": 0,
+     "hp": 20,
+     "q": 0,
+     "r": 2
+    },
+    {
+     "type": "UNIT_AXEMAN",
+     "player": 0,
+     "hp": 20,
+     "q": -4,
+     "r": 1
+    },
+    {
+     "type": "UNIT_ONAGER",
+     "player": 0,
+     "hp": 20,
+     "q": -3,
+     "r": 1
+    },
+    {
+     "type": "UNIT_SLINGER",
+     "player": 0,
+     "hp": 20,
+     "q": -2,
+     "r": 1
+    },
+    {
+     "type": "UNIT_SLINGER",
+     "player": 0,
+     "hp": 20,
+     "q": -1,
+     "r": 1
+    },
+    {
+     "type": "UNIT_PALTON_CAVALRY",
+     "player": 0,
+     "hp": 11,
+     "q": 0,
+     "r": 0
+    },
+    {
+     "type": "UNIT_SLINGER",
+     "player": 0,
+     "hp": 20,
+     "q": 1,
+     "r": 0
+    },
+    {
+     "type": "UNIT_JUDAISM_DISCIPLE",
+     "player": 0,
+     "hp": 20,
+     "q": 2,
+     "r": 0
+    },
+    {
+     "type": "UNIT_BIREME",
+     "player": 0,
+     "hp": 19,
+     "q": 0,
+     "r": -1
+    },
+    {
+     "type": "UNIT_BIREME",
+     "player": 0,
+     "hp": 19,
+     "q": 1,
+     "r": -2
+    }
+   ],
+   "log_unit_lost": 4,
+   "noncombat_lost": [],
+   "captured": [],
+   "player_names": {
+    "0": "alcaras",
+    "1": "Ninja"
+   }
+  }
+ }
+]

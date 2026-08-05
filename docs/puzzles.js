@@ -172,5 +172,428 @@ var OWPUZZLES = [
       { player: 1, type: 'UNIT_ARCHER', q: 3, r: 0, hp: 4 },
     ],
   },
+  {
+    "id": "nestor-charge",
+    "name": "The Charge at the River",
+    "author": "mined: alcaras v NestorLN 2024 g1, turn 115",
+    "brief": "Finish the charge: kill the swordsman and the enemy cataphract. 4 orders.",
+    "lesson": "A real tournament position. Rivers halve melee attacks \u2014 the winning charge threads between river edges to strike from dry ground.",
+    "orders": 4,
+    "radius": 4,
+    "objective": {
+      "kind": "killList",
+      "targets": [
+        2,
+        3
+      ]
+    },
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_CATAPHRACT",
+        "q": -1,
+        "r": 0,
+        "hp": 19
+      },
+      {
+        "player": 0,
+        "type": "UNIT_CATAPHRACT",
+        "q": -1,
+        "r": -2,
+        "hp": 20
+      },
+      {
+        "player": 1,
+        "type": "UNIT_CATAPHRACT",
+        "q": 1,
+        "r": -2,
+        "hp": 6
+      },
+      {
+        "player": 1,
+        "type": "UNIT_SWORDSMAN",
+        "q": -1,
+        "r": 1,
+        "hp": 8
+      },
+      {
+        "player": 1,
+        "type": "UNIT_LONGBOWMAN",
+        "q": -3,
+        "r": 1,
+        "hp": 18
+      }
+    ],
+    "tiles": [
+      {
+        "q": -4,
+        "r": 4,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_OCEAN"
+      },
+      {
+        "q": -3,
+        "r": 4,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_OCEAN"
+      },
+      {
+        "q": -2,
+        "r": 4,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_OCEAN"
+      },
+      {
+        "q": -1,
+        "r": 4,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_OCEAN"
+      },
+      {
+        "q": 0,
+        "r": 4,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_OCEAN"
+      },
+      {
+        "q": -4,
+        "r": 3,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_OCEAN"
+      },
+      {
+        "q": -3,
+        "r": 3,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_OCEAN"
+      },
+      {
+        "q": -2,
+        "r": 3,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_OCEAN"
+      },
+      {
+        "q": -1,
+        "r": 3,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_OCEAN"
+      },
+      {
+        "q": 0,
+        "r": 3,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_COAST"
+      },
+      {
+        "q": 1,
+        "r": 3,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_COAST"
+      },
+      {
+        "q": -4,
+        "r": 2,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_COAST"
+      },
+      {
+        "q": -3,
+        "r": 2,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_COAST"
+      },
+      {
+        "q": -2,
+        "r": 2,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_COAST"
+      },
+      {
+        "q": -1,
+        "r": 2,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_COAST"
+      },
+      {
+        "q": 0,
+        "r": 2,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_COAST"
+      },
+      {
+        "q": 1,
+        "r": 2,
+        "terrain": "TERRAIN_LUSH",
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 2,
+        "r": 2,
+        "terrain": "TERRAIN_LUSH",
+        "height": "HEIGHT_HILL",
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": -4,
+        "r": 1,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_COAST"
+      },
+      {
+        "q": -3,
+        "r": 1,
+        "terrain": "TERRAIN_MARSH"
+      },
+      {
+        "q": -2,
+        "r": 1,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_COAST"
+      },
+      {
+        "q": -1,
+        "r": 1,
+        "terrain": "TERRAIN_MARSH"
+      },
+      {
+        "q": 0,
+        "r": 1,
+        "terrain": "TERRAIN_MARSH"
+      },
+      {
+        "q": 1,
+        "r": 1,
+        "terrain": "TERRAIN_LUSH",
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 2,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 3,
+        "r": 1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": -4,
+        "r": 0,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_COAST"
+      },
+      {
+        "q": -3,
+        "r": 0,
+        "terrain": "TERRAIN_WATER",
+        "height": "HEIGHT_COAST"
+      },
+      {
+        "q": -2,
+        "r": 0,
+        "terrain": "TERRAIN_MARSH"
+      },
+      {
+        "q": -1,
+        "r": 0,
+        "terrain": "TERRAIN_MARSH"
+      },
+      {
+        "q": 0,
+        "r": 0,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": 0,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": 0,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 3,
+        "r": 0,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 4,
+        "r": 0,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -3,
+        "r": -1,
+        "terrain": "TERRAIN_LUSH"
+      },
+      {
+        "q": -2,
+        "r": -1,
+        "terrain": "TERRAIN_MARSH",
+        "river": [
+          3
+        ]
+      },
+      {
+        "q": -1,
+        "r": -1,
+        "terrain": "TERRAIN_LUSH"
+      },
+      {
+        "q": 0,
+        "r": -1,
+        "terrain": "TERRAIN_LUSH",
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": 1,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 3,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 4,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": -2,
+        "terrain": "TERRAIN_LUSH",
+        "vegetation": "VEGETATION_TREES",
+        "river": [
+          5
+        ]
+      },
+      {
+        "q": -1,
+        "r": -2,
+        "height": "HEIGHT_HILL",
+        "river": [
+          4,
+          5
+        ]
+      },
+      {
+        "q": 0,
+        "r": -2,
+        "terrain": "TERRAIN_LUSH",
+        "height": "HEIGHT_HILL",
+        "river": [
+          4,
+          5
+        ]
+      },
+      {
+        "q": 1,
+        "r": -2,
+        "terrain": "TERRAIN_LUSH",
+        "vegetation": "VEGETATION_TREES",
+        "river": [
+          3
+        ]
+      },
+      {
+        "q": 2,
+        "r": -2,
+        "terrain": "TERRAIN_LUSH",
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 3,
+        "r": -2,
+        "vegetation": "VEGETATION_TREES",
+        "river": [
+          3
+        ]
+      },
+      {
+        "q": 4,
+        "r": -2,
+        "terrain": "TERRAIN_ARID",
+        "vegetation": "VEGETATION_SCRUB"
+      },
+      {
+        "q": -1,
+        "r": -3,
+        "height": "HEIGHT_HILL",
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 0,
+        "r": -3,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 1,
+        "r": -3,
+        "vegetation": "VEGETATION_TREES",
+        "river": [
+          5
+        ]
+      },
+      {
+        "q": 2,
+        "r": -3,
+        "vegetation": "VEGETATION_SCRUB",
+        "river": [
+          3
+        ]
+      },
+      {
+        "q": 3,
+        "r": -3,
+        "river": [
+          3,
+          4
+        ]
+      },
+      {
+        "q": 4,
+        "r": -3,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 0,
+        "r": -4,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 1,
+        "r": -4,
+        "terrain": "TERRAIN_URBAN",
+        "road": true
+      },
+      {
+        "q": 2,
+        "r": -4,
+        "vegetation": "VEGETATION_TREES_CUT",
+        "river": [
+          5
+        ],
+        "road": true
+      },
+      {
+        "q": 3,
+        "r": -4,
+        "river": [
+          4
+        ],
+        "road": true
+      }
+    ]
+  },
 ];
 if (typeof module !== 'undefined') module.exports = OWPUZZLES;

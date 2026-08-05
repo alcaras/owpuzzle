@@ -734,6 +734,11 @@
     switch (objective.kind) {
       case 'killAll':
         return state.units.filter(function (u) { return u.player === 1 && u.hp > 0; }).length === 0;
+      case 'killList':
+        return objective.targets.every(function (id) {
+          var u = unitById(state, id);
+          return !u || u.hp <= 0;
+        });
       case 'killTarget':
         var t = unitById(state, objective.target);
         return !t || t.hp <= 0;
