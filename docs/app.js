@@ -341,17 +341,18 @@
 
   // Old World's unit health readout: two rows of boxes, one box per HP.
   // Filled = current HP; red = HP the previewed attack would remove;
-  // dark = already lost. Top row is the first half (drains last).
+  // dark = already lost. Fills COLUMN-MAJOR from the left: one column is a
+  // "tick" of HEALTH_PER_TICK (2) HP, as in the game (ClientUI.cs:1961), so
+  // 4 HP reads as a 2x2 block and 8 HP as 4x2.
+  var HEALTH_PER_TICK = 2;
   function drawHpPips(S, x, y, hp, max, previewLoss) {
-    var cols = max > 10 ? Math.ceil(max / 2) : max;
-    var rows = max > 10 ? 2 : 1;
-    var gap = 0.8, bw = (SIZE * 0.98 - gap * (cols - 1)) / cols, bh = 3.4;
+    var cols = Math.ceil(max / HEALTH_PER_TICK);
+    var gap = 0.9, bw = (SIZE * 0.98 - gap * (cols - 1)) / cols, bh = 3.4;
     var x0 = x - (cols * bw + gap * (cols - 1)) / 2;
     var y0 = y + SIZE * 0.78;
     hp = Math.max(0, hp);
     for (var i = 0; i < max; i++) {
-      // reading order: top row fills first, damage comes off the end
-      var row = i < cols ? 0 : 1, col = i % cols;
+      var col = Math.floor(i / HEALTH_PER_TICK), row = i % HEALTH_PER_TICK;
       var fill;
       if (i < hp - previewLoss) fill = '#7fb069';
       else if (i < hp) fill = '#ff5040';
