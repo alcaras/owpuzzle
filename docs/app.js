@@ -210,11 +210,14 @@
         ev.stopPropagation();
         onUnitTap(uid);
       });
-      // hover preview (desktop): full breakdown panel for legal targets
-      if (targetIds[uid]) {
-        el.addEventListener('pointerenter', function () { showPreviewPanel(uid); });
-        el.addEventListener('pointerleave', function () { if (armedTarget !== uid) hidePreviewPanel(); });
-      }
+      // hover (desktop): legal targets show the attack breakdown, anyone
+      // else shows their unit card. Content persists until replaced — the
+      // pane never collapses, so the layout never shifts under the cursor.
+      el.addEventListener('pointerenter', function () {
+        if (!CAN_HOVER) return;
+        if (targetIds[uid]) showPreviewPanel(uid);
+        else showUnitInfo(uid);
+      });
     });
 
     renderHud();
@@ -268,6 +271,72 @@
   }
   function hidePreviewPanel() {
     document.getElementById('preview-panel').classList.remove('show');
+  }
+
+  // ---------- unit card (hover any unit) ----------
+  var TRAIT_NAMES = { UNITTRAIT_MELEE: 'melee', UNITTRAIT_RANGED: 'ranged', UNITTRAIT_INFANTRY: 'infantry', UNITTRAIT_MOUNTED: 'mounted', UNITTRAIT_POLEARM: 'polearm', UNITTRAIT_SIEGE: 'siege', UNITTRAIT_HORSE: 'horse', UNITTRAIT_CHARIOT: 'chariot', UNITTRAIT_ELEPHANT: 'elephant', UNITTRAIT_SHIP: 'ship' };
+  var ATTACK_NAMES = { ATTACK_PIERCE: 'pierce (hits through target)', ATTACK_CLEAVE: 'cleave (hits beside target)', ATTACK_SPLASH: 'splash (hits around target)', ATTACK_CIRCLE: 'circle (hits all adjacent)' };
+
+  // human-readable combat-relevant lines for one effect unit
+  function describeEffect(e) {
+    var d = E.DATA.effects[e];
+    if (!d) return [];
+    var out = [];
+    if (d.iStrengthModifier) out.push(fmtPct(d.iStrengthModifier) + ' strength');
+    if (d.iAttackModifier) out.push(fmtPct(d.iAttackModifier) + ' attack');
+    if (d.iDefenseModifier) out.push(fmtPct(d.iDefenseModifier) + ' defense');
+    if (d.bRout) out.push('rout: advances on kill, may strike again');
+    (d.aeEffectUnitImmune || []).forEach(function (im) {
+      out.push('immune to ' + im.replace('EFFECTUNIT_', '').toLowerCase());
+    });
+    ['aiUnitTraitModifier', 'aiUnitTraitModifierAttack', 'aiUnitTraitModifierDefense', 'aiUnitTraitModifierMelee'].forEach(function (f, i) {
+      Object.keys(d[f] || {}).forEach(function (t) {
+        var suffix = ['', ' attacking', ' defending', ' in melee'][i];
+        out.push(fmtPct(d[f][t]) + ' vs ' + (TRAIT_NAMES[t] || t.replace('UNITTRAIT_', '').toLowerCase()) + suffix);
+      });
+    });
+    Object.keys(d.aiAttackValue || {}).forEach(function (a) {
+      var pct = (d.aiAttackPercent || {})[a] || 0;
+      out.push(ATTACK_NAMES[a] + (pct ? ' at ' + pct + '%' : ''));
+    });
+    Object.keys(d.aiMeleeToClearTerrainTargetModifier || {}).forEach(function (t) {
+      out.push(fmtPct(d.aiMeleeToClearTerrainTargetModifier[t]) + ' attacking open terrain');
+    });
+    if (d.iRiverAttackModifier) out.push(fmtPct(d.iRiverAttackModifier) + ' attacking across river');
+    if (d.iFlankingAttackModifier) out.push(fmtPct(d.iFlankingAttackModifier) + ' flanking');
+    if (d.iMeleeCounterPercent) out.push('counterattacks at ' + d.iMeleeCounterPercent + '% of attack');
+    if (d.iDamagedThemModifier) out.push(fmtPct(d.iDamagedThemModifier) + ' vs damaged units');
+    return out;
+  }
+  function fmtPct(v) { return (v > 0 ? '+' : '') + v + '%'; }
+
+  function showUnitInfo(uid) {
+    var u = E.unitById(state, uid);
+    if (!u || u.hp <= 0) return;
+    var inf = E.DATA.units[u.type];
+    var p = document.getElementById('preview-panel');
+    var ic = ICONS[u.type];
+    var lines = [];
+    E.effectsOf(u).forEach(function (e) {
+      describeEffect(e).forEach(function (t) { lines.push(t); });
+    });
+    if (inf.bZOC) lines.push('exerts zone of control');
+    var stateBits = [];
+    if (u.cooldown === 'ROUT') stateBits.push('routing — may attack again');
+    else if (u.cooldown) stateBits.push('done for this turn (' + u.cooldown.toLowerCase() + ')');
+    if (u.steps > 0) stateBits.push('moved ' + u.steps + '/' + E.fatigueLimit(u) + ' steps');
+    if (u.fortifyTurns > 0) stateBits.push('fortified ' + u.fortifyTurns + ' (+' + (u.fortifyTurns * 5) + '%)');
+    p.innerHTML =
+      '<h4>' + (u.player === 0 ? 'Your unit' : 'Enemy unit') + '</h4>' +
+      '<div class="who">' + (ic ? '<img class="p' + u.player + '" src="' + ic + '" alt="">' : '') +
+      shortName(u) + '</div>' +
+      '<div class="result"><span>Strength</span><b>' + inf.iStrength + '</b></div>' +
+      '<div class="result"><span>Hit points</span><b>' + u.hp + ' / ' + E.hpMax(u) + '</b></div>' +
+      '<div class="result"><span>Movement</span><b>' + inf.iMovement + '</b></div>' +
+      ((inf.iRangeMax || 0) > 0 ? '<div class="result"><span>Range</span><b>' + inf.iRangeMax + '</b></div>' : '') +
+      (lines.length ? '<hr>' + lines.map(function (t) { return '<div class="modline"><span>' + t + '</span></div>'; }).join('') : '') +
+      (stateBits.length ? '<hr>' + stateBits.map(function (t) { return '<div class="note">' + t + '</div>'; }).join('') : '');
+    p.classList.add('show');
   }
 
   // Old World's unit health readout: two rows of boxes, one box per HP.

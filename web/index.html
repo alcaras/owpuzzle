@@ -50,20 +50,39 @@
   }
   #board-wrap { width: 100%; max-width: 560px; padding: 4px; flex: 1 1 340px; }
   #preview-panel {
-    display: none; flex: 0 1 300px; max-width: 320px; min-width: 250px;
     background: #14161c; color: #e8e4d8; border-radius: 10px;
     padding: 12px 14px; font-size: 13px; margin: 4px;
     font-family: system-ui, sans-serif;
   }
-  #preview-panel.show { display: block; }
+  /* Wide screens: the panel column is ALWAYS reserved so showing the
+     breakdown never reflows the board mid-hover. */
+  @media (min-width: 880px) {
+    #main-row { flex-wrap: nowrap; }
+    #preview-panel { display: block; flex: 0 0 300px; width: 300px; align-self: stretch; }
+    #preview-panel:not(.show) > * { display: none; }
+    #preview-panel:not(.show)::before {
+      content: 'Select a unit and hover an enemy to preview the attack.';
+      color: #6d7078; font-size: 12px;
+    }
+  }
+  /* Narrow screens: fixed bottom sheet — overlays, never shifts layout. */
+  @media (max-width: 879.98px) {
+    #preview-panel { display: none; }
+    #preview-panel.show {
+      display: block; position: fixed; z-index: 30;
+      bottom: 10px; left: 50%; transform: translateX(-50%);
+      width: min(94vw, 340px);
+      box-shadow: 0 6px 28px rgba(0,0,0,.55);
+    }
+  }
   #preview-panel h4 {
     margin: 0 0 8px; font-size: 13px; letter-spacing: 1px; text-transform: uppercase;
     color: #ffb020; display: flex; align-items: center; gap: 6px;
   }
   #preview-panel .vs { display: flex; gap: 10px; }
   #preview-panel .col { flex: 1; }
-  #preview-panel .col .who { display: flex; align-items: center; gap: 5px; font-weight: 600; margin-bottom: 3px; }
-  #preview-panel .col .who img { width: 22px; height: 22px; border-radius: 50%; }
+  #preview-panel .who { display: flex; align-items: center; gap: 5px; font-weight: 600; margin-bottom: 3px; }
+  #preview-panel .who img { width: 22px; height: 22px; border-radius: 50%; }
   #preview-panel .who img.p0 { background: rgb(110,160,210); }
   #preview-panel .who img.p1 { background: rgb(150,60,60); }
   #preview-panel .big { font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; }
