@@ -4,7 +4,10 @@ Chess-puzzle-style single-turn tactics puzzles for Old World, playable in the
 browser (mobile-friendly). One puzzle a day, Wordle-style; find the BEST move
 sequence within your order budget.
 
-**Try it:** `python3 -m http.server -d web 8471` → http://localhost:8471
+**Live:** https://alcaras.github.io/owpuzzle/ (GitHub Pages from `docs/`;
+after changing `web/`, run `cp web/*.js web/index.html docs/` and push).
+
+**Local:** `python3 -m http.server -d web 8471` → http://localhost:8471
 (or open `dist/owpuzzle.html`, a self-contained single file).
 
 ## Architecture
