@@ -457,6 +457,9 @@
     });
     if (inf.bZOC) lines.push('exerts zone of control');
     var stateBits = [];
+    if (E.DATA.units[u.type].bUnlimber) {
+      stateBits.push(u.unlimbered ? 'set up — ready to fire (-25% defense)' : 'packed up — must Set Up before firing');
+    }
     if (u.cooldown === 'ROUT') stateBits.push('routing — may attack again');
     else if (u.cooldown) stateBits.push('done for this turn (' + u.cooldown.toLowerCase() + ')');
     if (u.steps > 0) stateBits.push('moved ' + u.steps + '/' + E.fatigueLimit(u) + ' steps');
@@ -540,6 +543,9 @@
         (pvs.length ? ', or a marked enemy to attack' : '');
       if (E.canMove(state, sel) && E.nextStepOrderCost(sel) > 1) {
         msg += '. FATIGUED: further moves are a FORCE MARCH costing 2 orders each (orange dots).';
+      }
+      if (E.DATA.units[sel.type].bUnlimber && !sel.unlimbered) {
+        msg = shortName(sel) + ' is PACKED UP — it must Set Up (1 order) before it can fire. Press the Set Up button.';
       }
       st.textContent = msg;
     } else {

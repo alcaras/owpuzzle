@@ -131,7 +131,7 @@ var OWPUZZLES = [
     radius: 3,
     objective: { kind: 'killAll' },
     units: [
-      { player: 0, type: 'UNIT_AXEMAN', q: -1, r: 0 },
+      { player: 0, type: 'UNIT_AXEMAN', q: -1, r: -1 },
       { player: 1, type: 'UNIT_WARRIOR', q: 1, r: 0, hp: 8 },
       { player: 1, type: 'UNIT_ARCHER', q: 1, r: -1, hp: 2 },
       { player: 1, type: 'UNIT_ARCHER', q: 0, r: 1, hp: 2 },
