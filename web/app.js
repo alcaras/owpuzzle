@@ -545,7 +545,7 @@
         msg += '. FATIGUED: further moves are a FORCE MARCH costing 2 orders each (orange dots).';
       }
       if (E.DATA.units[sel.type].bUnlimber && !sel.unlimbered) {
-        msg = shortName(sel) + ' is PACKED UP — it must Set Up (1 order) before it can fire. Press the Set Up button.';
+        msg = shortName(sel) + ' is PACKED UP — setting up ends its turn, so it cannot fire until next turn.';
       }
       st.textContent = msg;
     } else {

@@ -569,8 +569,9 @@
     var u = unitById(st, unitId);
     if (!canUnlimber(st, u)) throw new Error('cannot unlimber');
     u.unlimbered = true;
+    u.cooldown = 'UNLIMBERED'; // setting up ends the turn (Unit.cs:11117)
     st.orders -= 1;
-    st.log.push(nameOf(u) + ' sets up');
+    st.log.push(nameOf(u) + ' sets up — ready to fire next turn');
     return st;
   }
 
