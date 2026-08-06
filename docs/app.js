@@ -124,6 +124,10 @@
     var targets = (sel && !finished) ? E.attackTargets(state, sel) : [];
     var reachKeys = {}; reach.forEach(function (t) { reachKeys[E.key(t.q, t.r)] = t; });
     var targetIds = {}; targets.forEach(function (t) { targetIds[t.id] = true; });
+    var swapIds = {};
+    if (sel && !finished) state.units.forEach(function (o) {
+      if (o.player === 0 && E.canSwap(state, sel, o)) swapIds[o.id] = true;
+    });
 
     // tiles
     var clips = [];
@@ -224,6 +228,13 @@
       // HP pips, Old World style: two rows of boxes, one box per HP.
       // On attack preview, the boxes that would be lost turn red.
       drawHpPips(S, x, y, u.hp, E.hpMax(u), pv ? pv.damage : 0);
+      // swap affordance: moving onto an adjacent friendly swaps — show a
+      // tappable arrows badge on the ally's tile (no separate action needed)
+      if (swapIds[u.id]) {
+        S.push('<g data-swap="' + u.id + '" style="cursor:pointer">' +
+          '<circle cx="' + (x - SIZE * 0.52) + '" cy="' + (y - SIZE * 0.34) + '" r="11" fill="#ffffff" stroke="' + BOARD_BG + '" stroke-width="1.4"/>' +
+          '<text x="' + (x - SIZE * 0.52) + '" y="' + (y - SIZE * 0.34 + 1) + '" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="bold" fill="#14161c" pointer-events="none">\u21c4</text></g>');
+      }
       // promotion badges: the promotion's in-game icon on a gold disc
       (u.promotions || []).forEach(function (pr, pi) {
         var effName = (E.DATA.promotions[pr] && E.DATA.promotions[pr].effect) || pr;
@@ -262,6 +273,12 @@
       el.addEventListener('click', function () {
         var qr = el.getAttribute('data-move').split(',');
         act({ type: 'move', unit: selected, q: +qr[0], r: +qr[1] });
+      });
+    });
+    Array.prototype.forEach.call(wrap.querySelectorAll('[data-swap]'), function (el) {
+      el.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        if (selected != null) act({ type: 'swap', unit: selected, target: +el.getAttribute('data-swap') });
       });
     });
     // hovering an empty tile shows its terrain card
@@ -541,15 +558,7 @@
     bm.style.display = (selU && !finished && E.canMarch(state, selU) && selU.steps >= E.fatigueLimit(selU)) ? '' : 'none';
     var bu = document.getElementById('btn-setup');
     bu.style.display = (selU && !finished && E.canUnlimber(state, selU)) ? '' : 'none';
-    var bs = document.getElementById('btn-swap');
-    var swapMate = selU && state.units.filter(function (o) {
-      return o.player === 0 && E.canSwap(state, selU, o);
-    })[0];
-    if (selU && !finished && swapMate) {
-      bs.style.display = '';
-      bs.textContent = 'Swap with ' + shortName(swapMate);
-      bs.dataset.target = swapMate.id;
-    } else bs.style.display = 'none';
+
     var st = document.getElementById('status');
     if (finished) { st.textContent = ''; return; }
     var sel = selected != null ? E.unitById(state, selected) : null;
@@ -664,9 +673,7 @@
   document.getElementById('btn-setup').addEventListener('click', function () {
     if (selected != null) act({ type: 'unlimber', unit: selected });
   });
-  document.getElementById('btn-swap').addEventListener('click', function () {
-    if (selected != null) act({ type: 'swap', unit: selected, target: +this.dataset.target });
-  });
+
   document.getElementById('btn-reset').addEventListener('click', reset);
   document.getElementById('btn-again').addEventListener('click', reset);
   function reset() {
