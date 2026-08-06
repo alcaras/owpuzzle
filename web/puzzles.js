@@ -785,7 +785,7 @@ var OWPUZZLES = [
   {
     id: 'the-bodkin',
     difficulty: 1,
-    name: 'The Bodkin',
+    name: 'The Windlass',
     author: 'owpuzzle',
     brief: 'Kill both warriors. Your crossbowman has 2 orders.',
     lesson: 'Crossbows punch at +50% against melee troops and PIERCE the tile behind at half damage — but only at point blank range.',
