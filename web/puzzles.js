@@ -766,6 +766,23 @@ var OWPUZZLES = [
     ],
   },
   {
+    id: 'the-stampede',
+    difficulty: 2,
+    name: 'The Stampede',
+    author: 'owpuzzle',
+    brief: 'Kill both warriors with 3 orders. The gap in their line will stop your rout... unless something fills it.',
+    lesson: 'Combine your beasts: the elephant PANICS a survivor back one tile — right into your rout lane. Kill, overrun, kill again.',
+    orders: 3,
+    radius: 3,
+    objective: { kind: 'killAll' },
+    units: [
+      { player: 0, type: 'UNIT_HORSEMAN', q: -1, r: 0 },
+      { player: 0, type: 'UNIT_WAR_ELEPHANT', q: 3, r: 0 },
+      { player: 1, type: 'UNIT_WARRIOR', q: 0, r: 0, hp: 8 },
+      { player: 1, type: 'UNIT_WARRIOR', q: 2, r: 0, hp: 18 },
+    ],
+  },
+  {
     id: 'chop-the-spears',
     difficulty: 1,
     name: 'Chop the Spears',
