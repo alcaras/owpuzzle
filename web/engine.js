@@ -136,7 +136,7 @@
 
   function isWaterTile(t) { return t.terrain === 'TERRAIN_WATER'; }
   function isUrbanTile(t) { return t.terrain === 'TERRAIN_URBAN'; }
-  function isClearTile(t) { return !t.vegetation && !isUrbanTile(t) && !isWaterTile(t); }
+  function isClearTile(t) { return !t.vegetation && !t.improvement && !isUrbanTile(t) && !isWaterTile(t); } // Tile.isClear = !hasImprovement (Tile.cs:3092)
 
   // Approximation of TERRAIN_TARGET_OPEN: clear flat land (used by mounted +25).
   function isTerrainTarget(t, target) {
@@ -584,6 +584,34 @@
     return st;
   }
 
+  // Swap (Unit.cs:8258): adjacent friendly units exchange tiles for 1 order;
+  // both count a step; forbidden when BOTH tiles are in hostile ZOC.
+  function canSwap(state, u, o) {
+    if (!u || !o || u.id === o.id) return false;
+    if (u.hp <= 0 || o.hp <= 0 || u.player !== o.player) return false;
+    if (u.cooldown || o.cooldown) return false;
+    if (hexDistance(u, o) !== 1) return false;
+    if (u.steps + 1 > fatigueLimit(u) || o.steps + 1 > fatigueLimit(o)) return false;
+    if (state.orders < 1) return false;
+    if (inEnemyZOC(state, u, u.q, u.r) && inEnemyZOC(state, u, o.q, o.r)) return false;
+    return true;
+  }
+  function doSwap(state, unitId, otherId) {
+    var st = cloneState(state);
+    var u = unitById(st, unitId), o = unitById(st, otherId);
+    if (!canSwap(st, u, o)) throw new Error('cannot swap');
+    var q = u.q, r = u.r;
+    u.q = o.q; u.r = o.r;
+    o.q = q; o.r = r;
+    u.steps += 1; o.steps += 1;
+    u.fortifyTurns = 0; o.fortifyTurns = 0;
+    if (u.unlimbered) u.unlimbered = false;
+    if (o.unlimbered) o.unlimbered = false;
+    st.orders -= 1;
+    st.log.push(nameOf(u) + ' swaps with ' + nameOf(o));
+    return st;
+  }
+
   // Unlimber (Unit.cs:11082): siege must set up before firing; costs 1 order.
   // Moving packs the engine back up.
   function canUnlimber(state, u) {
@@ -850,6 +878,9 @@
       });
       if (canMarch(state, u) && u.steps >= fatigueLimit(u)) acts.push({ type: 'march', unit: u.id });
       if (canUnlimber(state, u)) acts.push({ type: 'unlimber', unit: u.id });
+      state.units.forEach(function (o) {
+        if (o.player === 0 && o.id > u.id && canSwap(state, u, o)) acts.push({ type: 'swap', unit: u.id, target: o.id });
+      });
     });
     return acts;
   }
@@ -860,6 +891,7 @@
     if (a.type === 'fortify') return doFortify(state, a.unit);
     if (a.type === 'march') return doMarch(state, a.unit);
     if (a.type === 'unlimber') return doUnlimber(state, a.unit);
+    if (a.type === 'swap') return doSwap(state, a.unit, a.target);
     throw new Error('unknown action ' + a.type);
   }
 
@@ -898,6 +930,7 @@
     effectsOf: effectsOf, isMelee: isMelee, rangeMax: rangeMax, hpMax: hpMax,
     canAct: canAct, canMove: canMove, canAttack: canAttack,
     canMarch: canMarch, doMarch: doMarch, canUnlimber: canUnlimber, doUnlimber: doUnlimber,
+    canSwap: canSwap, doSwap: doSwap,
     nextStepOrderCost: nextStepOrderCost,
     canDamage: canDamage, fatigueLimit: fatigueLimit,
     movementPoints: movementPoints, reachableTiles: reachableTiles,

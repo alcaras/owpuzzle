@@ -28,7 +28,7 @@
     var GROUPS = [
       { n: 1, title: 'Basics — one unit, one rule' },
       { n: 2, title: 'Tactics — combined arms' },
-      { n: 3, title: 'Battlefields — real positions' },
+      { n: 3, title: 'Challenges — nothing here is obvious' },
     ];
     var html = '<div class="progress">Solved <b>' + solvedCount + '</b> of ' + OWPUZZLES.length +
       (solvedCount === OWPUZZLES.length && solvedCount > 0 ? ' — the whole library! ⚔️' : '') + '</div>';
@@ -463,6 +463,7 @@
     });
     if (inf.bZOC) lines.push('exerts zone of control');
     var stateBits = [];
+    if (u.general) stateBits.push('carries a GENERAL');
     if (E.DATA.units[u.type].bUnlimber) {
       stateBits.push(u.unlimbered ? 'set up — ready to fire (-25% defense)' : 'packed up — must Set Up before firing');
     }
@@ -540,6 +541,15 @@
     bm.style.display = (selU && !finished && E.canMarch(state, selU) && selU.steps >= E.fatigueLimit(selU)) ? '' : 'none';
     var bu = document.getElementById('btn-setup');
     bu.style.display = (selU && !finished && E.canUnlimber(state, selU)) ? '' : 'none';
+    var bs = document.getElementById('btn-swap');
+    var swapMate = selU && state.units.filter(function (o) {
+      return o.player === 0 && E.canSwap(state, selU, o);
+    })[0];
+    if (selU && !finished && swapMate) {
+      bs.style.display = '';
+      bs.textContent = 'Swap with ' + shortName(swapMate);
+      bs.dataset.target = swapMate.id;
+    } else bs.style.display = 'none';
     var st = document.getElementById('status');
     if (finished) { st.textContent = ''; return; }
     var sel = selected != null ? E.unitById(state, selected) : null;
@@ -653,6 +663,9 @@
   });
   document.getElementById('btn-setup').addEventListener('click', function () {
     if (selected != null) act({ type: 'unlimber', unit: selected });
+  });
+  document.getElementById('btn-swap').addEventListener('click', function () {
+    if (selected != null) act({ type: 'swap', unit: selected, target: +this.dataset.target });
   });
   document.getElementById('btn-reset').addEventListener('click', reset);
   document.getElementById('btn-again').addEventListener('click', reset);
