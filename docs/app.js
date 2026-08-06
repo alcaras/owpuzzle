@@ -122,7 +122,7 @@
     var sel = selected != null ? E.unitById(state, selected) : null;
     var reach = (sel && !finished) ? E.reachableTiles(state, sel) : [];
     var targets = (sel && !finished) ? E.attackTargets(state, sel) : [];
-    var reachKeys = {}; reach.forEach(function (t) { reachKeys[E.key(t.q, t.r)] = true; });
+    var reachKeys = {}; reach.forEach(function (t) { reachKeys[E.key(t.q, t.r)] = t; });
     var targetIds = {}; targets.forEach(function (t) { targetIds[t.id] = true; });
 
     // tiles
@@ -160,9 +160,15 @@
         jg ? 'rgba(14,50,16,.95)' : sc ? 'rgba(96,110,60,.95)' : 'rgba(24,68,26,.95)');
       if (t.improvement === 'IMPROVEMENT_FORT') decorate(S, x, y, '🏰');
       if (reachKeys[k]) {
-        var fm = sel && E.nextStepOrderCost(sel) > 1;
-        S.push('<circle cx="' + x + '" cy="' + y + '" r="' + (fm ? 7.5 : 6) + '" fill="' + (fm ? '#ffb020' : '#ffffff') + '" opacity="0.8" pointer-events="none"/>');
-        if (fm) S.push('<text x="' + x + '" y="' + (y + 0.5) + '" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="bold" fill="#14161c" pointer-events="none">2</text>');
+        // one click moves the whole way; the badge is the total order cost
+        // (game shows the same multi-step range with boundary pips)
+        var rt = reachKeys[k];
+        if (rt.orders <= 1) {
+          S.push('<circle cx="' + x + '" cy="' + y + '" r="6" fill="#ffffff" opacity="0.8" pointer-events="none"/>');
+        } else {
+          S.push('<circle cx="' + x + '" cy="' + y + '" r="7.5" fill="' + (rt.forced ? '#ffb020' : '#ffffff') + '" opacity="' + (rt.forced ? 0.9 : 0.75) + '" pointer-events="none"/>');
+          S.push('<text x="' + x + '" y="' + (y + 0.5) + '" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="bold" fill="#14161c" pointer-events="none">' + rt.orders + '</text>');
+        }
       }
     });
 
@@ -539,7 +545,7 @@
     var sel = selected != null ? E.unitById(state, selected) : null;
     if (sel) {
       var pvs = E.attackTargets(state, sel);
-      var msg = shortName(sel) + ' selected — tap a highlighted tile to move' +
+      var msg = shortName(sel) + ' selected — tap any highlighted tile to move there in one go (numbers = orders)' +
         (pvs.length ? ', or a marked enemy to attack' : '');
       if (E.canMove(state, sel) && E.nextStepOrderCost(sel) > 1) {
         msg += '. FATIGUED: further moves are a FORCE MARCH costing 2 orders each (orange dots).';

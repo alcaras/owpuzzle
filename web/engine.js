@@ -487,33 +487,54 @@
     return false;
   }
 
-  // Reachable tiles for one move step. Returns [{q,r,cost}].
+  // Reachable tiles this turn, multi-step, exactly as the game previews it
+  // (Unit.getVisibleMoveLimit / getNumStepsForCost / getNumOrdersForSteps):
+  // Dijkstra over total movement cost; steps = ceil(cost / full movement);
+  // orders charged per step, doubled past the fatigue limit (march only).
+  // Returns [{q, r, cost, steps, orders, forced}].
   // ZOC rule (Unit.isValidMovementDirection, Unit.cs:7685): a step from one
   // hostile-ZOC tile to another hostile-ZOC tile is forbidden; entering ZOC
   // does NOT stop movement.
   function reachableTiles(state, u) {
-    if (!canMove(state, u)) return [];
+    if (u.hp <= 0 || u.cooldown) return [];
+    var full = movementPoints(u);
+    var limit = fatigueLimit(u);
+    var maxTotal = u.march ? limit * 2 : limit;   // march unlocks the second band
+    var stepsAvail = Math.max(0, maxTotal - u.steps);
+    function ordersForSteps(k) {
+      var o = 0;
+      for (var i = 1; i <= k; i++) o += (u.steps + i > limit) ? 1 + G.UNIT_FATIGUE_COST : 1;
+      return o;
+    }
+    while (stepsAvail > 0 && ordersForSteps(stepsAvail) > state.orders) stepsAvail--;
+    if (!stepsAvail) return [];
+    var budget = stepsAvail * full;
+
     var best = {}; best[key(u.q, u.r)] = 0;
-    var frontier = [{ q: u.q, r: u.r, left: movementPoints(u) }];
+    var frontier = [{ q: u.q, r: u.r, cost: 0 }];
     var out = {};
     while (frontier.length) {
-      var cur = frontier.pop();
+      // smallest-cost-first (boards are tiny; linear scan is fine)
+      var bi = 0;
+      for (var fi = 1; fi < frontier.length; fi++) if (frontier[fi].cost < frontier[bi].cost) bi = fi;
+      var cur = frontier.splice(bi, 1)[0];
+      if (best[key(cur.q, cur.r)] < cur.cost) continue;
       var curZOC = inEnemyZOC(state, u, cur.q, cur.r);
       for (var d = 0; d < 6; d++) {
         var nq = cur.q + DIRS[d].q, nr = cur.r + DIRS[d].r;
         var t = tileAt(state, nq, nr);
         if (!t) continue;
-        var occ = unitAt(state, nq, nr);
-        if (occ) continue; // one unit per tile; can't pass through anyone (simplified)
+        if (unitAt(state, nq, nr)) continue; // one unit per tile; no passing through
         if (curZOC && inEnemyZOC(state, u, nq, nr)) continue; // ZOC -> ZOC step
-        var c = moveCostInto(state, u, cur, { q: nq, r: nr });
-        if (c > cur.left) continue;
+        var c = cur.cost + moveCostInto(state, u, cur, { q: nq, r: nr });
+        if (c > budget) continue;
         var k = key(nq, nr);
-        var spent = movementPoints(u) - cur.left + c;
-        if (best[k] != null && best[k] <= spent) continue;
-        best[k] = spent;
-        out[k] = { q: nq, r: nr, cost: spent };
-        frontier.push({ q: nq, r: nr, left: cur.left - c });
+        if (best[k] != null && best[k] <= c) continue;
+        best[k] = c;
+        var st = Math.ceil(c / full);
+        out[k] = { q: nq, r: nr, cost: c, steps: st, orders: ordersForSteps(st),
+                   forced: u.steps + st > limit };
+        frontier.push({ q: nq, r: nr, cost: c });
       }
     }
     return Object.keys(out).map(function (k2) { return out[k2]; });
@@ -679,15 +700,16 @@
     var s = cloneState(state);
     var u = unitById(s, unitId);
     var reach = reachableTiles(s, u);
-    var ok = reach.some(function (t) { return t.q === q && t.r === r; });
-    if (!ok) throw new Error('illegal move');
-    var cost = nextStepOrderCost(u); // force-march steps cost double
+    var dest = reach.filter(function (t) { return t.q === q && t.r === r; })[0];
+    if (!dest) throw new Error('illegal move');
+    // one click = the whole path; all steps charged at once (Unit.cs:8007-8044)
     u.q = q; u.r = r;
-    u.steps += 1;
+    u.steps += dest.steps;
     if (u.unlimbered) u.unlimbered = false;
     u.fortifyTurns = 0;
-    s.orders -= cost;
-    s.log.push(nameOf(u) + ' moves' + (cost > 1 ? ' (force march, ' + cost + ' orders)' : ''));
+    s.orders -= dest.orders;
+    s.log.push(nameOf(u) + ' moves (' + dest.steps + (dest.steps > 1 ? ' steps, ' : ' step, ') +
+      dest.orders + (dest.orders > 1 ? ' orders' : ' order') + (dest.forced ? ', force march' : '') + ')');
     return s;
   }
 

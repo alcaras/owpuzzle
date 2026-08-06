@@ -58,9 +58,12 @@ Source of truth is the game's shipped C# reference source
   CIRCLE, SPLASH patterns at a % of full damage (spearman pierce = 25%).
 - **Distance/terrain**: ranged −20%/hex beyond 1; melee −50% across rivers;
   trees −50% for ranged attackers; forts +50 defense; fortify +5/turn.
-- **Movement & orders** (Unit.cs:7440-7748): a move step = up to full
-  movement, 1 order; steps past the fatigue limit are force-march at double
-  order cost, capped at 2x the limit. Attacks cost 1 order flat and never
+- **Movement & orders** (Unit.cs:7440-7748, 8007-8044): one click moves the
+  whole path — orders for all steps are charged at once (steps =
+  ceil(total path cost / full movement), getNumStepsForCost). The move
+  preview shows the full no-march range like the game's boundary pips
+  (getVisibleMoveLimit); March (100 training, Unit.cs:11071) unlocks the
+  second band at double order cost per step, capped at 2x the limit. Attacks cost 1 order flat and never
   fatigue the unit. Any cooldown (including ROUT) blocks movement — routed
   units may only attack again. ZOC (Unit.cs:7685): only ZOC->ZOC steps are
   forbidden (entering ZOC does not stop movement), and ZOC does not project
