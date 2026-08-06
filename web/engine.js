@@ -467,9 +467,11 @@
     var cost = (DATA.terrain[t.terrain] && DATA.terrain[t.terrain].iMovementCost) || G.MOVEMENT_MULTIPLER;
     cost += (DATA.height[t.height] && DATA.height[t.height].iMovementCost) || 0;
     if (t.vegetation) cost += (DATA.vegetation[t.vegetation] && DATA.vegetation[t.vegetation].iMovementCost) || 0;
-    if (t.road) cost = G.ROAD_MOVEMENT_COST;
-    if (riverBetween(state, from, to) && !(t.road && tileAt(state, from.q, from.r).road)) {
-      cost += G.RIVER_MOVEMENT_COST;
+    var fromT = tileAt(state, from.q, from.r);
+    var crossing = riverBetween(state, from, to);
+    if (t.road && fromT && fromT.road && !crossing) cost = G.ROAD_MOVEMENT_COST;
+    if (crossing && !(t.road && fromT && fromT.road)) {
+      cost += G.RIVER_CROSSING_COST_EXTRA; // Unit.cs:7605-7609
     }
     return cost;
   }
@@ -526,7 +528,12 @@
         if (!t) continue;
         if (unitAt(state, nq, nr)) continue; // one unit per tile; no passing through
         if (curZOC && inEnemyZOC(state, u, nq, nr)) continue; // ZOC -> ZOC step
-        var c = cur.cost + moveCostInto(state, u, cur, { q: nq, r: nr });
+        var tileCost = moveCostInto(state, u, cur, { q: nq, r: nr });
+        if (tileCost === Infinity) continue;
+        // PathFinder.getTileMoveCost: clamp so the step ends exactly on the
+        // boundary — any tile is enterable with any movement remaining
+        var partial = cur.cost % full;
+        var c = cur.cost + ((partial + tileCost >= full) ? (full - partial) : tileCost);
         if (c > budget) continue;
         var k = key(nq, nr);
         if (best[k] != null && best[k] <= c) continue;
