@@ -76,4 +76,6 @@ function seedCorePuzzles() {
   return PUZZLES.length;
 }
 
+try { db.exec('ALTER TABLE puzzles ADD COLUMN notes TEXT'); } catch (e) {}
+
 module.exports = { db, seedCorePuzzles };

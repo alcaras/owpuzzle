@@ -37,16 +37,20 @@
     return a.met === b.met && a.redHp === b.redHp && a.blueHp === b.blueHp && a.orders === b.orders;
   }
 
-  // Full search. opts: {maxStates}
+  // Full search. opts: {maxStates, maxMs}
   function solve(puzzle, opts) {
     opts = opts || {};
     var maxStates = opts.maxStates || 2000000;
+    var deadline = opts.maxMs ? Date.now() + opts.maxMs : Infinity;
     var init = E.loadPuzzle(puzzle);
     var seen = {};
     var best = null, bestLine = null, bestCount = 0, explored = 0, truncated = false;
 
+    var stop = false;
     function rec(s, line) {
-      if (explored++ > maxStates) { truncated = true; return; }
+      if (stop) return;
+      if (explored++ > maxStates) { stop = truncated = true; return; }
+      if ((explored & 255) === 0 && Date.now() > deadline) { stop = truncated = true; return; }
       var sc = score(s, puzzle.objective);
       if (best === null || better(sc, best)) {
         best = sc; bestLine = line.slice(); bestCount = 1;
@@ -55,6 +59,7 @@
       }
       var acts = E.legalActions(s);
       for (var i = 0; i < acts.length; i++) {
+        if (stop) return;
         var a = acts[i];
         var ns;
         try { ns = E.applyAction(s, a); } catch (e) { continue; }
@@ -81,8 +86,10 @@
     var winCount = 0, winLines = [], winOutcomes = {};
     if (best && best.met) {
       var seen2 = {};
+      var stop2 = false;
       (function rec2(s, line) {
-        if (winLines.length > 25) return;
+        if (stop2 || winLines.length > 25) return;
+        if (Date.now() > deadline) { stop2 = true; return; }
         var sc = score(s, puzzle.objective);
         if (sc.met && equalScore(sc, best)) {
           var oh = outcomeHash(s);
@@ -95,6 +102,7 @@
         }
         var acts = E.legalActions(s);
         for (var i = 0; i < acts.length; i++) {
+          if (stop2) return;
           var ns;
           try { ns = E.applyAction(s, acts[i]); } catch (e) { continue; }
           var h = stateHash(ns);

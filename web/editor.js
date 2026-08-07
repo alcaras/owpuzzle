@@ -268,7 +268,7 @@
     out('solving…');
     setTimeout(function () {
       try {
-        var r = OWSOLVER.solve(p, { maxStates: 150000 });
+        var r = OWSOLVER.solve(p, { maxStates: 150000, maxMs: 25000 });
         if (r.best && r.best.met) {
           out('SOLVABLE — ' + r.winCount + ' distinct winning outcome(s)' +
             (r.winCount === 1 ? ' (unique!)' : ' (consider tightening)') +
@@ -283,15 +283,26 @@
   };
   document.getElementById('btn-submit').onclick = function () {
     var p = buildPuzzle();
-    out('submitting…');
+    out('submitting… (the server verifies with the solver; up to ~20s for complex boards)');
     fetch('/api/submit', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ puzzle: p }),
     }).then(function (r) { return r.json(); }).then(function (d) {
-      if (d.error) out('✗ ' + d.error);
-      else out('✓ Submitted for review as "' + d.slug + '" — ' + d.winningLines + ' winning outcome(s).\nSolution on file:\n' +
-        d.solution.map(function (s, i) { return (i + 1) + '. ' + s; }).join('\n'));
-    }).catch(function () { out('✗ network error (are you running against the server, and logged in?)'); });
+      if (d.error) return out('✗ ' + d.error);
+      out('✓ Received as "' + d.slug + '" — the solver is verifying it now (can take a few minutes for big boards)…');
+      var tries = 0;
+      (function poll() {
+        if (++tries > 60) return out('still verifying — check back later; it will appear in the review queue when done.');
+        setTimeout(function () {
+          fetch('/api/submit-status/' + d.slug).then(function (r) { return r.json(); }).then(function (st) {
+            if (st.status === 'validating') { out('⏳ verifying… (' + (tries * 5) + 's)'); poll(); }
+            else if (st.status === 'pending') out('✓ VERIFIED and queued for review!\n' + (st.notes || ''));
+            else if (st.status === 'autorejected') out('✗ rejected by the solver: ' + (st.notes || ''));
+            else out('status: ' + st.status + ' — ' + (st.notes || ''));
+          }).catch(function () { poll(); });
+        }, 5000);
+      })();
+    }).catch(function () { out('✗ network error (are you logged in?)'); });
   };
 
   // ---------- render ----------

@@ -3,6 +3,7 @@
 // it through the same engine.js the browser uses.
 'use strict';
 const express = require('express');
+const { Worker } = require('worker_threads');
 const crypto = require('crypto');
 const path = require('path');
 const { db, seedCorePuzzles } = require('./db');
@@ -255,36 +256,49 @@ app.post('/api/submit', (req, res) => {
       !(p.tiles || []).some(t => t.city === 1)) {
     return res.status(400).json({ error: 'capture objective needs an enemy city tile' });
   }
-  let result;
-  try {
-    result = SOLVER.solve(p, { maxStates: 300000 });
-  } catch (e) {
-    return res.status(400).json({ error: 'puzzle failed to load: ' + e.message });
-  }
-  if (!result.best || !result.best.met) {
-    return res.status(400).json({ error: 'the solver says this puzzle is not solvable', explored: result.explored });
-  }
-  if (!result.line || result.line.length === 0) {
-    return res.status(400).json({ error: 'the objective is already satisfied before any move — that is not a puzzle' });
-  }
   const slug = (p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) +
     '-' + crypto.randomBytes(3).toString('hex'));
   p.id = slug;
   p.author = user.name;
-  db.prepare(`INSERT INTO puzzles (slug, json, status, author_id, author_name, rating)
-              VALUES (?, ?, 'pending', ?, ?, 1200)`)
+  db.prepare(`INSERT INTO puzzles (slug, json, status, author_id, author_name, rating, notes)
+              VALUES (?, ?, 'validating', ?, ?, 1200, 'solver running…')`)
     .run(slug, JSON.stringify(p), user.id, user.name);
-  if (DISCORD_WEBHOOK_URL) {
-    fetch(DISCORD_WEBHOOK_URL, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        content: `New puzzle submission: **${p.name}** by ${user.name} — ` +
-          `${result.winCount} winning line(s), ${p.orders} orders. Review: ${BASE_URL}/?p=${slug}&review=1`,
-      }),
-    }).catch(() => {});
-  }
-  res.json({ ok: true, slug, winningLines: result.winCount, solution: SOLVER.describeLine(p, result.line) });
+
+  // validate off-thread; the site stays responsive and the submitter polls
+  const w = new Worker(path.join(__dirname, 'solve-worker.js'), {
+    workerData: { puzzle: p, opts: { maxStates: 2000000, maxMs: 240000 } },
+  });
+  const finish = (status, notes) => {
+    db.prepare('UPDATE puzzles SET status = ?, notes = ? WHERE slug = ?').run(status, notes, slug);
+    if (status === 'pending' && DISCORD_WEBHOOK_URL) {
+      fetch(DISCORD_WEBHOOK_URL, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: `New puzzle submission: **${p.name}** by ${user.name}. ${notes} Review: ${BASE_URL}/?p=${slug}` }),
+      }).catch(() => {});
+    }
+  };
+  w.on('message', (r) => {
+    if (r.error) return finish('autorejected', 'failed to load: ' + r.error);
+    if (r.best && r.best.met) {
+      finish('pending', `Verified solvable at par ${p.orders}; ${r.winCount || '?'} winning outcome(s)` +
+        (r.truncated ? ' (search truncated)' : '') + '. Solution: ' + (r.solution || []).join(' → '));
+    } else {
+      finish('autorejected', r.truncated
+        ? 'verification gave up after 4 minutes without finding a solution — reduce the par, movers, or board'
+        : 'not solvable at that par');
+    }
+  });
+  w.on('error', (e) => finish('autorejected', 'solver crashed: ' + e.message));
+
+  res.json({ ok: true, slug, status: 'validating' });
 });
+
+app.get('/api/submit-status/:slug', (req, res) => {
+  const row = db.prepare('SELECT slug, status, notes, author_id FROM puzzles WHERE slug = ?').get(req.params.slug);
+  if (!row) return res.status(404).json({ error: 'not found' });
+  res.json({ slug: row.slug, status: row.status, notes: row.notes });
+});
+
 
 // review queue (admin)
 app.get('/api/review', (req, res) => {
