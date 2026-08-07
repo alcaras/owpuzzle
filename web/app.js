@@ -535,7 +535,7 @@
         var v = E.unitById(state, c.id);
         return '<div class="result"><span>splash: ' + shortName(v) + '</span><b>' + c.damage + '</b></div>';
       }).join('') : '') +
-      (ex.rout ? '<div class="note">Rout: overruns and may attack again</div>' : '') +
+      (ex.rout ? '<div class="note">Rout: advances and may attack again</div>' : '') +
       (armedTarget === defId && !CAN_HOVER ? '<div class="arm">tap again to attack</div>' : '');
     p.classList.add('show');
   }

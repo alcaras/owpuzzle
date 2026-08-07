@@ -872,7 +872,7 @@
       if (canAdvance) {
         att.q = defTile.q; att.r = defTile.r;
         routed = true;
-        s.log.push(nameOf(att) + ' overruns forward and routs — may act again');
+        s.log.push(nameOf(att) + ' routs — advances and may act again');
       } else {
         // rout WITHOUT advance only from a city tile (or onto a stacked tile,
         // which we don't model) — Unit.canRoutAfterNoAdvance, Unit.cs:8372

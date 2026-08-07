@@ -50,7 +50,7 @@ What makes these work (distilled from the first eleven):
 
 | Ability | Unit(s) | Puzzle |
 |---|---|---|
-| Rout / overrun chain | horseman, chariot | Overrun |
+| Rout chain | horseman, chariot | Rout |
 | Rout immunity (polearm) | spear line | The Spear Wall |
 | Anti-mounted | spear line | The Spear Wall (trap line) |
 | Pierce 25% | spearman | One Thrust |
