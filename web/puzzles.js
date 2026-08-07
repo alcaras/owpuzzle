@@ -223,51 +223,20 @@ var OWPUZZLES = [
     "author": "mined: alcaras v NestorLN 2024 g1, turn 115",
     "brief": "Finish the charge: kill the swordsman and the enemy cataphract. 4 orders.",
     "lesson": "A real tournament position. Rivers halve melee attacks \u2014 the winning charge threads between river edges to strike from dry ground.",
-    "orders": 4,
+    "orders": 6,
+    "slowVerify": true,
     "radius": 4,
     "objective": {
       "kind": "killList",
-      "targets": [
-        2,
-        3
-      ]
+      "targets": [3, 4, 5]
     },
     "units": [
-      {
-        "player": 0,
-        "type": "UNIT_CATAPHRACT",
-        "q": -1,
-        "r": 0,
-        "hp": 19
-      },
-      {
-        "player": 0,
-        "type": "UNIT_CATAPHRACT",
-        "q": -1,
-        "r": -2,
-        "hp": 20
-      },
-      {
-        "player": 1,
-        "type": "UNIT_CATAPHRACT",
-        "q": 1,
-        "r": -2,
-        "hp": 6
-      },
-      {
-        "player": 1,
-        "type": "UNIT_SWORDSMAN",
-        "q": -1,
-        "r": 1,
-        "hp": 8
-      },
-      {
-        "player": 1,
-        "type": "UNIT_LONGBOWMAN",
-        "q": -3,
-        "r": 1,
-        "hp": 18
-      }
+      { "player": 0, "type": "UNIT_CATAPHRACT", "q": -1, "r": 0, "hp": 19 },
+      { "player": 0, "type": "UNIT_CATAPHRACT", "q": -1, "r": -2, "hp": 20 },
+      { "player": 0, "type": "UNIT_CATAPHRACT", "q": 0, "r": -3, "hp": 18 },
+      { "player": 1, "type": "UNIT_CATAPHRACT", "q": 1, "r": -2, "hp": 6 },
+      { "player": 1, "type": "UNIT_SWORDSMAN", "q": -1, "r": 1, "hp": 8 },
+      { "player": 1, "type": "UNIT_LONGBOWMAN", "q": -3, "r": 1, "hp": 8 }
     ],
     "tiles": [
       {

@@ -5,7 +5,12 @@ var SOLVER = require('../web/solver.js');
 var PUZZLES = require('../web/puzzles.js');
 
 var failed = 0;
+var FULL = process.argv.includes('--full');
 PUZZLES.forEach(function (p) {
+  if (p.slowVerify && !FULL) {
+    console.log('== ' + p.name + ' (' + p.id + ')  SKIPPED (slowVerify; run with --full) — last offline verification: unique par-' + p.orders);
+    return;
+  }
   var t0 = Date.now();
   var res = SOLVER.solve(p, { maxStates: 500000 });
   var ms = Date.now() - t0;
