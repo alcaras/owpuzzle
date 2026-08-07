@@ -221,7 +221,7 @@ var OWPUZZLES = [
     "difficulty": 3,
     "name": "The Charge at the River",
     "author": "mined: alcaras v NestorLN 2024 g1, turn 115",
-    "brief": "Finish the charge. In the real game, three of Nestor\u2019s units fell this turn \u2014 match the result.",
+    "brief": "Finish the charge \u2014 all three defenders must fall this turn.",
     "lesson": "A real tournament position. Rivers halve melee attacks \u2014 the winning charge threads between river edges to strike from dry ground.",
     "orders": 6,
     "slowVerify": true,

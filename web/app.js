@@ -290,8 +290,9 @@
         clips.push('<clipPath id="' + cid2 + '"><polygon points="' + hexPoints(x, y) + '"/></clipPath>');
         S.push('<rect clip-path="url(#' + cid2 + ')" x="' + (x - SIZE) + '" y="' + (y - SIZE) + '" width="' + (2 * SIZE) + '" height="' + (2 * SIZE) + '" fill="rgba(6,44,10,.5)" pointer-events="none"/>');
       }
-      if (jg || fr || sc) drawTrees(S, x, y, jg ? 3 : 2, t.height === 'HEIGHT_HILL',
-        jg ? 'rgba(14,50,16,.95)' : sc ? 'rgba(96,110,60,.95)' : 'rgba(24,68,26,.95)');
+      if (sc) drawScrub(S, x, y, t.height === 'HEIGHT_HILL');
+      else if (jg || fr) drawTrees(S, x, y, jg ? 3 : 2, t.height === 'HEIGHT_HILL',
+        jg ? 'rgba(14,50,16,.95)' : 'rgba(24,68,26,.95)');
       if (t.city != null) {
         // city: double wall ring in owner color + hall glyph
         var cring = [];
@@ -712,6 +713,17 @@
         '" width="' + bw + '" height="' + bh + '" fill="' + fill +
         '" stroke="' + BOARD_BG + '" stroke-width="0.5" pointer-events="none"/>');
     }
+  }
+
+  // scrub: low rounded bushes, not trees
+  function drawScrub(S, x, y, onHill) {
+    var yb = y + (onHill ? -SIZE * 0.05 : SIZE * 0.3);
+    var spots = [[-0.34, 0], [0, 0.12], [0.34, -0.02], [0.16, -0.3]];
+    spots.forEach(function (sp) {
+      var bx = x + SIZE * sp[0], by = yb + SIZE * sp[1];
+      S.push('<ellipse cx="' + bx + '" cy="' + by + '" rx="' + (SIZE * 0.14) + '" ry="' + (SIZE * 0.09) +
+        '" fill="rgba(110,122,63,.95)" stroke="rgba(50,56,26,.6)" stroke-width="1" pointer-events="none"/>');
+    });
   }
 
   // procedural trees, geometry lifted from owdeepanalysis viewer :152-158:

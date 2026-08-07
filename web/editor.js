@@ -315,10 +315,14 @@
       if (t.vegetation === 'VEGETATION_JUNGLE') {
         S.push('<polygon points="' + hexPoints(x, y, 0.98) + '" fill="rgba(6,44,10,.5)" pointer-events="none"/>');
       }
-      if (t.vegetation) {
+      if (t.vegetation === 'VEGETATION_SCRUB') {
+        var yb2 = y + (t.height === 'HEIGHT_HILL' ? -SIZE * 0.05 : SIZE * 0.3);
+        [[-0.34, 0], [0, 0.12], [0.34, -0.02], [0.16, -0.3]].forEach(function (sp) {
+          S.push('<ellipse cx="' + (x + SIZE * sp[0]) + '" cy="' + (yb2 + SIZE * sp[1]) + '" rx="' + (SIZE * 0.14) + '" ry="' + (SIZE * 0.09) + '" fill="rgba(110,122,63,.95)" stroke="rgba(50,56,26,.6)" stroke-width="1" pointer-events="none"/>');
+        });
+      } else if (t.vegetation) {
         var nT = t.vegetation === 'VEGETATION_JUNGLE' ? 3 : 2;
-        var vc = t.vegetation === 'VEGETATION_JUNGLE' ? 'rgba(14,50,16,.95)' :
-                 t.vegetation === 'VEGETATION_SCRUB' ? 'rgba(96,110,60,.95)' : 'rgba(24,68,26,.95)';
+        var vc = t.vegetation === 'VEGETATION_JUNGLE' ? 'rgba(14,50,16,.95)' : 'rgba(24,68,26,.95)';
         var tw = SIZE * 0.26, th = SIZE * 0.62, yb = y + (t.height === 'HEIGHT_HILL' ? -SIZE * 0.12 : SIZE * 0.24);
         for (var vk = 0; vk < nT; vk++) {
           var VX = x + (vk - (nT - 1) / 2) * (tw * 1.25);
