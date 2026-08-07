@@ -28,7 +28,7 @@
     var GROUPS = [
       { n: 1, title: 'Basics — one unit, one rule' },
       { n: 2, title: 'Tactics — combined arms' },
-      { n: 3, title: 'Challenges — nothing here is obvious' },
+      { n: 3, title: 'Challenges' },
     ];
     var html = '<div class="progress">Solved <b>' + solvedCount + '</b> of ' + OWPUZZLES.length +
       (solvedCount === OWPUZZLES.length && solvedCount > 0 ? ' — the whole library! ⚔️' : '') + '</div>';
