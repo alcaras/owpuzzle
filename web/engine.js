@@ -633,7 +633,7 @@
     if (state.orders < 1) return false;
     if (inEnemyZOC(state, u, u.q, u.r) && inEnemyZOC(state, u, o.q, o.r)) return false;
     // each unit must be able to stand on the other's tile (no beached ships)
-    if (moveCostInto(state, u, o, u) === Infinity || moveCostInto(state, o, u, o) === Infinity) return false;
+    if (moveCostInto(state, u, u, o) === Infinity || moveCostInto(state, o, o, u) === Infinity) return false;
     return true;
   }
   function doSwap(state, unitId, otherId) {
@@ -968,7 +968,9 @@
 
   // puzzle = { name, orders, objective, tiles:[{q,r,terrain?,height?,veg?,improvement?,river?}...] OR radius,
   //            units:[{player,type,q,r,hp?,promotions?,fortifyTurns?,name?}] }
-  function loadPuzzle(p) {
+  // opts.play: grant the forgiving pool (par + slack orders, generous
+  // training for force-march recoveries). Solver/verification loads strict.
+  function loadPuzzle(p, opts) {
     var tiles = {};
     if (p.radius != null) {
       for (var q = -p.radius; q <= p.radius; q++)
@@ -990,8 +992,11 @@
         anchored: DATA.units[u.type].bAnchor ? !!u.anchored : undefined,
       };
     });
-    return { tiles: tiles, units: units, orders: p.orders, training: p.training || 0,
-      objective: p.objective, log: [] };
+    var play = opts && opts.play;
+    var orders = play ? p.orders + (p.slack != null ? p.slack : 6) : p.orders;
+    var training = play ? Math.max(p.training || 0, 300) : (p.training || 0);
+    return { tiles: tiles, units: units, orders: orders, training: training,
+      par: p.orders, objective: p.objective, log: [] };
   }
 
   var api = {

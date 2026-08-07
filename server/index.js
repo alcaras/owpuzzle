@@ -120,16 +120,18 @@ function publicUser(u) {
 // Replay the client's action line through the real engine. The server is the
 // referee: "solved" is whatever the replay says, nothing else.
 function replayLine(puzzle, line) {
-  let s = E.loadPuzzle(puzzle);
+  let s = E.loadPuzzle(puzzle, { play: true }); // same forgiving pool the client plays with
   if (!Array.isArray(line) || line.length > 100) return { solved: false, ordersUsed: 0 };
   try {
     for (const a of line) s = E.applyAction(s, a);
   } catch (e) {
     return { solved: false, ordersUsed: puzzle.orders - s.orders };
   }
+  const pool = puzzle.orders + (puzzle.slack != null ? puzzle.slack : 6);
   return {
     solved: E.checkObjective(s, puzzle.objective),
-    ordersUsed: puzzle.orders - s.orders,
+    ordersUsed: pool - s.orders,
+    perfect: E.checkObjective(s, puzzle.objective) && (pool - s.orders) <= puzzle.orders,
   };
 }
 
@@ -196,7 +198,7 @@ app.post('/api/attempt', (req, res) => {
   const row = db.prepare(`SELECT * FROM puzzles WHERE slug = ? AND status IN ('core','approved')`).get(slug);
   if (!row) return res.status(404).json({ error: 'unknown puzzle' });
   const puzzle = JSON.parse(row.json);
-  const { solved, ordersUsed } = replayLine(puzzle, line);
+  const { solved, ordersUsed, perfect } = replayLine(puzzle, line);
 
   const prior = db.prepare(
     'SELECT COUNT(*) n FROM attempts WHERE user_id = ? AND puzzle_id = ?').get(user.id, row.id).n;
@@ -221,7 +223,7 @@ app.post('/api/attempt', (req, res) => {
     .run(user.id, row.id, solved ? 1 : 0, rated ? 1 : 0, ordersUsed, JSON.stringify(line || []));
 
   const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
-  res.json({ solved, rated, ratingDelta, user: publicUser(fresh) });
+  res.json({ solved, perfect, rated, ratingDelta, user: publicUser(fresh) });
 });
 
 // Submissions: earn the right by solving every core puzzle. The solver is the

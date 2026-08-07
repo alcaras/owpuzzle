@@ -113,6 +113,7 @@
       html += '<h2 class="group">' + g.title + '</h2><div class="grid">';
       html += list.map(function (p) {
         var done = prog[p.id] && prog[p.id].solved;
+        var perf = prog[p.id] && prog[p.id].perfect;
         var heroU = p.units.filter(function (u) { return u.player === 0; })[0];
         var hero = heroU && ICONS0[heroU.type];
         var foes = p.units.filter(function (u) { return u.player === 1; }).map(function (u) {
@@ -120,10 +121,10 @@
           return ic ? '<img src="' + ic + '" alt="">' : '';
         }).join('');
         return '<a class="card' + (done ? ' solved' : '') + '" href="?p=' + p.id + '">' +
-          (done ? '<span class="done">✓</span>' : '') +
+          (done ? '<span class="done">' + (perf ? '\u2b50' : '\u2713') + '</span>' : '') +
           (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
           '<div class="body"><div class="card-head"><h3>' + p.name + '</h3>' +
-          '<span class="meta">' + p.orders + ' orders</span></div>' +
+          '<span class="meta"></span></div>' +
           '<p>' + p.brief + '</p>' +
           '<div class="foes"><span class="vs">VS</span>' + foes + '</div></div></a>';
       }).join('');
@@ -147,7 +148,7 @@
 
   // ---------- state ----------
   var history = [];       // stack of states for undo
-  var state = E.loadPuzzle(puzzle);
+  var state = E.loadPuzzle(puzzle, { play: true });
   var selected = null;    // unit id
   var finished = false;
   var actionsUsed = 0;
@@ -697,16 +698,12 @@
   }
 
   function renderHud() {
-    var pips = '';
-    for (var i = 0; i < puzzle.orders; i++) {
-      pips += '<span class="order-pip' + (i < puzzle.orders - state.orders ? ' spent' : '') + '"></span>';
-    }
-    document.getElementById('orders-pips').innerHTML = '<b>' + state.orders + '</b>' + pips;
+    var used = (puzzle.orders + (puzzle.slack != null ? puzzle.slack : 6)) - state.orders;
+    document.getElementById('orders-pips').innerHTML =
+      '<b>' + state.orders + '</b> left · <b>' + used + '</b> used — spend as few as you can';
     var tr = document.getElementById('training-span');
-    if (puzzle.training) {
-      tr.style.display = '';
-      tr.innerHTML = 'Training: <b>' + state.training + '</b>';
-    } else tr.style.display = 'none';
+    tr.style.display = '';
+    tr.innerHTML = 'Training: <b>' + state.training + '</b>';
     var selU = selected != null ? E.unitById(state, selected) : null;
     var bm = document.getElementById('btn-march');
     bm.style.display = (selU && !finished && E.canMarch(state, selU) && selU.steps >= E.fatigueLimit(selU)) ? '' : 'none';
@@ -790,13 +787,16 @@
     r.classList.add('show');
     document.getElementById('result-title').textContent = won ? '⚔️ Victory!' : '💀 Not this time';
     document.getElementById('btn-next').style.display = won ? '' : 'none';
-    var used = puzzle.orders - state.orders;
-    var blueLost = state.units.filter(function (u) { return u.player === 0 && u.hp <= 0; }).length;
+    var used = (puzzle.orders + (puzzle.slack != null ? puzzle.slack : 6)) - state.orders;
+    var perfect = won && used <= puzzle.orders;
     var blueDmg = state.units.filter(function (u) { return u.player === 0; })
       .reduce(function (s, u) { return s + (E.hpMax(u) - Math.max(0, u.hp)); }, 0);
     document.getElementById('result-body').textContent = won
-      ? 'Solved in ' + used + ' orders. Damage taken: ' + blueDmg + '.'
+      ? (perfect
+        ? '\u2b50 PERFECT \u2014 solved in ' + used + ' orders, the fewest possible! Damage taken: ' + blueDmg + '.'
+        : 'Solved in ' + used + ' orders \u2014 but it can be done in fewer\u2026 Damage taken: ' + blueDmg + '.')
       : 'The objective was not met. Study the field and try again.';
+    window.__perfect = perfect;
     document.getElementById('result-lesson').textContent = won && puzzle.lesson ? puzzle.lesson : '';
     window.__won = won;
     if (ME && puzzle.id !== 'draft') {
@@ -815,9 +815,14 @@
     if (won) {
       try {
         var prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}');
-        var used = puzzle.orders - state.orders;
-        if (!prog[puzzle.id] || !prog[puzzle.id].solved || used < prog[puzzle.id].orders) {
-          prog[puzzle.id] = { solved: true, orders: used, ts: Date.now() };
+        var used2 = (puzzle.orders + (puzzle.slack != null ? puzzle.slack : 6)) - state.orders;
+        var prev = prog[puzzle.id] || {};
+        if (!prev.solved || used2 < prev.orders) {
+          prog[puzzle.id] = { solved: true, orders: Math.min(used2, prev.orders || 99),
+            perfect: !!(prev.perfect || window.__perfect), ts: Date.now() };
+          localStorage.setItem('owpuzzle-progress', JSON.stringify(prog));
+        } else if (window.__perfect && !prev.perfect) {
+          prev.perfect = true;
           localStorage.setItem('owpuzzle-progress', JSON.stringify(prog));
         }
       } catch (e) {}
@@ -847,7 +852,7 @@
   document.getElementById('btn-reset').addEventListener('click', reset);
   document.getElementById('btn-again').addEventListener('click', reset);
   function reset() {
-    state = E.loadPuzzle(puzzle);
+    state = E.loadPuzzle(puzzle, { play: true });
     history = [];
     lineLog = [];
     selected = null;
