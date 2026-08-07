@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Old World — Puzzle Editor</title>
+<style>
+  :root {
+    --bg: #efe3cb; --panel: #faf3e3; --ink: #392e1f; --muted: #7a6a52;
+    --accent: #8c2f1b; --edge: #b9a680;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #221c12; --panel: #2f2819; --ink: #e8dcc4; --muted: #a89877;
+            --edge: #6a5a3f; --accent: #c25a3a; }
+  }
+  :root[data-theme="dark"] { --bg: #221c12; --panel: #2f2819; --ink: #e8dcc4; --muted: #a89877; --edge: #6a5a3f; --accent: #c25a3a; }
+  :root[data-theme="light"] { --bg: #efe3cb; --panel: #faf3e3; --ink: #392e1f; --muted: #7a6a52; --edge: #b9a680; --accent: #8c2f1b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: Georgia, serif; }
+  header { text-align: center; padding: 10px; }
+  header h1 { font-size: 18px; letter-spacing: 4px; margin: 0; }
+  header .sub { font-size: 12px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  header a { color: var(--accent); font-size: 13px; }
+  #layout { display: flex; flex-wrap: wrap; gap: 12px; max-width: 1100px; margin: 0 auto; padding: 0 10px 40px; justify-content: center; }
+  #board-col { flex: 1 1 420px; max-width: 620px; }
+  #board-wrap svg { width: 100%; height: auto; background: #0b0c0f; border-radius: 10px; }
+  #tools { flex: 0 1 380px; background: var(--panel); border: 1.5px solid var(--edge); border-radius: 12px; padding: 12px 14px; font-size: 13.5px; }
+  #tools h3 { margin: 12px 0 6px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--edge); padding-bottom: 3px; }
+  #tools h3:first-child { margin-top: 0; }
+  .brush-row { display: flex; flex-wrap: wrap; gap: 5px; margin: 4px 0; }
+  .brush { padding: 4px 9px; border: 1.5px solid var(--edge); border-radius: 7px; cursor: pointer; background: var(--bg); font-size: 12.5px; user-select: none; }
+  .brush.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  select, input[type=text], input[type=number], textarea { font-family: inherit; font-size: 13px; padding: 4px 6px; border: 1.5px solid var(--edge); border-radius: 6px; background: var(--bg); color: var(--ink); max-width: 100%; }
+  label { font-size: 12.5px; }
+  .row { display: flex; gap: 8px; align-items: center; margin: 4px 0; flex-wrap: wrap; }
+  button.act { font-family: inherit; font-size: 14px; padding: 7px 14px; border-radius: 8px; border: 1.5px solid var(--edge); background: var(--panel); color: var(--ink); cursor: pointer; }
+  button.act.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  #out { font-size: 12.5px; white-space: pre-wrap; background: var(--bg); border: 1px solid var(--edge); border-radius: 8px; padding: 8px; margin-top: 8px; min-height: 40px; max-height: 220px; overflow: auto; }
+  .hint { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>PUZZLE EDITOR</h1>
+    <div class="sub">Old World Combat Puzzles</div>
+    <a href="./">← back to the library</a>
+  </header>
+  <div id="layout">
+    <div id="board-col">
+      <div id="board-wrap"></div>
+      <div class="row" style="justify-content:center;margin-top:8px">
+        <button class="act" id="btn-test">▶ Test play</button>
+        <button class="act" id="btn-check">Check with solver</button>
+        <button class="act primary" id="btn-submit">Submit for review</button>
+        <button class="act" id="btn-export">Copy JSON</button>
+      </div>
+      <div id="out" class="hint">Pick a tool, then click tiles. In unit mode, click a tile to place; click a unit to edit or remove it.</div>
+    </div>
+    <div id="tools">
+      <h3>Puzzle</h3>
+      <div class="row"><label>Name <input type="text" id="p-name" value="My Puzzle" size="18"></label>
+        <label>Orders <input type="number" id="p-orders" value="3" min="1" max="12" style="width:52px"></label></div>
+      <div class="row"><label>Brief <input type="text" id="p-brief" size="34" value="Kill all enemies."></label></div>
+      <div class="row"><label>Lesson (shown after victory) <input type="text" id="p-lesson" size="30" value=""></label></div>
+      <div class="row"><label>Radius <select id="p-radius"><option>2</option><option selected>3</option><option>4</option></select></label>
+        <label>Training <input type="number" id="p-training" value="0" min="0" step="50" style="width:64px"></label>
+        <label>Objective <select id="p-objective">
+          <option value="killAll">kill all enemies</option>
+          <option value="killList">kill marked targets</option>
+        </select></label></div>
+      <h3>Tools</h3>
+      <div class="brush-row" id="mode-row"></div>
+      <div id="terrain-tools" style="display:none">
+        <div class="brush-row" id="terrain-row"></div>
+        <div class="brush-row" id="height-row"></div>
+        <div class="brush-row" id="veg-row"></div>
+        <div class="brush-row" id="feature-row"></div>
+      </div>
+      <div id="unit-tools" style="display:none">
+        <div class="row">
+          <label>Side <select id="u-side"><option value="0">Blue (you)</option><option value="1">Red (enemy)</option></select></label>
+          <label>HP <input type="number" id="u-hp" value="" placeholder="full" min="1" max="20" style="width:56px"></label>
+          <label><input type="checkbox" id="u-general"> general</label>
+        </div>
+        <div class="row"><label>Unit <select id="u-type"></select></label></div>
+        <div class="row"><label>Promotions <select id="u-promo" multiple size="4" style="min-width:180px"></select></label></div>
+        <div class="hint">Click an empty tile to place. Click an existing unit to remove it. In "mark target" objective mode, click enemies to toggle ☠.</div>
+      </div>
+      <div id="target-tools" style="display:none"><div class="hint">Click enemy units to mark/unmark them as objective targets (☠).</div></div>
+    </div>
+  </div>
+  <script src="data.js"></script>
+  <script src="icons.js"></script>
+  <script src="engine.js"></script>
+  <script src="solver.js"></script>
+  <script src="editor.js"></script>
+</body>
+</html>

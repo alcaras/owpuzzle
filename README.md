@@ -81,6 +81,33 @@ the final kill + routed-unit move rejected; horseman vs archer = 9 (mounted
 vs axeman = 4 with pierce 1 to the unit behind; ranged defenders never
 counter; melee counter = 1.
 
+## Server (fly.io) — rated puzzles, Discord login, submissions
+
+`server/` is a Node app (express + better-sqlite3) that serves `web/` plus a
+rated-puzzle API. Lichess-style: every puzzle is Glicko-2 rated; a solve is a
+win against the puzzle, a fail is a loss; only the FIRST attempt counts.
+Attempts are SERVER-VERIFIED — the client submits its action line and the
+server replays it through the same engine.js. Failed puzzles requeue after
+24h (unrated on replay). Anonymous play still works (localStorage, unrated).
+Submissions unlock after solving every core puzzle; the in-browser editor
+(`/editor.html`) builds puzzles (units, terrain, rivers, promotions,
+generals, objectives), checks them with the solver, and submits to a review
+queue (Discord webhook ping + admin approve API).
+
+Local: `cd server && npm install && node index.js` → http://localhost:8080
+
+Deploy:
+```
+fly launch --no-deploy        # uses fly.toml; create the app + volume
+fly volumes create owpuzzle_data --size 1
+fly secrets set DISCORD_CLIENT_ID=... DISCORD_CLIENT_SECRET=... \
+  ADMIN_DISCORD_IDS=<your discord id> DISCORD_WEBHOOK_URL=... \
+  BASE_URL=https://<app>.fly.dev
+fly deploy
+```
+Discord app: create at discord.com/developers, add redirect
+`https://<app>.fly.dev/auth/callback`, scope `identify`.
+
 ## Puzzle format
 
 ```js

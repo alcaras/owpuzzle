@@ -6,9 +6,37 @@
   // ---------- puzzle selection: library home, ?p=<id> to play ----------
   var params = new URLSearchParams(location.search);
   var puzzle = null;
-  if (params.get('p')) {
+  if (params.get('draft')) {
+    try { puzzle = JSON.parse(localStorage.getItem('owpuzzle-draft')); } catch (e) {}
+  } else if (params.get('p')) {
     puzzle = OWPUZZLES.filter(function (p) { return p.id === params.get('p'); })[0];
+    if (!puzzle) {
+      // community puzzle: fetch from the server, then boot
+      fetch('/api/puzzle/' + encodeURIComponent(params.get('p')))
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.puzzle) { d.puzzle.id = d.slug; boot(d.puzzle); }
+          else document.getElementById('p-brief').textContent = d.error || 'puzzle not found';
+        })
+        .catch(function () { document.getElementById('p-brief').textContent = 'could not load puzzle'; });
+    }
   }
+
+  // ---------- auth widget (works on every page) ----------
+  var ME = null;
+  function renderAuth() {
+    var el = document.getElementById('auth-widget');
+    if (!el) return;
+    if (ME) {
+      el.innerHTML = '<b>' + ME.name + '</b> · rating <b>' + ME.rating + '</b>' +
+        (ME.canSubmit ? ' · <a href="editor.html">✎ create</a>' :
+          ' · ✎ unlocks at ' + ME.coreSolved + '/' + ME.coreTotal + ' solved');
+    } else {
+      el.innerHTML = '<a href="/auth/discord">Sign in with Discord</a> <span class="hint">to get rated & submit puzzles</span>';
+    }
+  }
+  fetch('/api/me').then(function (r) { return r.json(); })
+    .then(function (d) { ME = d.user; renderAuth(); }).catch(function () {});
 
   // ---------- library home ----------
   if (!puzzle) {
@@ -30,7 +58,9 @@
       { n: 2, title: 'Tactics — combined arms' },
       { n: 3, title: 'Challenges' },
     ];
-    var html = '<div class="progress">Solved <b>' + solvedCount + '</b> of ' + OWPUZZLES.length +
+    var html = '<div class="progress" id="rated-row" style="margin-bottom:8px">' +
+      '<button class="rated-btn" id="btn-rated">▶ Play rated puzzle</button></div>' +
+      '<div class="progress">Solved <b>' + solvedCount + '</b> of ' + OWPUZZLES.length +
       (solvedCount === OWPUZZLES.length && solvedCount > 0 ? ' — the whole library! ⚔️' : '') + '</div>';
     GROUPS.forEach(function (g) {
       var list = OWPUZZLES.filter(function (p) { return (p.difficulty || 2) === g.n; });
@@ -55,8 +85,19 @@
       html += '</div>';
     });
     home.innerHTML = html;
+    document.getElementById('btn-rated').addEventListener('click', function () {
+      var btn = this;
+      fetch('/api/next').then(function (r) { return r.json(); }).then(function (d) {
+        if (d.slug) location.href = '?p=' + d.slug;
+        else btn.textContent = d.error || d.message || 'sign in with Discord first';
+      }).catch(function () { btn.textContent = 'server not available'; });
+    });
     return; // no game to run
   }
+  if (puzzle) boot(puzzle);
+
+  function boot(bootPuzzle) {
+  puzzle = bootPuzzle;
   document.getElementById('back-link').innerHTML = '<a href="./">← all puzzles</a>';
 
   // ---------- state ----------
@@ -65,6 +106,7 @@
   var selected = null;    // unit id
   var finished = false;
   var actionsUsed = 0;
+  var lineLog = [];       // actions taken, replayed server-side for rating
 
   // ---------- board geometry (pointy-top axial) ----------
   var SIZE = 46;
@@ -645,6 +687,7 @@
       history.push(state);
       var keepSel = a.unit;
       state = E.applyAction(state, a);
+      lineLog.push(a);
       actionsUsed++;
       armedTarget = null;
       hidePreviewPanel();
@@ -680,6 +723,19 @@
       : 'The objective was not met. Study the field and try again.';
     document.getElementById('result-lesson').textContent = won && puzzle.lesson ? puzzle.lesson : '';
     window.__won = won;
+    if (ME && puzzle.id !== 'draft') {
+      fetch('/api/attempt', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: puzzle.id, line: lineLog }),
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (typeof d.ratingDelta === 'number' && d.rated) {
+          var b = document.getElementById('result-body');
+          b.textContent += ' Rating ' + (d.ratingDelta >= 0 ? '+' : '') + d.ratingDelta +
+            ' → ' + d.user.rating + '.';
+          ME = d.user; renderAuth();
+        }
+      }).catch(function () {});
+    }
     if (won) {
       try {
         var prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}');
@@ -696,6 +752,7 @@
   document.getElementById('btn-undo').addEventListener('click', function () {
     if (!history.length) return;
     state = history.pop();
+    lineLog.pop();
     actionsUsed--;
     finished = false;
     selected = null;
@@ -716,6 +773,7 @@
   function reset() {
     state = E.loadPuzzle(puzzle);
     history = [];
+    lineLog = [];
     selected = null;
     finished = false;
     actionsUsed = 0;
@@ -745,4 +803,5 @@
   document.getElementById('library').innerHTML = '';
 
   render();
+  } // end boot
 })();
