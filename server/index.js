@@ -103,8 +103,9 @@ function coreSolvedCount(userId) {
 function coreCount() {
   return db.prepare(`SELECT COUNT(*) n FROM puzzles WHERE status = 'core'`).get().n;
 }
-function canSubmit(user) {
-  return user && (user.is_admin || coreSolvedCount(user.id) >= coreCount());
+function canSubmit(user) { return !!user; } // any signed-in player may submit
+function completedAll(user) {
+  return user && coreSolvedCount(user.id) >= coreCount();
 }
 function publicUser(u) {
   if (!u) return null;
@@ -112,7 +113,7 @@ function publicUser(u) {
     name: u.name, avatar: u.avatar, rating: Math.round(u.rating),
     rd: Math.round(u.rd), isAdmin: !!u.is_admin,
     coreSolved: coreSolvedCount(u.id), coreTotal: coreCount(),
-    canSubmit: canSubmit(u),
+    canSubmit: true, completedAll: completedAll(u),
   };
 }
 
@@ -228,11 +229,6 @@ app.post('/api/attempt', (req, res) => {
 app.post('/api/submit', (req, res) => {
   const user = userFromReq(req);
   if (!user) return res.status(401).json({ error: 'not logged in' });
-  if (!canSubmit(user)) {
-    return res.status(403).json({
-      error: `submissions unlock when you have solved every puzzle (${coreSolvedCount(user.id)}/${coreCount()})`,
-    });
-  }
   const p = req.body && req.body.puzzle;
   if (!p || !p.name || !p.units || !p.objective || !p.orders) {
     return res.status(400).json({ error: 'incomplete puzzle' });

@@ -29,8 +29,8 @@
     if (!el) return;
     if (ME) {
       el.innerHTML = '<b>' + ME.name + '</b> · rating <b>' + ME.rating + '</b>' +
-        (ME.canSubmit ? ' · <a href="editor.html">✎ create</a>' :
-          ' · ✎ unlocks at ' + ME.coreSolved + '/' + ME.coreTotal + ' solved');
+        ' · <a href="editor.html">✎ create a puzzle</a>' +
+        (ME.completedAll ? ' 🏆' : '');
     } else {
       el.innerHTML = '<a href="/auth/discord">Sign in with Discord</a> <span class="hint">to get rated & submit puzzles</span>';
     }
@@ -58,7 +58,12 @@
       { n: 2, title: 'Tactics — combined arms' },
       { n: 3, title: 'Challenges' },
     ];
-    var html = '<div class="progress" id="rated-row" style="margin-bottom:8px">' +
+    var invite = '';
+    if (solvedCount === OWPUZZLES.length && solvedCount > 0) {
+      invite = '<div class="progress" style="margin-bottom:6px">🏆 You have conquered the whole library — ' +
+        '<a href="editor.html"><b>build one of your own?</b></a></div>';
+    }
+    var html = invite + '<div class="progress" id="rated-row" style="margin-bottom:8px">' +
       '<button class="rated-btn" id="btn-rated">▶ Play rated puzzle</button></div>' +
       '<div class="progress">Solved <b>' + solvedCount + '</b> of ' + OWPUZZLES.length +
       (solvedCount === OWPUZZLES.length && solvedCount > 0 ? ' — the whole library! ⚔️' : '') + '</div>';
