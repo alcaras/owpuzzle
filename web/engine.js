@@ -873,9 +873,14 @@
         att.q = defTile.q; att.r = defTile.r;
         routed = true;
         s.log.push(nameOf(att) + ' overruns forward and routs — may act again');
-      } else if (canTargetFrom(s, att, from, def.id)) {
-        routed = true;
-        s.log.push(nameOf(att) + ' routs — may act again');
+      } else {
+        // rout WITHOUT advance only from a city tile (or onto a stacked tile,
+        // which we don't model) — Unit.canRoutAfterNoAdvance, Unit.cs:8372
+        var fromT = tileAt(s, from.q, from.r);
+        if (fromT && fromT.city != null && canTargetFrom(s, att, from, def.id)) {
+          routed = true;
+          s.log.push(nameOf(att) + ' routs from the city walls — may act again');
+        }
       }
     }
     if (routed) {

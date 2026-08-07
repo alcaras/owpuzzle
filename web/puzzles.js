@@ -1369,7 +1369,7 @@ var OWPUZZLES = [
     "author": "mined from a real game",
     "brief": "Kill the armoured elephant holding the road and the onager behind it.",
     "lesson": "Shock cavalry that kills may strike again from where it stands \u2014 so land the killing blow from the one tile that already touches your next target.",
-    "orders": 4,
+    "orders": 3,
     "radius": 3,
     "objective": {
       "kind": "killList",
@@ -1591,7 +1591,7 @@ var OWPUZZLES = [
         "player": 1,
         "type": "UNIT_ONAGER",
         "q": 0,
-        "r": -1,
+        "r": 0,
         "hp": 9
       },
       {
