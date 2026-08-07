@@ -412,8 +412,7 @@
       }
       // objective marker: skull above units that must die
       if (u.player === 1 && mustKill[u.id] === true) {
-        S.push('<circle cx="' + x + '" cy="' + (y - SIZE * 0.68) + '" r="7.5" fill="#2c0f0c" stroke="#ffd23e" stroke-width="1.2" pointer-events="none"/>');
-        S.push('<text x="' + x + '" y="' + (y - SIZE * 0.68 + 0.5) + '" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="#ffd23e" pointer-events="none">☠</text>');
+        S.push('<text x="' + x + '" y="' + (y - SIZE * 0.66) + '" text-anchor="middle" dominant-baseline="middle" font-size="14" pointer-events="none">\ud83c\udfaf</text>');
       }
       // general pennant: gold flag at top-left, like the game's general banner
       if (u.general) {

@@ -100,7 +100,7 @@
   });
   brushRow(document.getElementById('feature-row'), TOOLSETS.feature, 'feature');
 
-  var modes = [['units', 'place units'], ['terrain', 'paint terrain'], ['targets', 'mark targets ☠']];
+  var modes = [['units', 'place units'], ['terrain', 'paint terrain'], ['targets', 'mark targets 🎯']];
   modes.forEach(function (m) {
     var b = document.createElement('span');
     b.className = 'brush' + (m[0] === mode ? ' on' : '');
@@ -367,8 +367,7 @@
       if (u.anchored) S.push('<text x="' + (x - SIZE * 0.44) + '" y="' + (y + SIZE * 0.05) + '" text-anchor="middle" font-size="13" pointer-events="none">⚓</text>');
       if (u.hp != null) S.push('<text x="' + x + '" y="' + (y + SIZE * 0.86) + '" text-anchor="middle" font-size="11" font-weight="bold" fill="#fff" stroke="' + BOARD_BG + '" stroke-width="2.5" paint-order="stroke" font-family="system-ui">' + u.hp + '</text>');
       if (targets.indexOf(i) >= 0) {
-        S.push('<circle cx="' + x + '" cy="' + (y - SIZE * 0.62) + '" r="8" fill="#2c0f0c" stroke="#ffd23e" stroke-width="1.2"/>');
-        S.push('<text x="' + x + '" y="' + (y - SIZE * 0.61) + '" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="#ffd23e">☠</text>');
+        S.push('<text x="' + x + '" y="' + (y - SIZE * 0.6) + '" text-anchor="middle" dominant-baseline="middle" font-size="14">\ud83c\udfaf</text>');
       }
       S.push('</g>');
     });
