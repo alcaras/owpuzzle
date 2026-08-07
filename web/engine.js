@@ -910,12 +910,17 @@
   function killsOf(state) {
     return state.units.filter(function (u) { return u.player === 1 && u.hp <= 0; }).length;
   }
+  // strength-weighted destruction: the measure for maxKill objectives
+  function strKilledOf(state) {
+    return state.units.filter(function (u) { return u.player === 1 && u.hp <= 0; })
+      .reduce(function (t, u) { return t + baseStrength(u); }, 0);
+  }
 
   function checkObjective(state, objective) {
     switch (objective.kind) {
       case 'maxKill':
-        // hidden ceiling: met when the player has destroyed `count` enemies
-        return killsOf(state) >= (objective.count || 999);
+        // hidden ceiling: met when the destroyed enemy STRENGTH reaches `count`
+        return strKilledOf(state) >= (objective.count || 999999);
       case 'killAll':
         return state.units.filter(function (u) { return u.player === 1 && u.hp > 0; }).length === 0;
       case 'killList':
@@ -1021,7 +1026,7 @@
     canMarch: canMarch, doMarch: doMarch, canUnlimber: canUnlimber, doUnlimber: doUnlimber,
     canSwap: canSwap, doSwap: doSwap,
     canAnchor: canAnchor, doAnchor: doAnchor, waterControlled: waterControlled,
-    poolOrders: poolOrders, killsOf: killsOf,
+    poolOrders: poolOrders, killsOf: killsOf, strKilledOf: strKilledOf,
     nextStepOrderCost: nextStepOrderCost,
     canDamage: canDamage, fatigueLimit: fatigueLimit,
     movementPoints: movementPoints, reachableTiles: reachableTiles,

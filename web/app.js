@@ -217,6 +217,8 @@
     var inf = E.DATA.units[u.type];
     return (inf.iRangeMax || 0) > 0 ? '🏹' : '⚔';
   }
+  // the game displays strength / 10 (a 50-strength unit shows "5")
+  function fmt10(v) { return (v / 10).toFixed(1).replace(/\.0$/, ''); }
   function shortName(u) {
     return u.type.replace('UNIT_', '').replace(/_/g, ' ').toLowerCase();
   }
@@ -516,12 +518,12 @@
       '<h4>⚔ Attack Preview</h4>' +
       '<div class="vs">' +
       '<div class="col"><div class="who">' + chip(attU) + '</div>' +
-      '<div class="big">' + ex.att.total + '</div>' +
-      '<div class="modline"><span>base strength</span><span>' + ex.att.base + '</span></div>' +
+      '<div class="big">' + fmt10(ex.att.total) + '</div>' +
+      '<div class="modline"><span>base strength</span><span>' + fmt10(ex.att.base) + '</span></div>' +
       modLines(ex.att.mods) + '</div>' +
       '<div class="col"><div class="who">' + chip(defU) + '</div>' +
-      '<div class="big">' + ex.def.total + '</div>' +
-      '<div class="modline"><span>base strength</span><span>' + ex.def.base + '</span></div>' +
+      '<div class="big">' + fmt10(ex.def.total) + '</div>' +
+      '<div class="modline"><span>base strength</span><span>' + fmt10(ex.def.base) + '</span></div>' +
       modLines(ex.def.mods) + '</div>' +
       '</div><hr>' +
       '<div class="result"><span>Damage</span><b class="' + (ex.kills ? 'kill' : 'dmg') + '">' +
@@ -677,7 +679,7 @@
       '<div class="who">' + (ic ? '<img class="p' + u.player + '" src="' + ic + '" alt="">' : '') +
       shortName(u) + '</div>' +
       (promoNames.length ? '<div class="note" style="color:#ffd23e;margin:0 0 4px">' + promoNames.join(' · ') + '</div>' : '') +
-      '<div class="result"><span>Strength</span><b>' + inf.iStrength + '</b></div>' +
+      '<div class="result"><span>Strength</span><b>' + fmt10(inf.iStrength) + '</b></div>' +
       '<div class="result"><span>Hit points</span><b>' + u.hp + ' / ' + E.hpMax(u) + '</b></div>' +
       '<div class="result"><span>Movement</span><b>' + inf.iMovement + '</b></div>' +
       ((inf.iRangeMax || 0) > 0 ? '<div class="result"><span>Range</span><b>' + inf.iRangeMax + '</b></div>' : '') +
@@ -849,13 +851,16 @@
       .reduce(function (s, u) { return s + (E.hpMax(u) - Math.max(0, u.hp)); }, 0);
     var body;
     if (puzzle.objective.kind === 'maxKill') {
+      var killStr = E.strKilledOf(state);
       var kills = E.killsOf(state);
       if (won) {
-        body = '\u2b50 MAXIMUM DESTRUCTION \u2014 ' + kills + ' kills, the most possible!' +
+        body = '\u2b50 MAXIMUM DESTRUCTION \u2014 ' + kills + ' kills, ' + fmt10(killStr) +
+          ' strength: the most possible!' +
           (perfect ? ' And in the fewest orders (' + used + '). \u2b50' : ' (' + used + ' orders \u2014 it can be done in fewer\u2026)') +
           ' Damage taken: ' + blueDmg + '.';
       } else {
-        body = 'You destroyed ' + kills + ' \u2014 more is possible\u2026 Study the field and try again.';
+        body = 'You destroyed ' + kills + ' unit' + (kills === 1 ? '' : 's') + ' (' + fmt10(killStr) +
+          ' strength) \u2014 more destruction is possible\u2026 Study the field and try again.';
       }
     } else {
       body = won

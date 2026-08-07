@@ -7,15 +7,21 @@ const { puzzle, opts } = workerData;
 let result;
 try {
   if (puzzle.objective && puzzle.objective.kind === 'maxKill') {
-    // compute the hidden ceiling: most kills achievable, then min orders
-    const reds = puzzle.units.filter(u => u.player === 1).length;
+    // hidden ceiling = max total enemy STRENGTH destroyable; iterate the
+    // distinct achievable strength sums from the top down
+    const E2 = require(path.join(__dirname, '..', 'web', 'engine.js'));
+    const strengths = puzzle.units.filter(u => u.player === 1)
+      .map(u => E2.DATA.units[u.type].iStrength);
+    let sums = new Set([0]);
+    for (const st of strengths) for (const v of [...sums]) sums.add(v + st);
+    const targets = [...sums].filter(v => v > 0).sort((a, b) => b - a);
     const probe = JSON.parse(JSON.stringify(puzzle));
     probe.orders = 12; // strict search pool for authoring
     let found = null;
-    for (let k = reds; k >= 1 && !found; k--) {
+    for (const k of targets) {
       probe.objective = { kind: 'maxKill', count: k };
       const r = SOLVER.solve(probe, opts || {});
-      if (r.best && r.best.met) found = { k, r };
+      if (r.best && r.best.met) { found = { k, r }; break; }
     }
     if (!found) { result = { best: { met: false }, truncated: true }; }
     else {
