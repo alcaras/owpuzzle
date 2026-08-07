@@ -1368,8 +1368,8 @@ var OWPUZZLES = [
     "name": "The Jungle Road",
     "author": "mined from a real game",
     "brief": "Kill the armoured elephant holding the road and the onager behind it.",
-    "lesson": "Shock cavalry that kills may strike again from where it stands \u2014 so land the killing blow from the one tile that already touches your next target.",
-    "orders": 3,
+    "lesson": "Shock cavalry OVERRUNS: the killing blow carries it into the vacated tile \u2014 line up the charge so the overrun lands you beside your next victim.",
+    "orders": 4,
     "radius": 3,
     "objective": {
       "kind": "killList",
@@ -1585,7 +1585,7 @@ var OWPUZZLES = [
         "type": "UNIT_ARMOURED_ELEPHANT",
         "q": 1,
         "r": 0,
-        "hp": 7
+        "hp": 10
       },
       {
         "player": 1,
