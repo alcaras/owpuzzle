@@ -35,7 +35,7 @@
   .row { display: flex; gap: 8px; align-items: center; margin: 4px 0; flex-wrap: wrap; }
   button.act { font-family: inherit; font-size: 14px; padding: 7px 14px; border-radius: 8px; border: 1.5px solid var(--edge); background: var(--panel); color: var(--ink); cursor: pointer; }
   button.act.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  #out { font-size: 12.5px; white-space: pre-wrap; background: var(--bg); border: 1px solid var(--edge); border-radius: 8px; padding: 8px; margin-top: 8px; min-height: 40px; max-height: 220px; overflow: auto; }
+  #out { font-size: 12.5px; border-left: 4px solid var(--edge); white-space: pre-wrap; background: var(--bg); border: 1px solid var(--edge); border-radius: 8px; padding: 8px; margin-top: 8px; min-height: 40px; max-height: 220px; overflow: auto; }
   .hint { color: var(--muted); font-size: 12px; }
 </style>
 </head>
@@ -50,9 +50,10 @@
       <div id="board-wrap"></div>
       <div class="row" style="justify-content:center;margin-top:8px">
         <button class="act" id="btn-test">▶ Test play</button>
-        <button class="act" id="btn-check">Check with solver</button>
+        <button class="act" id="btn-check">Validate</button>
         <button class="act primary" id="btn-submit">Submit for review</button>
         <button class="act" id="btn-export">Copy JSON</button>
+        <button class="act" id="btn-reset">Reset</button>
       </div>
       <div id="out" class="hint">Pick a tool, then click tiles. In unit mode, click a tile to place; click a unit to edit or remove it.</div>
     </div>
@@ -67,6 +68,7 @@
         <label>Objective <select id="p-objective">
           <option value="killAll">kill all enemies</option>
           <option value="killList">kill marked targets</option>
+          <option value="capture">capture the enemy city</option>
         </select></label></div>
       <h3>Tools</h3>
       <div class="brush-row" id="mode-row"></div>
@@ -81,6 +83,7 @@
           <label>Side <select id="u-side"><option value="0">Blue (you)</option><option value="1">Red (enemy)</option></select></label>
           <label>HP <input type="number" id="u-hp" value="" placeholder="full" min="1" max="20" style="width:56px"></label>
           <label><input type="checkbox" id="u-general"> general</label>
+          <label><input type="checkbox" id="u-anchored"> anchored (ships)</label>
         </div>
         <div class="row"><label>Unit <select id="u-type"></select></label></div>
         <div class="row"><label>Promotions <select id="u-promo" multiple size="4" style="min-width:180px"></select></label></div>

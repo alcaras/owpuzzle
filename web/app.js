@@ -258,6 +258,17 @@
       }
       if (jg || fr || sc) drawTrees(S, x, y, jg ? 3 : 2, t.height === 'HEIGHT_HILL',
         jg ? 'rgba(14,50,16,.95)' : sc ? 'rgba(96,110,60,.95)' : 'rgba(24,68,26,.95)');
+      if (t.city != null) {
+        // city: double wall ring in owner color + hall glyph
+        var cring = [];
+        for (var ci = 0; ci < 6; ci++) {
+          var ca = Math.PI / 180 * (60 * ci - 30);
+          cring.push((x + SIZE * 0.86 * Math.cos(ca)).toFixed(1) + ',' + (y + SIZE * 0.86 * Math.sin(ca)).toFixed(1));
+        }
+        S.push('<polygon points="' + cring.join(' ') + '" fill="none" stroke="' + (PCOL[t.city] || '#999') + '" stroke-width="5" pointer-events="none"/>');
+        S.push('<polygon points="' + cring.join(' ') + '" fill="none" stroke="' + BOARD_BG + '" stroke-width="1.5" stroke-dasharray="4 6" pointer-events="none"/>');
+        S.push('<text x="' + x + '" y="' + (y - SIZE * 0.42) + '" text-anchor="middle" font-size="15" pointer-events="none">\ud83c\udfdb\ufe0f</text>');
+      }
       if (t.improvement) {
         // draw improvements as an inset wall ring so they stay visible
         // under an occupying unit; fort gets crenellation ticks
@@ -280,6 +291,22 @@
           S.push('<text x="' + x + '" y="' + (y + 0.5) + '" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="bold" fill="#14161c" pointer-events="none">' + rt.orders + '</text>');
         }
       }
+    });
+
+    // territory: owner wash + hairline border on ownership-change edges
+    tiles.forEach(function (t) {
+      if (t.owner == null) return;
+      var x = cx(t), y = cy(t);
+      var oc = PCOL[t.owner] || 'rgb(120,120,120)';
+      S.push('<polygon points="' + hexPoints(x, y) + '" fill="' + oc.replace('rgb', 'rgba').replace(')', ',0.14)') + '" pointer-events="none"/>');
+      E.DIRS.forEach(function (d, di) {
+        var n = E.tileAt(state, t.q + d.q, t.r + d.r);
+        if (n && n.owner === t.owner) return;
+        var a1 = Math.PI / 180 * (-60 * di - 30), a2 = Math.PI / 180 * (-60 * di + 30);
+        S.push('<line x1="' + (x + SIZE * 0.97 * Math.cos(a1)) + '" y1="' + (y + SIZE * 0.97 * Math.sin(a1)) +
+          '" x2="' + (x + SIZE * 0.97 * Math.cos(a2)) + '" y2="' + (y + SIZE * 0.97 * Math.sin(a2)) +
+          '" stroke="' + oc + '" stroke-width="2" opacity="0.8" pointer-events="none"/>');
+      });
     });
 
     // roads: brown segments from center toward each adjacent road tile
@@ -536,6 +563,7 @@
     else if (t.height === 'HEIGHT_HILL') bits.push('hill');
     if (t.vegetation) bits.push(t.vegetation.replace('VEGETATION_', '').toLowerCase().replace('_', ' '));
     bits.push(t.terrain.replace('TERRAIN_', '').toLowerCase());
+    if (t.city != null) bits.push(t.city === 0 ? 'your city' : 'enemy city');
     if (t.improvement) bits.push(t.improvement.replace('IMPROVEMENT_', '').toLowerCase());
     if (t.road) bits.push('road');
     return bits.join(' · ');
@@ -559,6 +587,8 @@
     if (t.improvement && E.DATA.improvements[t.improvement] && E.DATA.improvements[t.improvement].iDefenseModifier) {
       out.push('+' + E.DATA.improvements[t.improvement].iDefenseModifier + '% defense for the occupant');
     }
+    if (t.owner != null && t.city == null) out.push((t.owner === 0 ? 'your' : 'enemy') + ' territory');
+    if (t.city != null) out.push('cities are never inside enemy ZOC; hostile cities project ZOC');
     if (t.river && t.river.length) {
       out.push('river on ' + t.river.length + ' edge' + (t.river.length > 1 ? 's' : '') +
         ' (melee across a river: -50%; crossing costs extra movement)');

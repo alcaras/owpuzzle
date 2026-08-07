@@ -135,7 +135,7 @@
   function movementPoints(u) { return (info(u).iMovement + sumEffect(u, 'iMovementExtra')) * G.MOVEMENT_MULTIPLER; }
 
   function isWaterTile(t) { return t.terrain === 'TERRAIN_WATER'; }
-  function isUrbanTile(t) { return t.terrain === 'TERRAIN_URBAN'; }
+  function isUrbanTile(t) { return t.terrain === 'TERRAIN_URBAN' || t.city != null; }
   function isClearTile(t) { return !t.vegetation && !t.improvement && !isUrbanTile(t) && !isWaterTile(t); } // Tile.isClear = !hasImprovement (Tile.cs:3092)
 
   // Approximation of TERRAIN_TARGET_OPEN: clear flat land (used by mounted +25).
@@ -276,6 +276,7 @@
         sumEffectPair(att, 'aiVegetationFromModifier', from.vegetation));
       add('terrain', sumEffectPair(att, 'aiTerrainFromModifier', from.terrain));
       add('height', sumEffectPair(att, 'aiHeightFromModifier', from.height));
+      if (from.owner === att.player) add('friendly territory', sumEffect(att, 'iHomeModifier'));
 
       if (to) {
         if (isMelee(att) && riverBetween(state, from, to)) {
@@ -337,6 +338,7 @@
         sumEffectPair(def, 'aiVegetationFromModifier', to.vegetation));
       add('terrain', sumEffectPair(def, 'aiTerrainFromModifier', to.terrain));
       add('height', sumEffectPair(def, 'aiHeightFromModifier', to.height));
+      if (to.owner === def.player) add('friendly territory', sumEffect(def, 'iHomeModifier'));
       if (to.improvement) {
         var imp = DATA.improvements[to.improvement];
         if (imp) {
@@ -460,7 +462,18 @@
   function moveCostInto(state, u, from, to) {
     var t = tileAt(state, to.q, to.r);
     if (!t) return Infinity;
-    if (isWaterTile(t) && !info(u).bWater) return Infinity;
+    if (info(u).bWater) {
+      // ships sail water only
+      if (!isWaterTile(t)) return Infinity;
+      if (u.anchored) return Infinity;
+      return G.MOVEMENT_MULTIPLER;
+    }
+    if (isWaterTile(t)) {
+      // land units may enter water under friendly WATER CONTROL, spending a
+      // full move (Unit.cs:7578 returns movement())
+      if (!waterControlled(state, to, u.player)) return Infinity;
+      return movementPoints(u);
+    }
     if (t.height === 'HEIGHT_MOUNTAIN' || t.height === 'HEIGHT_VOLCANO') return Infinity;
     // terrain iMovementCost is the full base cost (9 = one move); height and
     // vegetation costs are additive on top
@@ -479,10 +492,31 @@
   // Tile (q,r) is in hostile ZOC for unit u: an adjacent enemy with ZOC,
   // across a non-river edge (Tile.isHostileZOC, Tile.cs:10061 — ZOC does not
   // project across rivers).
+  function waterControlled(state, pos, player) {
+    for (var i = 0; i < state.units.length; i++) {
+      var o = state.units[i];
+      if (o.hp <= 0 || o.player !== player || !info(o).bWater || !o.anchored) continue;
+      var radius = 1 + sumEffect(o, 'iWaterControlExtra');
+      if (hexDistance(o, pos) <= radius) return true;
+    }
+    // friendly city harbors control adjacent water
+    for (var d = 0; d < 6; d++) {
+      var t = tileAt(state, pos.q + DIRS[d].q, pos.r + DIRS[d].r);
+      if (t && t.city === player) return true;
+    }
+    return false;
+  }
+
   function inEnemyZOC(state, u, q, r) {
     if (hasEffectFlag(u, 'bIgnoreZOC')) return false;
+    var here = tileAt(state, q, r);
+    if (here && here.city != null) return false;   // city tiles are never in ZOC (Tile.cs:10070)
     for (var d = 0; d < 6; d++) {
       if (riverBetween(state, { q: q, r: r }, { q: q + DIRS[d].q, r: r + DIRS[d].r })) continue;
+      var nt = tileAt(state, q + DIRS[d].q, r + DIRS[d].r);
+      if (!nt) continue;
+      if (here && isWaterTile(here) !== isWaterTile(nt)) continue; // no ZOC across the shoreline (Tile.cs:10044)
+      if (nt.city != null && nt.city !== u.player) return true; // hostile cities project ZOC (Tile.cs:10049)
       var o = unitAt(state, q + DIRS[d].q, r + DIRS[d].r);
       if (o && o.player !== u.player && info(o).bZOC) return true;
     }
@@ -598,6 +632,8 @@
     if (u.steps + 1 > fatigueLimit(u) || o.steps + 1 > fatigueLimit(o)) return false;
     if (state.orders < 1) return false;
     if (inEnemyZOC(state, u, u.q, u.r) && inEnemyZOC(state, u, o.q, o.r)) return false;
+    // each unit must be able to stand on the other's tile (no beached ships)
+    if (moveCostInto(state, u, o, u) === Infinity || moveCostInto(state, o, u, o) === Infinity) return false;
     return true;
   }
   function doSwap(state, unitId, otherId) {
@@ -613,6 +649,27 @@
     if (o.unlimbered) o.unlimbered = false;
     st.orders -= 1;
     st.log.push(nameOf(u) + ' swaps with ' + nameOf(o));
+    return st;
+  }
+
+  // Anchor (Unit.cs:11126): a warship drops anchor for 1 order and projects
+  // WATER CONTROL (1 tile + iWaterControlExtra, e.g. the Lading promotion),
+  // letting friendly land units march across the controlled water.
+  function canAnchor(state, u) {
+    if (u.hp <= 0 || u.cooldown || u.anchored) return false;
+    if (!info(u).bAnchor) return false;
+    var t = tileAt(state, u.q, u.r);
+    if (!t || !isWaterTile(t)) return false;
+    if (state.orders < 1) return false;
+    return true;
+  }
+  function doAnchor(state, unitId) {
+    var st = cloneState(state);
+    var u = unitById(st, unitId);
+    if (!canAnchor(st, u)) throw new Error('cannot anchor');
+    u.anchored = true;
+    st.orders -= 1;
+    st.log.push(nameOf(u) + ' drops anchor — water control established');
     return st;
   }
 
@@ -859,6 +916,12 @@
           var u = unitById(state, id);
           return !u || u.hp <= 0;
         });
+      case 'capture':
+        return state.units.some(function (u) {
+          if (u.player !== 0 || u.hp <= 0) return false;
+          var t = tileAt(state, u.q, u.r);
+          return t && t.city === 1;
+        });
       case 'killTarget':
         var t = unitById(state, objective.target);
         return !t || t.hp <= 0;
@@ -882,6 +945,7 @@
       });
       if (canMarch(state, u) && u.steps >= fatigueLimit(u)) acts.push({ type: 'march', unit: u.id });
       if (canUnlimber(state, u)) acts.push({ type: 'unlimber', unit: u.id });
+      if (canAnchor(state, u)) acts.push({ type: 'anchor', unit: u.id });
       state.units.forEach(function (o) {
         if (o.player === 0 && o.id > u.id && canSwap(state, u, o)) acts.push({ type: 'swap', unit: u.id, target: o.id });
       });
@@ -895,6 +959,7 @@
     if (a.type === 'fortify') return doFortify(state, a.unit);
     if (a.type === 'march') return doMarch(state, a.unit);
     if (a.type === 'unlimber') return doUnlimber(state, a.unit);
+    if (a.type === 'anchor') return doAnchor(state, a.unit);
     if (a.type === 'swap') return doSwap(state, a.unit, a.target);
     throw new Error('unknown action ' + a.type);
   }
@@ -908,7 +973,7 @@
     if (p.radius != null) {
       for (var q = -p.radius; q <= p.radius; q++)
         for (var r = Math.max(-p.radius, -q - p.radius); r <= Math.min(p.radius, -q + p.radius); r++)
-          tiles[key(q, r)] = { q: q, r: r, terrain: 'TERRAIN_TEMPERATE', height: 'HEIGHT_FLAT', vegetation: null, improvement: null, river: [], road: false, owner: null };
+          tiles[key(q, r)] = { q: q, r: r, terrain: 'TERRAIN_TEMPERATE', height: 'HEIGHT_FLAT', vegetation: null, improvement: null, river: [], road: false, owner: null, city: null };
     }
     (p.tiles || []).forEach(function (t) {
       var base = tiles[key(t.q, t.r)] || { q: t.q, r: t.r, terrain: 'TERRAIN_TEMPERATE', height: 'HEIGHT_FLAT', vegetation: null, improvement: null, river: [], road: false, owner: null };
@@ -922,6 +987,7 @@
         promotions: u.promotions || [], fortifyTurns: u.fortifyTurns || 0,
         cooldown: null, steps: 0, general: !!u.general, name: u.name || null,
         march: false, unlimbered: DATA.units[u.type].bUnlimber ? !!u.unlimbered : undefined,
+        anchored: DATA.units[u.type].bAnchor ? !!u.anchored : undefined,
       };
     });
     return { tiles: tiles, units: units, orders: p.orders, training: p.training || 0,
@@ -935,6 +1001,7 @@
     canAct: canAct, canMove: canMove, canAttack: canAttack,
     canMarch: canMarch, doMarch: doMarch, canUnlimber: canUnlimber, doUnlimber: doUnlimber,
     canSwap: canSwap, doSwap: doSwap,
+    canAnchor: canAnchor, doAnchor: doAnchor, waterControlled: waterControlled,
     nextStepOrderCost: nextStepOrderCost,
     canDamage: canDamage, fatigueLimit: fatigueLimit,
     movementPoints: movementPoints, reachableTiles: reachableTiles,

@@ -15,6 +15,10 @@ var OWDATA = {
    "iStrengthModifier": -5
   },
   "EFFECTUNIT_AMPHIBIOUS": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_SHIP": 1
+   },
    "iRiverAttackModifier": 50,
    "iWaterLandAttackModifier": 50
   },
@@ -71,12 +75,21 @@ var OWDATA = {
    "iPillageYieldModifier": 100
   },
   "EFFECTUNIT_BESIEGER": {
+   "abUnitTraitInvalid": {
+    "UNITTRAIT_MOUNTED": 1,
+    "UNITTRAIT_SHIP": 1
+   },
    "iUrbanAttackModifier": 25
   },
   "EFFECTUNIT_BESIEGER_ALL": {
    "iUrbanAttackModifier": 10
   },
   "EFFECTUNIT_BLOODTHIRSTY": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1,
+    "UNITTRAIT_SHIP": 1
+   },
    "iDamagedThemModifier": 10
   },
   "EFFECTUNIT_BLOODTHIRSTY_ALL": {
@@ -87,6 +100,10 @@ var OWDATA = {
    "iVisionExtra": 1
   },
   "EFFECTUNIT_BRAVE": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1
+   },
    "aiUnitTraitModifier": {
     "UNITTRAIT_MELEE": 10
    }
@@ -141,22 +158,38 @@ var OWDATA = {
    }
   },
   "EFFECTUNIT_COCKSWAIN": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_SHIP": 1
+   },
    "iHomeModifier": 20
   },
   "EFFECTUNIT_COLD": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1
+   },
    "aiTerrainFromModifier": {
     "TERRAIN_TUNDRA": 25
    }
   },
   "EFFECTUNIT_COMBAT1": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_PROMOTABLE": 1
+   },
    "iClassNum": 1,
    "iStrengthModifier": 5
   },
   "EFFECTUNIT_COMBAT2": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_PROMOTABLE": 1
+   },
    "iClassNum": 2,
    "iStrengthModifier": 10
   },
   "EFFECTUNIT_COMBAT3": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_PROMOTABLE": 1
+   },
    "iClassNum": 3,
    "iStrengthModifier": 15
   },
@@ -173,9 +206,19 @@ var OWDATA = {
    "iFlankingAttackModifier": 100
   },
   "EFFECTUNIT_CONNECTION_TACTICAL_ADVANTAGE": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1,
+    "UNITTRAIT_SHIP": 1
+   },
    "iCriticalChance": 10
   },
   "EFFECTUNIT_CONNECTION_TACTICAL_ADVANTAGE_AURA": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1,
+    "UNITTRAIT_SHIP": 1
+   },
    "iConnectedAttackModifier": 50
   },
   "EFFECTUNIT_CRIPPLED": {
@@ -198,12 +241,22 @@ var OWDATA = {
    "iHasGeneralModifier": 10
   },
   "EFFECTUNIT_EAGLE_EYE": {
+   "abUnitTraitInvalid": {
+    "UNITTRAIT_SIEGE": 1
+   },
+   "abUnitTraitValid": {
+    "UNITTRAIT_RANGED": 1
+   },
    "bIgnoresDistance": 1
   },
   "EFFECTUNIT_ELEPHANT": {
    "iVisionExtra": -1
   },
   "EFFECTUNIT_ENGINEER": {
+   "abUnitTraitInvalid": {
+    "UNITTRAIT_MOUNTED": 1,
+    "UNITTRAIT_SHIP": 1
+   },
    "bBuildRoad": 1
   },
   "EFFECTUNIT_ENGINEER_ALL": {
@@ -220,6 +273,10 @@ var OWDATA = {
    "iEnlistHealPercent": 100
   },
   "EFFECTUNIT_FIERCE": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1
+   },
    "aiUnitTraitModifier": {
     "UNITTRAIT_INFANTRY": 10
    }
@@ -230,17 +287,29 @@ var OWDATA = {
    }
   },
   "EFFECTUNIT_FIRESHIP": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_SHIP": 1
+   },
    "bPushWater": 1
   },
   "EFFECTUNIT_FOCUS1": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_PROMOTABLE": 1
+   },
    "iClassNum": 1,
    "iCriticalChance": 10
   },
   "EFFECTUNIT_FOCUS2": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_PROMOTABLE": 1
+   },
    "iClassNum": 2,
    "iCriticalChance": 15
   },
   "EFFECTUNIT_FOCUS3": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_PROMOTABLE": 1
+   },
    "iClassNum": 3,
    "iCriticalChance": 20
   },
@@ -257,17 +326,38 @@ var OWDATA = {
    "bGeneralHopping": 1
   },
   "EFFECTUNIT_GRAPPLER": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_SHIP": 1
+   },
    "bImmobilize": 1
   },
   "EFFECTUNIT_GUARD1": {
+   "abUnitTraitInvalid": {
+    "UNITTRAIT_MOUNTED": 1
+   },
+   "abUnitTraitValid": {
+    "UNITTRAIT_PROMOTABLE": 1
+   },
    "iClassNum": 1,
    "iDefenseModifier": 10
   },
   "EFFECTUNIT_GUARD2": {
+   "abUnitTraitInvalid": {
+    "UNITTRAIT_MOUNTED": 1
+   },
+   "abUnitTraitValid": {
+    "UNITTRAIT_PROMOTABLE": 1
+   },
    "iClassNum": 2,
    "iDefenseModifier": 15
   },
   "EFFECTUNIT_GUARD3": {
+   "abUnitTraitInvalid": {
+    "UNITTRAIT_MOUNTED": 1
+   },
+   "abUnitTraitValid": {
+    "UNITTRAIT_PROMOTABLE": 1
+   },
    "iClassNum": 3,
    "iDefenseModifier": 20
   },
@@ -281,6 +371,11 @@ var OWDATA = {
    "iHealAlways": 1
   },
   "EFFECTUNIT_HECKLER": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1,
+    "UNITTRAIT_SHIP": 1
+   },
    "bMultiTeams": 1,
    "iVsGeneralModifier": 25
   },
@@ -307,6 +402,10 @@ var OWDATA = {
    "bSkipIcon": 1
   },
   "EFFECTUNIT_HIGHLANDER": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1
+   },
    "aiHeightFromModifier": {
     "HEIGHT_HILL": 25
    }
@@ -320,6 +419,10 @@ var OWDATA = {
    "bRemoveVegetation": 1
   },
   "EFFECTUNIT_HORSEBANE": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1
+   },
    "aiUnitTraitModifier": {
     "UNITTRAIT_MOUNTED": 25
    }
@@ -333,9 +436,17 @@ var OWDATA = {
    "iUrbanDefenseModifier": 25
   },
   "EFFECTUNIT_INGENUITY": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1,
+    "UNITTRAIT_SHIP": 1
+   },
    "iStrengthModifier": 20
   },
   "EFFECTUNIT_LADING": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_SHIP": 1
+   },
    "iWaterControlExtra": 1
   },
   "EFFECTUNIT_LEADER_EXPLORER": {
@@ -363,14 +474,23 @@ var OWDATA = {
    "iCriticalChance": 50
   },
   "EFFECTUNIT_MANEUVERS": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_SHIP": 1
+   },
    "bIgnoreZOC": 1,
    "iFatigueExtra": 1
   },
   "EFFECTUNIT_MARINES": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_SHIP": 1
+   },
    "iSettlementAttackModifier": 25,
    "iWaterLandAttackModifier": 25
   },
   "EFFECTUNIT_MARKSMAN": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_RANGED": 1
+   },
    "iRangeExtra": 1
   },
   "EFFECTUNIT_MELEE": {
@@ -390,12 +510,22 @@ var OWDATA = {
    "iFatigueExtra": 2
   },
   "EFFECTUNIT_NAVAL_DETRACTOR_INFANTRY": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_INFANTRY": 1
+   },
    "iStrengthModifier": 10
   },
   "EFFECTUNIT_NAVAL_DETRACTOR_SHIP": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_SHIP": 1
+   },
    "iAttackModifier": -50
   },
   "EFFECTUNIT_NOMAD": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1
+   },
    "aiTerrainFromModifier": {
     "TERRAIN_ARID": 25,
     "TERRAIN_SAND": 25
@@ -417,6 +547,9 @@ var OWDATA = {
    "iStrengthModifier": -5
   },
   "EFFECTUNIT_OVERWHELM": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_SHIP": 1
+   },
    "aiAttackPercent": {
     "ATTACK_CLEAVE": 25
    },
@@ -488,6 +621,10 @@ var OWDATA = {
    ]
   },
   "EFFECTUNIT_RANGER": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1
+   },
    "aiVegetationFromModifier": {
     "VEGETATION_JUNGLE": 25,
     "VEGETATION_TREES": 25
@@ -517,6 +654,9 @@ var OWDATA = {
    "bRout": 1
   },
   "EFFECTUNIT_SADDLEBORN": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MOUNTED": 1
+   },
    "iFlankingAttackModifier": 25
   },
   "EFFECTUNIT_SANDSTORM_TRAINING": {
@@ -528,14 +668,26 @@ var OWDATA = {
    "bRemoveVegetation": 1
   },
   "EFFECTUNIT_SEABORN": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_SHIP": 1
+   },
    "aiHeightFromModifier": {
     "HEIGHT_OCEAN": 20
    }
   },
   "EFFECTUNIT_SENTINEL": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1,
+    "UNITTRAIT_SHIP": 1
+   },
    "iHomeModifier": 20
   },
   "EFFECTUNIT_SHIELDBEARER": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1
+   },
    "aiUnitTraitModifier": {
     "UNITTRAIT_RANGED": 10
    }
@@ -548,7 +700,15 @@ var OWDATA = {
   "EFFECTUNIT_SHIP": {
    "iMeleeCounter": 1
   },
+  "EFFECTUNIT_SHIP_FORMATION": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_SHIP": 1
+   }
+  },
   "EFFECTUNIT_SHRAPNEL": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_RANGED": 1
+   },
    "aiAttackPercent": {
     "ATTACK_SPLASH": 25
    }
@@ -576,6 +736,12 @@ var OWDATA = {
    }
   },
   "EFFECTUNIT_STEADFAST": {
+   "abUnitTraitInvalid": {
+    "UNITTRAIT_SHIP": 1
+   },
+   "abUnitTraitValid": {
+    "UNITTRAIT_PROMOTABLE": 1
+   },
    "aiUnitTraitModifier": {
     "UNITTRAIT_TRIBAL": 25
    },
@@ -588,18 +754,39 @@ var OWDATA = {
    "bMultiTeams": 1
   },
   "EFFECTUNIT_STRIKE1": {
+   "abUnitTraitInvalid": {
+    "UNITTRAIT_RANGED": 1
+   },
+   "abUnitTraitValid": {
+    "UNITTRAIT_PROMOTABLE": 1
+   },
    "iAttackModifier": 10,
    "iClassNum": 1
   },
   "EFFECTUNIT_STRIKE2": {
+   "abUnitTraitInvalid": {
+    "UNITTRAIT_RANGED": 1
+   },
+   "abUnitTraitValid": {
+    "UNITTRAIT_PROMOTABLE": 1
+   },
    "iAttackModifier": 15,
    "iClassNum": 2
   },
   "EFFECTUNIT_STRIKE3": {
+   "abUnitTraitInvalid": {
+    "UNITTRAIT_RANGED": 1
+   },
+   "abUnitTraitValid": {
+    "UNITTRAIT_PROMOTABLE": 1
+   },
    "iAttackModifier": 20,
    "iClassNum": 3
   },
   "EFFECTUNIT_SURVEYOR": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_WORKER": 1
+   },
    "bNoRoadCooldown": 1
   },
   "EFFECTUNIT_SWIFT": {
@@ -625,12 +812,22 @@ var OWDATA = {
   "EFFECTUNIT_TACTICIAN_RANGED": {
    "bSkipIcon": 1
   },
+  "EFFECTUNIT_TESTUDO": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1
+   }
+  },
   "EFFECTUNIT_TORSION_SPRING": {
    "aiUnitTraitModifierAttack": {
     "UNITTRAIT_INFANTRY": 100
    }
   },
   "EFFECTUNIT_TOUGH": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1,
+    "UNITTRAIT_SHIP": 1
+   },
    "iDamagedUsModifier": 10
   },
   "EFFECTUNIT_TOUGH_ALL": {
@@ -643,7 +840,16 @@ var OWDATA = {
   "EFFECTUNIT_TRACKER_ALL": {
    "iVisionExtra": 2
   },
+  "EFFECTUNIT_TRAIT_AMBUSHER": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_MELEE": 1,
+    "UNITTRAIT_RANGED": 1
+   }
+  },
   "EFFECTUNIT_TRAIT_ASTRONOMER": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_SHIP": 1
+   },
    "iMovementExtra": 1,
    "iVisionExtra": 2
   },
@@ -666,12 +872,19 @@ var OWDATA = {
    "iVisionExtra": 2
   },
   "EFFECTUNIT_TRAIT_MAHOUT": {
+   "abUnitTraitValid": {
+    "UNITTRAIT_ELEPHANT": 1
+   },
    "bZOC": 1
   },
   "EFFECTUNIT_VOLLEY": {
    "iAdjacentSameAttackModifier": 20
   },
   "EFFECTUNIT_WARDEN": {
+   "abUnitTraitInvalid": {
+    "UNITTRAIT_MOUNTED": 1,
+    "UNITTRAIT_SHIP": 1
+   },
    "aiTerrainFromModifier": {
     "TERRAIN_URBAN": 25
    }
@@ -1764,6 +1977,7 @@ var OWDATA = {
    ]
   },
   "UNIT_BIREME": {
+   "bAnchor": 1,
    "bBlocks": 1,
    "bGeneral": 1,
    "bMelee": 1,
@@ -2118,6 +2332,7 @@ var OWDATA = {
    ]
   },
   "UNIT_DROMON": {
+   "bAnchor": 1,
    "bBlocks": 1,
    "bGeneral": 1,
    "bMelee": 1,
@@ -3636,6 +3851,7 @@ var OWDATA = {
    ]
   },
   "UNIT_TRIREME": {
+   "bAnchor": 1,
    "bBlocks": 1,
    "bGeneral": 1,
    "bMelee": 1,

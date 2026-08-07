@@ -246,8 +246,12 @@ app.post('/api/submit', (req, res) => {
         p.objective.targets.every(i => p.units[i] && p.units[i].player === 1))) {
     return res.status(400).json({ error: 'killList objective needs valid enemy targets' });
   }
-  if (!['killAll', 'killList', 'killTarget'].includes(p.objective.kind)) {
+  if (!['killAll', 'killList', 'killTarget', 'capture'].includes(p.objective.kind)) {
     return res.status(400).json({ error: 'unknown objective' });
+  }
+  if (p.objective.kind === 'capture' &&
+      !(p.tiles || []).some(t => t.city === 1)) {
+    return res.status(400).json({ error: 'capture objective needs an enemy city tile' });
   }
   let result;
   try {

@@ -36,7 +36,7 @@ def pairlist(entry, tag):
     d = {}
     for p in node.findall("Pair"):
         k = p.findtext("zIndex")
-        v = p.findtext("iValue") or p.findtext("zValue")
+        v = p.findtext("iValue") or p.findtext("zValue") or p.findtext("bValue")
         if k is not None and v is not None:
             try:
                 d[k] = int(v)
@@ -73,6 +73,7 @@ for z, e in entries(parse("unitTrait.xml")):
 
 # ---------- effect units (generic modifier bags) ----------
 EFFECT_LISTS = [
+    "abUnitTraitValid", "abUnitTraitInvalid",
     "aiHeightFromModifier", "aiTerrainFromModifier", "aiVegetationFromModifier",
     "aiImprovementToModifier", "aiMeleeToClearTerrainTargetModifier",
     "aiUnitTraitModifier", "aiUnitTraitModifierAttack",
@@ -105,7 +106,7 @@ for z, e in entries(parse("promotion.xml")):
 # ---------- units ----------
 KEEP_UNIT = ["iMovement", "iVision", "iFatigue", "iStrength", "iRangeMax",
              "iRangeMin", "iHPMax", "bMelee", "bZOC", "bBlocks", "bFortify",
-             "bGeneral", "bRegular", "bWater", "bUnlimber"]
+             "bGeneral", "bRegular", "bWater", "bUnlimber", "bAnchor"]
 units = {}
 for z, e in entries(parse("unit.xml")):
     s = scalars(e)
