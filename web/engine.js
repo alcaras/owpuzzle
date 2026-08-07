@@ -526,7 +526,9 @@
         var nq = cur.q + DIRS[d].q, nr = cur.r + DIRS[d].r;
         var t = tileAt(state, nq, nr);
         if (!t) continue;
-        if (unitAt(state, nq, nr)) continue; // one unit per tile; no passing through
+        var occ = unitAt(state, nq, nr);
+        if (occ && occ.player !== u.player) continue; // enemies block the path
+        // friendly units can be moved THROUGH but not ended on
         if (curZOC && inEnemyZOC(state, u, nq, nr)) continue; // ZOC -> ZOC step
         var tileCost = moveCostInto(state, u, cur, { q: nq, r: nr });
         if (tileCost === Infinity) continue;
@@ -538,9 +540,11 @@
         var k = key(nq, nr);
         if (best[k] != null && best[k] <= c) continue;
         best[k] = c;
-        var st = Math.ceil(c / full);
-        out[k] = { q: nq, r: nr, cost: c, steps: st, orders: ordersForSteps(st),
-                   forced: u.steps + st > limit };
+        if (!occ) {
+          var st = Math.ceil(c / full);
+          out[k] = { q: nq, r: nr, cost: c, steps: st, orders: ordersForSteps(st),
+                     forced: u.steps + st > limit };
+        }
         frontier.push({ q: nq, r: nr, cost: c });
       }
     }

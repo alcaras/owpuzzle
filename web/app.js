@@ -128,6 +128,15 @@
     if (sel && !finished) state.units.forEach(function (o) {
       if (o.player === 0 && E.canSwap(state, sel, o)) swapIds[o.id] = true;
     });
+    // objective targets: strong red + skull marker; bystander enemies washed out
+    var mustKill = {};
+    state.units.forEach(function (o) {
+      if (o.player !== 1) return;
+      var ob = puzzle.objective;
+      mustKill[o.id] = ob.kind === 'killAll' ||
+        (ob.kind === 'killTarget' && ob.target === o.id) ||
+        (ob.kind === 'killList' && ob.targets.indexOf(o.id) >= 0);
+    });
 
     // tiles
     var clips = [];
@@ -162,7 +171,17 @@
       }
       if (jg || fr || sc) drawTrees(S, x, y, jg ? 3 : 2, t.height === 'HEIGHT_HILL',
         jg ? 'rgba(14,50,16,.95)' : sc ? 'rgba(96,110,60,.95)' : 'rgba(24,68,26,.95)');
-      if (t.improvement === 'IMPROVEMENT_FORT') decorate(S, x, y, '🏰');
+      if (t.improvement) {
+        // draw improvements as an inset wall ring so they stay visible
+        // under an occupying unit; fort gets crenellation ticks
+        var ringPts = [];
+        for (var ai = 0; ai < 6; ai++) {
+          var aa = Math.PI / 180 * (60 * ai - 30);
+          ringPts.push((x + SIZE * 0.82 * Math.cos(aa)).toFixed(1) + ',' + (y + SIZE * 0.82 * Math.sin(aa)).toFixed(1));
+        }
+        S.push('<polygon points="' + ringPts.join(' ') + '" fill="none" stroke="#c9b07a" stroke-width="4" pointer-events="none"/>');
+        S.push('<polygon points="' + ringPts.join(' ') + '" fill="none" stroke="#6b5636" stroke-width="4" stroke-dasharray="6 7" pointer-events="none"/>');
+      }
       if (reachKeys[k]) {
         // one click moves the whole way; the badge is the total order cost
         // (game shows the same multi-step range with boundary pips)
@@ -211,6 +230,7 @@
       var t = { q: u.q, r: u.r };
       var x = cx(t), y = cy(t);
       var color = PCOL[u.player] || PCOL[1];
+      if (u.player === 1 && !mustKill[u.id]) color = 'rgb(158,112,104)'; // not an objective
       var isSel = sel && sel.id === u.id;
       var isTarget = targetIds[u.id];
       var exhausted = u.player === 0 && !E.canAct(state, u) && !finished;
@@ -234,6 +254,17 @@
         S.push('<g data-swap="' + u.id + '" style="cursor:pointer">' +
           '<circle cx="' + (x - SIZE * 0.52) + '" cy="' + (y - SIZE * 0.34) + '" r="11" fill="#ffffff" stroke="' + BOARD_BG + '" stroke-width="1.4"/>' +
           '<text x="' + (x - SIZE * 0.52) + '" y="' + (y - SIZE * 0.34 + 1) + '" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="bold" fill="#14161c" pointer-events="none">\u21c4</text></g>');
+      }
+      // objective marker: skull above units that must die
+      if (u.player === 1 && mustKill[u.id]) {
+        S.push('<circle cx="' + x + '" cy="' + (y - SIZE * 0.68) + '" r="7.5" fill="#2c0f0c" stroke="#ffd23e" stroke-width="1.2" pointer-events="none"/>');
+        S.push('<text x="' + x + '" y="' + (y - SIZE * 0.68 + 0.5) + '" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="#ffd23e" pointer-events="none">☠</text>');
+      }
+      // general pennant: gold flag at top-left, like the game's general banner
+      if (u.general) {
+        var gx = x - SIZE * 0.5, gy = y - SIZE * 0.52;
+        S.push('<line x1="' + gx + '" y1="' + gy + '" x2="' + gx + '" y2="' + (gy + 16) + '" stroke="' + BOARD_BG + '" stroke-width="2" pointer-events="none"/>');
+        S.push('<polygon points="' + gx + ',' + gy + ' ' + (gx + 14) + ',' + (gy + 4) + ' ' + gx + ',' + (gy + 8) + '" fill="#ffd23e" stroke="' + BOARD_BG + '" stroke-width="1" pointer-events="none"/>');
       }
       // promotion badges: the promotion's in-game icon on a gold disc
       (u.promotions || []).forEach(function (pr, pi) {
@@ -498,7 +529,13 @@
       '<div class="result"><span>Movement</span><b>' + inf.iMovement + '</b></div>' +
       ((inf.iRangeMax || 0) > 0 ? '<div class="result"><span>Range</span><b>' + inf.iRangeMax + '</b></div>' : '') +
       (lines.length ? '<hr>' + lines.map(function (t) { return '<div class="modline"><span>' + t + '</span></div>'; }).join('') : '') +
-      (stateBits.length ? '<hr>' + stateBits.map(function (t) { return '<div class="note">' + t + '</div>'; }).join('') : '');
+      (stateBits.length ? '<hr>' + stateBits.map(function (t) { return '<div class="note">' + t + '</div>'; }).join('') : '') +
+      (function () {
+        var tt = E.tileAt(state, u.q, u.r);
+        if (!tt) return '';
+        return '<hr><div class="modline"><span>standing on: <b>' + terrainName(tt) + '</b></span></div>' +
+          terrainLines(tt).map(function (l) { return '<div class="modline"><span>' + l + '</span></div>'; }).join('');
+      })();
     p.classList.add('show');
   }
 
