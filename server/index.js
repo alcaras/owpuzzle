@@ -230,11 +230,24 @@ app.post('/api/submit', (req, res) => {
   const user = userFromReq(req);
   if (!user) return res.status(401).json({ error: 'not logged in' });
   const p = req.body && req.body.puzzle;
-  if (!p || !p.name || !p.units || !p.objective || !p.orders) {
+  if (!p || !String(p.name || '').trim() || !Array.isArray(p.units) || !p.objective || !p.orders) {
     return res.status(400).json({ error: 'incomplete puzzle' });
   }
   if (p.units.length > 12 || (p.radius || 3) > 5) {
     return res.status(400).json({ error: 'too large (max 12 units, radius 5)' });
+  }
+  const blues = p.units.filter(u => u.player === 0);
+  const reds = p.units.filter(u => u.player === 1);
+  if (!blues.length || !reds.length) {
+    return res.status(400).json({ error: 'a puzzle needs at least one unit on each side' });
+  }
+  if (p.objective.kind === 'killList' &&
+      !(Array.isArray(p.objective.targets) && p.objective.targets.length &&
+        p.objective.targets.every(i => p.units[i] && p.units[i].player === 1))) {
+    return res.status(400).json({ error: 'killList objective needs valid enemy targets' });
+  }
+  if (!['killAll', 'killList', 'killTarget'].includes(p.objective.kind)) {
+    return res.status(400).json({ error: 'unknown objective' });
   }
   let result;
   try {
@@ -244,6 +257,9 @@ app.post('/api/submit', (req, res) => {
   }
   if (!result.best || !result.best.met) {
     return res.status(400).json({ error: 'the solver says this puzzle is not solvable', explored: result.explored });
+  }
+  if (!result.line || result.line.length === 0) {
+    return res.status(400).json({ error: 'the objective is already satisfied before any move — that is not a puzzle' });
   }
   const slug = (p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) +
     '-' + crypto.randomBytes(3).toString('hex'));

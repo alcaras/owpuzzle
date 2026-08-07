@@ -36,7 +36,47 @@
     }
   }
   fetch('/api/me').then(function (r) { return r.json(); })
-    .then(function (d) { ME = d.user; renderAuth(); }).catch(function () {});
+    .then(function (d) {
+      ME = d.user; renderAuth();
+      if (ME && ME.isAdmin && document.getElementById('home') &&
+          document.getElementById('home').classList.contains('show')) loadReviewQueue();
+    }).catch(function () {});
+
+  function loadReviewQueue() {
+    fetch('/api/review').then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.pending || !d.pending.length) return;
+      var home = document.getElementById('home');
+      var sec = document.createElement('div');
+      sec.innerHTML = '<h2 class="group">Review queue — ' + d.pending.length + ' pending</h2>';
+      var grid = document.createElement('div');
+      grid.className = 'grid';
+      d.pending.forEach(function (item) {
+        var card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = '<div class="body"><div class="card-head"><h3>' + item.puzzle.name + '</h3>' +
+          '<span class="meta">' + item.puzzle.orders + ' orders</span></div>' +
+          '<p>by <b>' + (item.author || '?') + '</b> — ' + (item.puzzle.brief || '') + '</p>' +
+          '<div class="row" style="margin-top:8px;display:flex;gap:8px">' +
+          '<a href="?p=' + item.slug + '"><button class="rated-btn" style="font-size:13px;padding:5px 12px">Play</button></a>' +
+          '<button data-v="1" style="font-size:13px;padding:5px 12px">Approve</button>' +
+          '<button data-v="0" style="font-size:13px;padding:5px 12px">Reject</button></div>';
+        Array.prototype.forEach.call(card.querySelectorAll('[data-v]'), function (b) {
+          b.addEventListener('click', function () {
+            fetch('/api/review/' + item.slug, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ approve: b.dataset.v === '1' }),
+            }).then(function (r) { return r.json(); }).then(function (res) {
+              card.style.opacity = 0.4;
+              card.querySelector('h3').textContent += ' — ' + res.status;
+            });
+          });
+        });
+        grid.appendChild(card);
+      });
+      sec.appendChild(grid);
+      home.insertBefore(sec, home.firstChild);
+    }).catch(function () {});
+  }
 
   // ---------- library home ----------
   if (!puzzle) {
