@@ -160,6 +160,9 @@
   .card p { margin: 5px 0 0; font-size: 13px; }
   .back-link { font-size: 13px; margin-top: 4px; }
   .back-link a { color: var(--accent); text-decoration: none; }
+  #auth-widget a { color: var(--accent); }
+  .rated-btn { font-family: inherit; font-size: 15px; padding: 8px 20px; border-radius: 9px;
+    border: 1.5px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
   /* hex styling */
   .hex { stroke: var(--hex-line); stroke-width: 1.2; }
   .hex.reach { cursor: pointer; }
@@ -175,6 +178,7 @@
     <div class="puzzle-title" id="p-name"></div>
     <div class="brief" id="p-brief"></div>
     <div class="back-link" id="back-link"></div>
+    <div id="auth-widget" style="font-size:12.5px;margin-top:5px;color:var(--muted)"></div>
   </header>
   <div id="home"></div>
   <div class="hud">
@@ -197,7 +201,8 @@
     <div id="result-body"></div>
     <div class="lesson" id="result-lesson"></div>
     <div style="margin-top:10px">
-      <button class="primary" id="btn-share">Share</button>
+      <button class="primary" id="btn-next">Next puzzle ▶</button>
+      <button id="btn-share">Share</button>
       <button id="btn-again">Try again</button>
     </div>
   </div>

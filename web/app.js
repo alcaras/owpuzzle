@@ -719,6 +719,7 @@
     var r = document.getElementById('result');
     r.classList.add('show');
     document.getElementById('result-title').textContent = won ? '⚔️ Victory!' : '💀 Not this time';
+    document.getElementById('btn-next').style.display = won ? '' : 'none';
     var used = puzzle.orders - state.orders;
     var blueLost = state.units.filter(function (u) { return u.player === 0 && u.hp <= 0; }).length;
     var blueDmg = state.units.filter(function (u) { return u.player === 0; })
@@ -788,6 +789,25 @@
     render();
   }
 
+  document.getElementById('btn-next').addEventListener('click', function () {
+    var btn = this;
+    if (ME) {
+      fetch('/api/next').then(function (r) { return r.json(); }).then(function (d) {
+        if (d.slug) location.href = '?p=' + d.slug;
+        else btn.textContent = d.message || 'queue exhausted!';
+      }).catch(function () { advanceLocal(); });
+    } else advanceLocal();
+    function advanceLocal() {
+      var prog = {};
+      try { prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}'); } catch (e) {}
+      var idx = OWPUZZLES.indexOf(OWPUZZLES.filter(function (p) { return p.id === puzzle.id; })[0]);
+      for (var i = 1; i <= OWPUZZLES.length; i++) {
+        var cand = OWPUZZLES[(idx + i) % OWPUZZLES.length];
+        if (!(prog[cand.id] && prog[cand.id].solved)) { location.href = '?p=' + cand.id; return; }
+      }
+      location.href = './';
+    }
+  });
   document.getElementById('btn-share').addEventListener('click', function () {
     var used = puzzle.orders - state.orders;
     var txt = 'Old World Combat Puzzle — ' + puzzle.name + '\n' +
