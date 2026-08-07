@@ -321,17 +321,6 @@
         S.push('<polygon points="' + ringPts.join(' ') + '" fill="none" stroke="#c9b07a" stroke-width="4" pointer-events="none"/>');
         S.push('<polygon points="' + ringPts.join(' ') + '" fill="none" stroke="#6b5636" stroke-width="4" stroke-dasharray="6 7" pointer-events="none"/>');
       }
-      if (reachKeys[k]) {
-        // one click moves the whole way; the badge is the total order cost
-        // (game shows the same multi-step range with boundary pips)
-        var rt = reachKeys[k];
-        if (rt.orders <= 1) {
-          S.push('<circle cx="' + x + '" cy="' + y + '" r="6" fill="#ffffff" opacity="0.8" pointer-events="none"/>');
-        } else {
-          S.push('<circle cx="' + x + '" cy="' + y + '" r="7.5" fill="' + (rt.forced ? '#ffb020' : '#ffffff') + '" opacity="' + (rt.forced ? 0.9 : 0.75) + '" pointer-events="none"/>');
-          S.push('<text x="' + x + '" y="' + (y + 0.5) + '" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="bold" fill="#14161c" pointer-events="none">' + rt.orders + '</text>');
-        }
-      }
     });
 
     // territory: owner wash + hairline border on ownership-change edges
@@ -377,6 +366,18 @@
           '" x2="' + (x + SIZE * Math.cos(a2)) + '" y2="' + (y + SIZE * Math.sin(a2)) +
           '" stroke="#4696eb" stroke-width="' + (SIZE * 0.2) + '" stroke-linecap="round"/>');
       });
+    });
+
+    // reach markers: drawn ABOVE roads/rivers/territory so they always read.
+    // One click moves the whole way; the badge is the total order cost.
+    reach.forEach(function (rt) {
+      var x = cx(rt), y = cy(rt);
+      if (rt.orders <= 1) {
+        S.push('<circle cx="' + x + '" cy="' + y + '" r="6" fill="#ffffff" opacity="0.85" stroke="#14161c" stroke-width="0.8" pointer-events="none"/>');
+      } else {
+        S.push('<circle cx="' + x + '" cy="' + y + '" r="7.5" fill="' + (rt.forced ? '#ffb020' : '#ffffff') + '" opacity="0.9" stroke="#14161c" stroke-width="0.8" pointer-events="none"/>');
+        S.push('<text x="' + x + '" y="' + (y + 0.5) + '" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="bold" fill="#14161c" pointer-events="none">' + rt.orders + '</text>');
+      }
     });
 
     // units: owner-color disc + in-game icon + HP bar (viewer :229-242)
