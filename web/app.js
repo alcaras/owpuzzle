@@ -38,9 +38,42 @@
   fetch('/api/me').then(function (r) { return r.json(); })
     .then(function (d) {
       ME = d.user; renderAuth();
-      if (ME && ME.isAdmin && document.getElementById('home') &&
-          document.getElementById('home').classList.contains('show')) loadReviewQueue();
+      var onHome = document.getElementById('home') &&
+        document.getElementById('home').classList.contains('show');
+      if (onHome) loadCommunityPuzzles();
+      if (ME && ME.isAdmin && onHome) loadReviewQueue();
     }).catch(function () {});
+
+  function loadCommunityPuzzles() {
+    fetch('/api/puzzles').then(function (r) { return r.json(); }).then(function (d) {
+      var ICONS0 = (typeof OWICONS !== 'undefined') ? OWICONS : {};
+      var community = (d.puzzles || []).filter(function (x) { return x.status === 'approved'; });
+      if (!community.length) return;
+      var home = document.getElementById('home');
+      var sec = document.createElement('div');
+      sec.innerHTML = '<h2 class="group">Community puzzles — by players like you</h2>';
+      var grid = document.createElement('div');
+      grid.className = 'grid';
+      grid.innerHTML = community.map(function (x) {
+        var pz = x.puzzle;
+        var heroU = pz.units.filter(function (u) { return u.player === 0; })[0];
+        var hero = heroU && ICONS0[heroU.type];
+        var foes = pz.units.filter(function (u) { return u.player === 1; }).map(function (u) {
+          var ic = ICONS0[u.type];
+          return ic ? '<img src="' + ic + '" alt="">' : '';
+        }).join('');
+        return '<a class="card' + (x.solvedByMe ? ' solved' : '') + '" href="?p=' + x.slug + '">' +
+          (x.solvedByMe ? '<span class="done">\u2713</span>' : '') +
+          (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
+          '<div class="body"><div class="card-head"><h3>' + pz.name + '</h3>' +
+          '<span class="meta">by ' + (x.author || '?') + '</span></div>' +
+          '<p>' + (pz.brief || '') + '</p>' +
+          '<div class="foes"><span class="vs">VS</span>' + foes + '</div></div></a>';
+      }).join('');
+      sec.appendChild(grid);
+      home.appendChild(sec);
+    }).catch(function () {});
+  }
 
   function loadReviewQueue() {
     fetch('/api/review').then(function (r) { return r.json(); }).then(function (d) {
