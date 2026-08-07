@@ -1,4 +1,4 @@
-location.replace('https://owpuzzle.fly.dev/' + location.search + location.hash);
+if (!document.getElementById('moved-note')) { var mn=document.createElement('div'); mn.id='moved-note'; mn.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99;background:#8c2f1b;color:#fff;text-align:center;padding:10px;font-family:Georgia,serif'; mn.innerHTML='We moved — please update your link to <a href="https://owpuzzle.fly.dev/" style="color:#ffd23e">owpuzzle.fly.dev</a>'; document.body.appendChild(mn); setTimeout(function(){location.replace('https://owpuzzle.fly.dev/'+location.search+location.hash);},3000); }
 // UI: SVG hex board + interaction for one-turn puzzles.
 (function () {
   'use strict';
