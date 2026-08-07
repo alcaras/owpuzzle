@@ -30,7 +30,18 @@ What makes these work (distilled from the first eleven):
    nothing else can?" — the palton's bloodless rout chain, the ballista's
    column-piercing bolt, the elephant's shove. Name the puzzle after the deed.
 
-8. **Difficulty is scope, not obscurity.**
+8. **Hidden par.** Players get a forgiving pool (+6 orders, 300 training) so
+   mistakes are playable, and the brief never states the optimal order count.
+   Solving at all is a win; solving at par earns the PERFECT star. The
+   discovery of "how few is possible?" is itself part of the puzzle.
+
+9. **Give them more army than they need.** In challenge puzzles, include
+   units the optimal line does NOT use — decoys, tempting slow paths,
+   redundant attackers. Several lines should reach the objective at
+   different order costs; only one hits par. A unit is never dead weight if
+   it anchors a plausible-but-inefficient plan.
+
+10. **Difficulty is scope, not obscurity.**
    - *Basics*: one unit, one rule, flat ground.
    - *Tactics*: two-three units cooperating; the rule interacts with another.
    - *Battlefields*: real mined positions where several rules stack.

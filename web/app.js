@@ -29,7 +29,7 @@
     if (!el) return;
     if (ME) {
       el.innerHTML = '<b>' + ME.name + '</b> · rating <b>' + ME.rating + '</b>' +
-        ' · <a href="editor.html">✎ create a puzzle</a>' +
+        ' · <a href="editor.html">✎ create a puzzle</a>' + (ME.isAdmin ? ' · <a href="admin.html">admin</a>' : '') +
         (ME.completedAll ? ' 🏆' : '');
     } else {
       el.innerHTML = '<a href="/auth/discord">Sign in with Discord</a> <span class="hint">to get rated & submit puzzles</span>';

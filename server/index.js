@@ -301,6 +301,27 @@ app.post('/api/review/:slug', (req, res) => {
   res.json({ ok: true, status: verdict });
 });
 
+app.get('/api/admin/stats', (req, res) => {
+  const user = userFromReq(req);
+  if (!user || !user.is_admin) return res.status(403).json({ error: 'admin only' });
+  const puzzles = db.prepare(`
+    SELECT slug, json, status, author_name, rating, rd, attempts, solves, created_at
+    FROM puzzles ORDER BY rating DESC`).all().map(r => ({
+      slug: r.slug, name: JSON.parse(r.json).name, status: r.status,
+      author: r.author_name, rating: Math.round(r.rating), rd: Math.round(r.rd),
+      attempts: r.attempts, solves: r.solves,
+    }));
+  const users = db.prepare(`
+    SELECT u.name, u.rating, u.rd, u.created_at,
+      (SELECT COUNT(DISTINCT puzzle_id) FROM attempts a WHERE a.user_id = u.id AND a.solved = 1) solved,
+      (SELECT COUNT(*) FROM attempts a WHERE a.user_id = u.id) attempts
+    FROM users u ORDER BY u.rating DESC`).all().map(r => ({
+      name: r.name, rating: Math.round(r.rating), rd: Math.round(r.rd),
+      solved: r.solved, attempts: r.attempts, since: r.created_at,
+    }));
+  res.json({ puzzles, users });
+});
+
 app.get('/api/leaderboard', (req, res) => {
   const users = db.prepare(`
     SELECT name, avatar, rating, rd,

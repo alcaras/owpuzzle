@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>owpuzzle — admin</title>
+<style>
+  :root { --bg:#efe3cb; --panel:#faf3e3; --ink:#392e1f; --muted:#7a6a52; --accent:#8c2f1b; --edge:#b9a680; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#221c12; --panel:#2f2819; --ink:#e8dcc4; --muted:#a89877; --edge:#6a5a3f; --accent:#c25a3a; } }
+  :root[data-theme="dark"] { --bg:#221c12; --panel:#2f2819; --ink:#e8dcc4; --muted:#a89877; --edge:#6a5a3f; --accent:#c25a3a; }
+  :root[data-theme="light"] { --bg:#efe3cb; --panel:#faf3e3; --ink:#392e1f; --muted:#7a6a52; --edge:#b9a680; --accent:#8c2f1b; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:Georgia,serif; padding:16px; }
+  h1 { text-align:center; font-size:18px; letter-spacing:4px; }
+  h2 { font-size:13px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--edge); padding-bottom:4px; margin-top:28px; }
+  .wrap { max-width:860px; margin:0 auto; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; background:var(--panel); }
+  th, td { text-align:left; padding:6px 10px; border-bottom:1px solid var(--edge); }
+  th { font-size:11.5px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .pending { color:var(--accent); font-weight:bold; }
+  a { color:var(--accent); }
+  .note { text-align:center; color:var(--muted); font-size:13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>OWPUZZLE — ADMIN</h1>
+  <p class="note"><a href="./">← library</a> · ratings converge as attempts accumulate (rd = uncertainty)</p>
+  <div id="content" class="note">loading…</div>
+</div>
+<script>
+fetch('/api/admin/stats').then(r => r.json()).then(d => {
+  if (d.error) { document.getElementById('content').textContent = d.error + ' — sign in as admin first'; return; }
+  function esc(x) { return String(x == null ? '' : x).replace(/</g, '&lt;'); }
+  var h = '<h2>Puzzle ratings (' + d.puzzles.length + ')</h2><table><tr>' +
+    '<th>Puzzle</th><th>Status</th><th>Author</th><th class="num">Rating</th><th class="num">±RD</th>' +
+    '<th class="num">Attempts</th><th class="num">Solves</th><th class="num">Solve %</th></tr>';
+  d.puzzles.forEach(function (p) {
+    h += '<tr><td><a href="?p=' + esc(p.slug) + '" href="/?p=' + esc(p.slug) + '">' + esc(p.name) + '</a></td>' +
+      '<td class="' + (p.status === 'pending' ? 'pending' : '') + '">' + esc(p.status) + '</td>' +
+      '<td>' + esc(p.author) + '</td><td class="num"><b>' + p.rating + '</b></td><td class="num">' + p.rd + '</td>' +
+      '<td class="num">' + p.attempts + '</td><td class="num">' + p.solves + '</td>' +
+      '<td class="num">' + (p.attempts ? Math.round(100 * p.solves / p.attempts) + '%' : '—') + '</td></tr>';
+  });
+  h += '</table><h2>Players (' + d.users.length + ')</h2><table><tr>' +
+    '<th>Player</th><th class="num">Rating</th><th class="num">±RD</th><th class="num">Solved</th>' +
+    '<th class="num">Attempts</th><th>Since</th></tr>';
+  d.users.forEach(function (u) {
+    h += '<tr><td><b>' + esc(u.name) + '</b></td><td class="num"><b>' + u.rating + '</b></td>' +
+      '<td class="num">' + u.rd + '</td><td class="num">' + u.solved + '</td>' +
+      '<td class="num">' + u.attempts + '</td><td>' + esc((u.since || '').slice(0, 10)) + '</td></tr>';
+  });
+  h += '</table>';
+  document.getElementById('content').innerHTML = h.replace(/href="\?p=/g, 'href="/?p=');
+});
+</script>
+</body>
+</html>
