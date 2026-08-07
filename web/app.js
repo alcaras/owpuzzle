@@ -743,7 +743,7 @@
   }
 
   function renderHud() {
-    var used = (puzzle.orders + (puzzle.slack != null ? puzzle.slack : 6)) - state.orders;
+    var used = E.poolOrders(puzzle) - state.orders;
     document.getElementById('orders-pips').innerHTML =
       '<b>' + state.orders + '</b> left · <b>' + used + '</b> used — spend as few as you can';
     var tr = document.getElementById('training-span');
@@ -832,7 +832,7 @@
     r.classList.add('show');
     document.getElementById('result-title').textContent = won ? '⚔️ Victory!' : '💀 Not this time';
     document.getElementById('btn-next').style.display = won ? '' : 'none';
-    var used = (puzzle.orders + (puzzle.slack != null ? puzzle.slack : 6)) - state.orders;
+    var used = E.poolOrders(puzzle) - state.orders;
     var perfect = won && used <= puzzle.orders;
     var blueDmg = state.units.filter(function (u) { return u.player === 0; })
       .reduce(function (s, u) { return s + (E.hpMax(u) - Math.max(0, u.hp)); }, 0);
@@ -860,7 +860,7 @@
     if (won) {
       try {
         var prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}');
-        var used2 = (puzzle.orders + (puzzle.slack != null ? puzzle.slack : 6)) - state.orders;
+        var used2 = E.poolOrders(puzzle) - state.orders;
         var prev = prog[puzzle.id] || {};
         if (!prev.solved || used2 < prev.orders) {
           prog[puzzle.id] = { solved: true, orders: Math.min(used2, prev.orders || 99),

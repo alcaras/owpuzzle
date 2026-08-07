@@ -968,6 +968,13 @@
 
   // puzzle = { name, orders, objective, tiles:[{q,r,terrain?,height?,veg?,improvement?,river?}...] OR radius,
   //            units:[{player,type,q,r,hp?,promotions?,fortifyTurns?,name?}] }
+  // Bucketed order pool so players cannot back-calculate the hidden par
+  // from what they are given.
+  function poolOrders(p) {
+    if (p.pool) return p.pool;
+    return p.orders <= 5 ? 10 : p.orders <= 10 ? 15 : 20;
+  }
+
   // opts.play: grant the forgiving pool (par + slack orders, generous
   // training for force-march recoveries). Solver/verification loads strict.
   function loadPuzzle(p, opts) {
@@ -993,7 +1000,7 @@
       };
     });
     var play = opts && opts.play;
-    var orders = play ? p.orders + (p.slack != null ? p.slack : 6) : p.orders;
+    var orders = play ? poolOrders(p) : p.orders;
     var training = play ? Math.max(p.training || 0, 300) : (p.training || 0);
     return { tiles: tiles, units: units, orders: orders, training: training,
       par: p.orders, objective: p.objective, log: [] };
@@ -1007,6 +1014,7 @@
     canMarch: canMarch, doMarch: doMarch, canUnlimber: canUnlimber, doUnlimber: doUnlimber,
     canSwap: canSwap, doSwap: doSwap,
     canAnchor: canAnchor, doAnchor: doAnchor, waterControlled: waterControlled,
+    poolOrders: poolOrders,
     nextStepOrderCost: nextStepOrderCost,
     canDamage: canDamage, fatigueLimit: fatigueLimit,
     movementPoints: movementPoints, reachableTiles: reachableTiles,

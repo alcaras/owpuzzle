@@ -128,7 +128,7 @@ function replayLine(puzzle, line) {
   } catch (e) {
     return { solved: false, ordersUsed: puzzle.orders - s.orders };
   }
-  const pool = puzzle.orders + (puzzle.slack != null ? puzzle.slack : 6);
+  const pool = E.poolOrders(puzzle);
   return {
     solved: E.checkObjective(s, puzzle.objective),
     ordersUsed: pool - s.orders,
