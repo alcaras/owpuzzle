@@ -257,6 +257,7 @@
       mustKill[o.id] = ob.kind === 'killAll' ||
         (ob.kind === 'killTarget' && ob.target === o.id) ||
         (ob.kind === 'killList' && ob.targets.indexOf(o.id) >= 0);
+      if (ob.kind === 'maxKill') mustKill[o.id] = 'open'; // strong red, no skull
     });
 
     // tiles
@@ -405,7 +406,7 @@
           '<text x="' + (x - SIZE * 0.52) + '" y="' + (y - SIZE * 0.34 + 1) + '" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="bold" fill="#14161c" pointer-events="none">\u21c4</text></g>');
       }
       // objective marker: skull above units that must die
-      if (u.player === 1 && mustKill[u.id]) {
+      if (u.player === 1 && mustKill[u.id] === true) {
         S.push('<circle cx="' + x + '" cy="' + (y - SIZE * 0.68) + '" r="7.5" fill="#2c0f0c" stroke="#ffd23e" stroke-width="1.2" pointer-events="none"/>');
         S.push('<text x="' + x + '" y="' + (y - SIZE * 0.68 + 0.5) + '" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="#ffd23e" pointer-events="none">☠</text>');
       }
@@ -754,6 +755,8 @@
     bm.style.display = (selU && !finished && E.canMarch(state, selU) && selU.steps >= E.fatigueLimit(selU)) ? '' : 'none';
     var bu = document.getElementById('btn-setup');
     bu.style.display = (selU && !finished && E.canUnlimber(state, selU)) ? '' : 'none';
+    var be = document.getElementById('btn-endturn');
+    be.style.display = (puzzle.objective.kind === 'maxKill' && !finished) ? '' : 'none';
 
     var st = document.getElementById('status');
     if (finished) { st.textContent = ''; return; }
@@ -819,10 +822,18 @@
   }
 
   function checkEnd() {
+    if (puzzle.objective.kind === 'maxKill') {
+      // the player declares the turn over (End Turn) — or runs out of actions
+      if (state.orders <= 0 || E.legalActions(state).length === 0) endTurnMaxKill();
+      return;
+    }
     var met = E.checkObjective(state, puzzle.objective);
     if (met) { finish(true); return; }
-    // no more useful actions?
     if (state.orders <= 0 || E.legalActions(state).length === 0) finish(false);
+  }
+
+  function endTurnMaxKill() {
+    finish(E.checkObjective(state, puzzle.objective));
   }
 
   function finish(won) {
@@ -836,11 +847,24 @@
     var perfect = won && used <= puzzle.orders;
     var blueDmg = state.units.filter(function (u) { return u.player === 0; })
       .reduce(function (s, u) { return s + (E.hpMax(u) - Math.max(0, u.hp)); }, 0);
-    document.getElementById('result-body').textContent = won
-      ? (perfect
-        ? '\u2b50 PERFECT \u2014 solved in ' + used + ' orders, the fewest possible! Damage taken: ' + blueDmg + '.'
-        : 'Solved in ' + used + ' orders \u2014 but it can be done in fewer\u2026 Damage taken: ' + blueDmg + '.')
-      : 'The objective was not met. Study the field and try again.';
+    var body;
+    if (puzzle.objective.kind === 'maxKill') {
+      var kills = E.killsOf(state);
+      if (won) {
+        body = '\u2b50 MAXIMUM DESTRUCTION \u2014 ' + kills + ' kills, the most possible!' +
+          (perfect ? ' And in the fewest orders (' + used + '). \u2b50' : ' (' + used + ' orders \u2014 it can be done in fewer\u2026)') +
+          ' Damage taken: ' + blueDmg + '.';
+      } else {
+        body = 'You destroyed ' + kills + ' \u2014 more is possible\u2026 Study the field and try again.';
+      }
+    } else {
+      body = won
+        ? (perfect
+          ? '\u2b50 PERFECT \u2014 solved in ' + used + ' orders, the fewest possible! Damage taken: ' + blueDmg + '.'
+          : 'Solved in ' + used + ' orders \u2014 but it can be done in fewer\u2026 Damage taken: ' + blueDmg + '.')
+        : 'The objective was not met. Study the field and try again.';
+    }
+    document.getElementById('result-body').textContent = body;
     window.__perfect = perfect;
     document.getElementById('result-lesson').textContent = won && puzzle.lesson ? puzzle.lesson : '';
     window.__won = won;
@@ -886,6 +910,9 @@
     hidePreviewPanel();
     document.getElementById('result').classList.remove('show');
     render();
+  });
+  document.getElementById('btn-endturn').addEventListener('click', function () {
+    if (!finished) endTurnMaxKill();
   });
   document.getElementById('btn-march').addEventListener('click', function () {
     if (selected != null) act({ type: 'march', unit: selected });

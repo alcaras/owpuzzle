@@ -907,8 +907,15 @@
 
   // ================= Objectives =================
 
+  function killsOf(state) {
+    return state.units.filter(function (u) { return u.player === 1 && u.hp <= 0; }).length;
+  }
+
   function checkObjective(state, objective) {
     switch (objective.kind) {
+      case 'maxKill':
+        // hidden ceiling: met when the player has destroyed `count` enemies
+        return killsOf(state) >= (objective.count || 999);
       case 'killAll':
         return state.units.filter(function (u) { return u.player === 1 && u.hp > 0; }).length === 0;
       case 'killList':
@@ -1014,7 +1021,7 @@
     canMarch: canMarch, doMarch: doMarch, canUnlimber: canUnlimber, doUnlimber: doUnlimber,
     canSwap: canSwap, doSwap: doSwap,
     canAnchor: canAnchor, doAnchor: doAnchor, waterControlled: waterControlled,
-    poolOrders: poolOrders,
+    poolOrders: poolOrders, killsOf: killsOf,
     nextStepOrderCost: nextStepOrderCost,
     canDamage: canDamage, fatigueLimit: fatigueLimit,
     movementPoints: movementPoints, reachableTiles: reachableTiles,

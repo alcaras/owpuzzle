@@ -212,6 +212,7 @@
     var objective = { kind: 'killAll' };
     if (objKind === 'killList' && targets.length) objective = { kind: 'killList', targets: targets.slice().sort() };
     if (objKind === 'capture') objective = { kind: 'capture' };
+    if (objKind === 'maxKill') objective = { kind: 'maxKill' };
     var tileOverrides = [];
     Object.keys(tiles).forEach(function (k) {
       var t = tiles[k], b = blank(t.q, t.r), o = { q: t.q, r: t.r };

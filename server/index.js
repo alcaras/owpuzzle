@@ -249,7 +249,7 @@ app.post('/api/submit', (req, res) => {
         p.objective.targets.every(i => p.units[i] && p.units[i].player === 1))) {
     return res.status(400).json({ error: 'killList objective needs valid enemy targets' });
   }
-  if (!['killAll', 'killList', 'killTarget', 'capture'].includes(p.objective.kind)) {
+  if (!['killAll', 'killList', 'killTarget', 'capture', 'maxKill'].includes(p.objective.kind)) {
     return res.status(400).json({ error: 'unknown objective' });
   }
   if (p.objective.kind === 'capture' &&
@@ -279,6 +279,10 @@ app.post('/api/submit', (req, res) => {
   };
   w.on('message', (r) => {
     if (r.error) return finish('autorejected', 'failed to load: ' + r.error);
+    if (r.updatedPuzzle) {
+      db.prepare('UPDATE puzzles SET json = ? WHERE slug = ?').run(JSON.stringify(r.updatedPuzzle), slug);
+      p.orders = r.updatedPuzzle.orders;
+    }
     if (r.best && r.best.met) {
       finish('pending', `Verified solvable at par ${p.orders}; ${r.winCount || '?'} winning outcome(s)` +
         (r.truncated ? ' (search truncated)' : '') + '. Solution: ' + (r.solution || []).join(' → '));
