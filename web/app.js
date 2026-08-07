@@ -6,12 +6,15 @@
   // ---------- puzzle selection: library home, ?p=<id> to play ----------
   var params = new URLSearchParams(location.search);
   var puzzle = null;
+  var remotePending = false;
   if (params.get('draft')) {
     try { puzzle = JSON.parse(localStorage.getItem('owpuzzle-draft')); } catch (e) {}
   } else if (params.get('p')) {
     puzzle = OWPUZZLES.filter(function (p) { return p.id === params.get('p'); })[0];
     if (!puzzle) {
-      // community puzzle: fetch from the server, then boot
+      // community puzzle: fetch from the server, then boot the game view
+      remotePending = true;
+      document.getElementById('p-brief').textContent = 'loading puzzle\u2026';
       fetch('/api/puzzle/' + encodeURIComponent(params.get('p')))
         .then(function (r) { return r.json(); })
         .then(function (d) {
@@ -112,7 +115,7 @@
   }
 
   // ---------- library home ----------
-  if (!puzzle) {
+  if (!puzzle && !remotePending) {
     document.getElementById('day-label').textContent = 'COMBAT PUZZLES';
     document.getElementById('p-name').textContent = '';
     document.getElementById('p-brief').textContent =
