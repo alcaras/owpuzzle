@@ -750,8 +750,12 @@
 
   function renderHud() {
     var used = E.poolOrders(puzzle) - state.orders;
-    document.getElementById('orders-pips').innerHTML =
-      '<b>' + state.orders + '</b> left · <b>' + used + '</b> used — spend as few as you can';
+    var hudLine = '<b>' + state.orders + '</b> left · <b>' + used + '</b> used — spend as few as you can';
+    if (puzzle.objective.kind === 'maxKill') {
+      hudLine += ' &nbsp;·&nbsp; <span class="str-killed">☠ <b>' +
+        fmt10(E.strKilledOf(state)) + '</b> strength destroyed</span>';
+    }
+    document.getElementById('orders-pips').innerHTML = hudLine;
     var tr = document.getElementById('training-span');
     tr.style.display = '';
     tr.innerHTML = 'Training: <b>' + state.training + '</b>';
