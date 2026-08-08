@@ -221,15 +221,12 @@ var OWPUZZLES = [
     "difficulty": 3,
     "name": "The Charge at the River",
     "author": "mined: alcaras v NestorLN 2024 g1, turn 115",
-    "brief": "Finish the charge \u2014 all three defenders must fall this turn.",
+    "brief": "Destroy as much enemy strength as you can this turn.",
     "lesson": "A real tournament position. Rivers halve melee attacks \u2014 the winning charge threads between river edges to strike from dry ground.",
-    "orders": 6,
+    "orders": 5,
     "slowVerify": true,
     "radius": 4,
-    "objective": {
-      "kind": "killList",
-      "targets": [3, 4, 5]
-    },
+    "objective": { "kind": "maxKill", "count": 260 },
     "units": [
       { "player": 0, "type": "UNIT_CATAPHRACT", "q": -1, "r": 0, "hp": 19 },
       { "player": 0, "type": "UNIT_CATAPHRACT", "q": -1, "r": -2, "hp": 20 },
@@ -995,18 +992,11 @@ var OWPUZZLES = [
     "difficulty": 3,
     "name": "The Shore Riders",
     "author": "mined from a real game",
-    "brief": "Kill the chariot, the Beja archer and the galley grounded in the shallows.",
+    "brief": "Destroy as much enemy strength as you can this turn.",
     "lesson": "A point-blank kill by ranged cavalry routs exactly like a charge \u2014 the palton may fire again, but only while another enemy still stands within reach of the tile it fires from.",
     "orders": 5,
     "radius": 3,
-    "objective": {
-      "kind": "killList",
-      "targets": [
-        2,
-        3,
-        4
-      ]
-    },
+    "objective": { "kind": "maxKill", "count": 190 },
     "tiles": [
       {
         "q": -3,
@@ -1289,17 +1279,11 @@ var OWPUZZLES = [
     "difficulty": 3,
     "name": "The Wood Line",
     "author": "mined from a real game",
-    "brief": "Kill the archer in the trees and the axeman guarding the open ground beside him.",
+    "brief": "Destroy as much enemy strength as you can this turn.",
     "lesson": "Trees halve ranged fire and do nothing against a charge \u2014 and a Rout kill carries the elephant into the wood, where the next man can be taken from behind.",
-    "orders": 4,
+    "orders": 3,
     "radius": 3,
-    "objective": {
-      "kind": "killList",
-      "targets": [
-        3,
-        4
-      ]
-    },
+    "objective": { "kind": "maxKill", "count": 100 },
     "tiles": [
       {
         "q": -2,
@@ -1487,25 +1471,18 @@ var OWPUZZLES = [
         "r": -1,
         "hp": 17
       }
-    ],
-    "slowVerify": true
+    ]
   },
   {
     "id": "the-jungle-road",
     "difficulty": 3,
     "name": "The Jungle Road",
     "author": "mined from a real game",
-    "brief": "Kill the armoured elephant holding the road and the onager behind it.",
+    "brief": "Destroy as much enemy strength as you can this turn.",
     "lesson": "A ROUT kill carries the attacker into the vacated tile \u2014 line up the charge so you land beside your next victim.",
     "orders": 4,
     "radius": 3,
-    "objective": {
-      "kind": "killList",
-      "targets": [
-        3,
-        4
-      ]
-    },
+    "objective": { "kind": "maxKill", "count": 140 },
     "tiles": [
       {
         "q": -3,
@@ -1736,26 +1713,18 @@ var OWPUZZLES = [
         "r": -2,
         "hp": 8
       }
-    ],
-    "slowVerify": true
+    ]
   },
   {
     "id": "the-crossed-lanes",
     "difficulty": 3,
     "name": "The Crossed Lanes",
     "author": "mined from a real game",
-    "brief": "Kill both legionaries and the hastatus.",
+    "brief": "Destroy as much enemy strength as you can this turn.",
     "lesson": "A ballista bolt carries on through the body it hits, so two engines shooting the same front-rank man skewer two different men behind him.",
     "orders": 3,
     "radius": 3,
-    "objective": {
-      "kind": "killList",
-      "targets": [
-        4,
-        5,
-        6
-      ]
-    },
+    "objective": { "kind": "maxKill", "count": 220 },
     "tiles": [
       {
         "q": -3,
@@ -2020,18 +1989,11 @@ var OWPUZZLES = [
     "difficulty": 3,
     "name": "Down the Avenue",
     "author": "mined from a real game",
-    "brief": "Kill both onagers in the street and the spearman standing behind them.",
+    "brief": "Destroy as much enemy strength as you can this turn.",
     "lesson": "A bolt does not stop at the first body \u2014 take the shot that lines three of them up, then walk a finisher round the block for the survivor.",
     "orders": 4,
     "radius": 3,
-    "objective": {
-      "kind": "killList",
-      "targets": [
-        3,
-        4,
-        5
-      ]
-    },
+    "objective": { "kind": "maxKill", "count": 170 },
     "tiles": [
       {
         "q": -3,
