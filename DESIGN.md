@@ -84,15 +84,17 @@ The OW-native forms of "the move that looks wrong":
 2. **The rout ferry** — kills as free movement: plan the advance lane by kill
    order, not by damage.
 3. **Decline the kill** — a wounded enemy begs to die, but the order is needed
-   elsewhere (natural fit: maxKill ceilings).
+   elsewhere (*Leave Him*).
 4. **The quiet flank key** — move 1 deals zero damage: park a unit on the far
    side so the real attack is flanked (*The Pincer*).
 5. **Weak unit first** — attack order matters: softening thresholds, rounding
    (round up iff stronger), and who must land the killing blow.
 6. **Push to align** — the elephant shove as geometry, not damage: relocate an
-   enemy into a pierce/splash lane.
+   enemy into a pierce/splash lane (*The Shove*).
 7. **Spend to save** — force march's 100 training / double orders, or eating a
    counterattack on purpose, because position is worth more than the cost.
+8. **The small kill that opens the map** — killing a cheap unit removes its
+   zone of control, unlocking the path the real attack needs (*The Gatekeeper*).
 
 ## Ability coverage matrix
 
@@ -119,6 +121,9 @@ The OW-native forms of "the move that looks wrong":
 | Unlimber + splash + no falloff | onager, mangonel | The Barrage |
 | Movement costs / roads | — | The Low Road |
 | Rout advance is mandatory + directional | horseman | Cut the Bowstring |
+| Push as positioning + pierce lane | war elephant, ballista | The Shove |
+| ZOC unlock (kill frees the road) | — | The Gatekeeper |
+| maxKill / strength-per-order (decline the bait) | — | Leave Him |
 | Fatigue / force march (+training) | — | Over the Hills |
 | Real position (stacked rules) | — | The Charge at the River |
 
