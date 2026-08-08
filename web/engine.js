@@ -1016,6 +1016,15 @@
         anchored: DATA.units[u.type].bAnchor ? !!u.anchored : undefined,
       };
     });
+    // A killList/killTarget id that resolves to nothing would count as
+    // already dead (auto-win) — reject the puzzle instead of playing it.
+    var obj = p.objective || {};
+    function checkTarget(id) {
+      var u = units.filter(function (x) { return x.id === id; })[0];
+      if (!u || u.player !== 1) throw new Error('objective target ' + id + ' is not an enemy unit');
+    }
+    if (obj.kind === 'killList') (obj.targets || []).forEach(checkTarget);
+    if (obj.kind === 'killTarget') checkTarget(obj.target);
     var play = opts && opts.play;
     var orders = play ? poolOrders(p) : p.orders;
     var training = play ? Math.max(p.training || 0, 300) : (p.training || 0);

@@ -46,6 +46,54 @@ What makes these work (distilled from the first eleven):
    - *Tactics*: two-three units cooperating; the rule interacts with another.
    - *Battlefields*: real mined positions where several rules stack.
 
+## Composition theory (borrowed from chess problems)
+
+Chess composition has a 150-year-old vocabulary for what makes a puzzle good,
+and most of it transfers:
+
+- **The key.** The first move of the solution. The strongest keys are *quiet*
+  (not a capture/check — for us: not an attack) and *paradoxical* (they look
+  wrong: a sacrifice, a retreat, declining a capture). A key that is also the
+  most tempting move is a weak key.
+- **Tries and refutations.** A good problem has 2–3 plausible plans that fail
+  by a small, visible margin, each for a *different* reason. The tries are the
+  teaching: understanding why each fails is understanding why the key works.
+  A "try" that also reaches par is not a try — it's move-order freedom.
+- **Paradox.** The solution should defy a natural principle of play. Research
+  on generated puzzles (DeepMind 2025) operationalizes this as *shallow search
+  vs deep search disagreement* — the greedy move is not the right move.
+- **Economy / unity.** Every unit serves the idea or the soundness. A decoy is
+  never dead weight — it anchors a plausible-but-refuted try.
+- **Difficulty is idiosyncratic.** Hristova et al. 2014: even strong players
+  cannot rank puzzle difficulty. Trust the Glicko ratings, not our seeds.
+
+`tools/analyze_puzzle.js` measures this per puzzle: the winning first
+action(s), whether the key is QUIET, its **paradox rank** (how many legal
+first actions deal more immediate damage than the key), and the loudest
+refuted tries with their failure margins. Quality bar for new Tactics/
+Battlefield puzzles: paradox rank ≥ 2 **or** a quiet key with real
+alternatives, and at least one refuted loud try.
+
+### Paradox vocabulary for Old World
+
+The OW-native forms of "the move that looks wrong":
+
+1. **The wrong-way advance** — Rout advances are mandatory and directional;
+   the loudest kill can carry you away from the objective (*Cut the
+   Bowstring*).
+2. **The rout ferry** — kills as free movement: plan the advance lane by kill
+   order, not by damage.
+3. **Decline the kill** — a wounded enemy begs to die, but the order is needed
+   elsewhere (natural fit: maxKill ceilings).
+4. **The quiet flank key** — move 1 deals zero damage: park a unit on the far
+   side so the real attack is flanked (*The Pincer*).
+5. **Weak unit first** — attack order matters: softening thresholds, rounding
+   (round up iff stronger), and who must land the killing blow.
+6. **Push to align** — the elephant shove as geometry, not damage: relocate an
+   enemy into a pierce/splash lane.
+7. **Spend to save** — force march's 100 training / double orders, or eating a
+   counterattack on purpose, because position is worth more than the cost.
+
 ## Ability coverage matrix
 
 | Ability | Unit(s) | Puzzle |
@@ -70,6 +118,7 @@ What makes these work (distilled from the first eleven):
 | Push | elephants | Trample |
 | Unlimber + splash + no falloff | onager, mangonel | The Barrage |
 | Movement costs / roads | — | The Low Road |
+| Rout advance is mandatory + directional | horseman | Cut the Bowstring |
 | Fatigue / force march (+training) | — | Over the Hills |
 | Real position (stacked rules) | — | The Charge at the River |
 
