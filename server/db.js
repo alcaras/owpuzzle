@@ -55,21 +55,42 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 // Seed / refresh core puzzles from web/puzzles.js.
 // Difficulty seeds the initial rating; high RD lets attempts converge it.
+//
+// An EDITED puzzle is technically a new puzzle: its old rating and everyone's
+// completion no longer apply. When the seeded json differs from the stored
+// row, the old row is retired under slug@vN (attempt history stays attached
+// to it) and a fresh row takes the canonical slug with a reseeded rating —
+// so it re-enters every player's queue, and first attempts are rated again.
+//
+// FORCE_RESET: puzzles edited before this versioning existed (their new json
+// was already upserted, so the diff can't see the change). Retired once —
+// the versions>0 guard makes it idempotent.
+const FORCE_RESET = ['nestor-charge', 'the-shore-riders', 'the-wood-line',
+  'the-jungle-road', 'the-crossed-lanes', 'down-the-avenue', 'cut-the-bowstring'];
 function seedCorePuzzles() {
   const PUZZLES = require(path.join(__dirname, '..', 'web', 'puzzles.js'));
   const seedRating = { 1: 900, 2: 1200, 3: 1500 };
-  const up = db.prepare(`
-    INSERT INTO puzzles (slug, json, status, rating, author_name)
-    VALUES (@slug, @json, 'core', @rating, @author)
-    ON CONFLICT(slug) DO UPDATE SET json = @json, status = 'core'`);
+  const sel = db.prepare('SELECT id, json, status FROM puzzles WHERE slug = ?');
+  const countV = db.prepare('SELECT COUNT(*) c FROM puzzles WHERE slug LIKE ?');
+  const retire = db.prepare(`UPDATE puzzles SET slug = ?, status = 'retired' WHERE id = ?`);
+  const ins = db.prepare(`INSERT INTO puzzles (slug, json, status, rating, author_name)
+    VALUES (?, ?, 'core', ?, ?)`);
+  const restore = db.prepare(`UPDATE puzzles SET status = 'core' WHERE id = ?`);
   const tx = db.transaction(() => {
     for (const p of PUZZLES) {
-      up.run({
-        slug: p.id,
-        json: JSON.stringify(p),
-        rating: seedRating[p.difficulty || 2] || 1200,
-        author: p.author || 'owpuzzle',
-      });
+      const json = JSON.stringify(p);
+      const rating = seedRating[p.difficulty || 2] || 1200;
+      const author = p.author || 'owpuzzle';
+      const row = sel.get(p.id);
+      if (!row) { ins.run(p.id, json, rating, author); continue; }
+      const versions = countV.get(p.id + '@v%').c;
+      const force = FORCE_RESET.includes(p.id) && versions === 0;
+      if (row.json !== json || force) {
+        retire.run(p.id + '@v' + (versions + 1), row.id);
+        ins.run(p.id, json, rating, author);
+      } else if (row.status !== 'core') {
+        restore.run(row.id);
+      }
     }
   });
   tx();

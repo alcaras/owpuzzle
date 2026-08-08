@@ -29,6 +29,30 @@ with tempfile.TemporaryDirectory() as td:
         b = base64.b64encode(open(small, "rb").read()).decode()
         icons[u] = "data:image/png;base64," + b
 
+# white stylized unit icons (the game's flag silhouettes) from per-ankh's
+# extracted sprites -> FLAG_UNIT_* keys. Alias tribal variants without their
+# own icon to a sensible base silhouette.
+FLAG_SRC = "/Users/dominik/Library/CloudStorage/Dropbox/cc/per-ankh/static/sprites/units-icons"
+FLAG_ALIAS = {
+    "UNIT_BEJA_ARCHER": "UNIT_ARCHER",
+    "UNIT_MEDJAY_ARCHER": "UNIT_ARCHER",
+}
+flag_files = os.listdir(FLAG_SRC)
+n_flag = 0
+with tempfile.TemporaryDirectory() as td3:
+    for u in units:
+        src_unit = FLAG_ALIAS.get(u, u)
+        match = [f for f in flag_files if f.startswith(src_unit + ".")]
+        if not match:
+            continue
+        p = os.path.join(FLAG_SRC, match[0])
+        small = os.path.join(td3, u + ".png")
+        subprocess.run(["sips", "-Z", "64", p, "--out", small],
+                       check=True, capture_output=True)
+        icons["FLAG_" + u] = "data:image/png;base64," + \
+            base64.b64encode(open(small, "rb").read()).decode()
+        n_flag += 1
+
 # effect icons (promotions + innate abilities) from icons/effects
 EFF_SRC = "/Users/dominik/Library/CloudStorage/Dropbox/cc/owreference/dist/img/icons/effects"
 effs = sorted(set(re.findall(r'"(EFFECTUNIT_[A-Z0-9_]+)"', data)))

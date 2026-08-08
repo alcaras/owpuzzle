@@ -3,6 +3,41 @@
   'use strict';
   var E = OWENGINE;
 
+  // ---------- unit art style: colorful portraits vs white flag icons ----------
+  var ICON_STYLE = 'portrait';
+  try { ICON_STYLE = localStorage.getItem('owpuzzle-iconstyle') || 'portrait'; } catch (e) {}
+  var _artParam = new URLSearchParams(location.search).get('art');
+  if (_artParam === 'flag' || _artParam === 'portrait') ICON_STYLE = _artParam;
+  function unitIcon(type) {
+    var IC = (typeof OWICONS !== 'undefined') ? OWICONS : {};
+    return ICON_STYLE === 'flag'
+      ? (IC['FLAG_' + type] || IC[type])
+      : (IC[type] || IC['FLAG_' + type]);
+  }
+  function isFlagIcon(type) {
+    var IC = (typeof OWICONS !== 'undefined') ? OWICONS : {};
+    var ic = unitIcon(type);
+    return !!ic && ic === IC['FLAG_' + type];
+  }
+  function wireIconStyleToggle() {
+    var btn = document.getElementById('btn-iconstyle');
+    if (!btn) return;
+    function label() {
+      btn.textContent = 'Unit art: ' + (ICON_STYLE === 'flag' ? 'Icons' : 'Portraits') + ' \u21c4';
+    }
+    label();
+    btn.addEventListener('click', function () {
+      ICON_STYLE = ICON_STYLE === 'flag' ? 'portrait' : 'flag';
+      try { localStorage.setItem('owpuzzle-iconstyle', ICON_STYLE); } catch (e) {}
+      label();
+      var onHome = document.getElementById('home') &&
+        document.getElementById('home').classList.contains('show');
+      if (onHome) location.reload();
+      else if (window.__rerender) window.__rerender();
+    });
+  }
+  wireIconStyleToggle();
+
   // ---------- puzzle selection: library home, ?p=<id> to play ----------
   var params = new URLSearchParams(location.search);
   var puzzle = null;
@@ -23,6 +58,24 @@
         })
         .catch(function () { document.getElementById('p-brief').textContent = 'could not load puzzle'; });
     }
+  }
+
+  // ---------- progress versioning ----------
+  // An edited puzzle is a new puzzle: local progress entries carry a hash of
+  // the GAMEPLAY content (not brief/lesson text). A stored entry whose hash
+  // no longer matches reads as unsolved. Entries without a hash predate this
+  // and are trusted as-is.
+  function puzzleHash(p) {
+    var s = JSON.stringify([p.orders, p.radius, p.training || 0, p.tiles || null,
+      p.objective, p.units]);
+    var h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+  }
+  function progEntry(prog, p) {
+    var e = prog[p.id];
+    if (e && e.v && e.v !== puzzleHash(p)) return null; // content changed
+    return e || null;
   }
 
   // ---------- auth widget (works on every page) ----------
@@ -60,9 +113,9 @@
       grid.innerHTML = community.map(function (x) {
         var pz = x.puzzle;
         var heroU = pz.units.filter(function (u) { return u.player === 0; })[0];
-        var hero = heroU && ICONS0[heroU.type];
+        var hero = heroU && unitIcon(heroU.type);
         var foes = pz.units.filter(function (u) { return u.player === 1; }).map(function (u) {
-          var ic = ICONS0[u.type];
+          var ic = unitIcon(u.type);
           return ic ? '<img src="' + ic + '" alt="">' : '';
         }).join('');
         return '<a class="card' + (x.solvedByMe ? ' solved' : '') + '" href="?p=' + x.slug + '">' +
@@ -128,7 +181,7 @@
     var ICONS0 = (typeof OWICONS !== 'undefined') ? OWICONS : {};
     var prog = {};
     try { prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}'); } catch (e) {}
-    var solvedCount = OWPUZZLES.filter(function (p) { return prog[p.id] && prog[p.id].solved; }).length;
+    var solvedCount = OWPUZZLES.filter(function (p) { var e = progEntry(prog, p); return e && e.solved; }).length;
     var GROUPS = [
       { n: 1, title: 'Basics — one unit, one rule' },
       { n: 2, title: 'Tactics — combined arms' },
@@ -148,12 +201,13 @@
       if (!list.length) return;
       html += '<h2 class="group">' + g.title + '</h2><div class="grid">';
       html += list.map(function (p) {
-        var done = prog[p.id] && prog[p.id].solved;
-        var perf = prog[p.id] && prog[p.id].perfect;
+        var pe = progEntry(prog, p);
+        var done = pe && pe.solved;
+        var perf = pe && pe.perfect;
         var heroU = p.units.filter(function (u) { return u.player === 0; })[0];
-        var hero = heroU && ICONS0[heroU.type];
+        var hero = heroU && unitIcon(heroU.type);
         var foes = p.units.filter(function (u) { return u.player === 1; }).map(function (u) {
-          var ic = ICONS0[u.type];
+          var ic = unitIcon(u.type);
           return ic ? '<img src="' + ic + '" alt="">' : '';
         }).join('');
         return '<a class="card' + (done ? ' solved' : '') + '" href="?p=' + p.id + '">' +
@@ -229,6 +283,7 @@
   // ---------- render ----------
   var wrap = document.getElementById('board-wrap');
 
+  window.__rerender = function () { render(); };
   function render() {
     var tiles = Object.keys(state.tiles).map(function (k) { return state.tiles[k]; });
     var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -394,8 +449,11 @@
       if (isSel) S.push('<circle cx="' + x + '" cy="' + (y + SIZE * 0.08) + '" r="' + (SIZE * 0.72) + '" fill="none" stroke="#fff" stroke-width="3"/>');
       if (isTarget) S.push('<circle cx="' + x + '" cy="' + (y + SIZE * 0.08) + '" r="' + (SIZE * 0.72) + '" fill="none" stroke="#ffb020" stroke-width="3" stroke-dasharray="8 5"/>');
       S.push('<circle cx="' + x + '" cy="' + (y + SIZE * 0.24) + '" r="' + (SIZE * 0.52) + '" fill="' + color + '" stroke="' + BOARD_BG + '" stroke-width="1.6"/>');
-      var ic = ICONS[u.type];
-      if (ic) {
+      var ic = unitIcon(u.type);
+      if (ic && isFlagIcon(u.type)) {
+        // white silhouette sits ON the colored disc, like the game's flags
+        S.push('<image href="' + ic + '" x="' + (x - SIZE * 0.32) + '" y="' + (y - SIZE * 0.08) + '" width="' + (SIZE * 0.64) + '" height="' + (SIZE * 0.64) + '" pointer-events="none"/>');
+      } else if (ic) {
         S.push('<image href="' + ic + '" x="' + (x - SIZE * 0.4) + '" y="' + (y - SIZE * 0.16) + '" width="' + (SIZE * 0.8) + '" height="' + (SIZE * 0.8) + '" pointer-events="none"/>');
       } else {
         S.push('<text x="' + x + '" y="' + (y + SIZE * 0.24) + '" text-anchor="middle" dominant-baseline="middle" font-size="' + (SIZE * 0.55) + '" pointer-events="none">' + glyphFor(u) + '</text>');
@@ -513,7 +571,7 @@
     var attU = E.unitById(state, selected), defU = E.unitById(state, defId);
     var p = document.getElementById('preview-panel');
     function chip(u) {
-      var ic = ICONS[u.type];
+      var ic = unitIcon(u.type);
       return (ic ? '<img class="p' + u.player + '" src="' + ic + '" alt="">' : '') +
         shortName(u);
     }
@@ -653,7 +711,7 @@
     if (!u || u.hp <= 0) return;
     var inf = E.DATA.units[u.type];
     var p = document.getElementById('preview-panel');
-    var ic = ICONS[u.type];
+    var ic = unitIcon(u.type);
     var promoNames = (u.promotions || []).map(function (pr) {
       var eff = (E.DATA.promotions[pr] && E.DATA.promotions[pr].effect) || pr;
       var nm = eff.replace(/^(EFFECTUNIT_|PROMOTION_)/, '').toLowerCase().replace(/_/g, ' ');
@@ -897,10 +955,11 @@
       try {
         var prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}');
         var used2 = E.poolOrders(puzzle) - state.orders;
-        var prev = prog[puzzle.id] || {};
+        var prev = progEntry(prog, puzzle) || {};
         if (!prev.solved || used2 < prev.orders) {
           prog[puzzle.id] = { solved: true, orders: Math.min(used2, prev.orders || 99),
-            perfect: !!(prev.perfect || window.__perfect), ts: Date.now() };
+            perfect: !!(prev.perfect || window.__perfect), ts: Date.now(),
+            v: puzzleHash(puzzle) };
           localStorage.setItem('owpuzzle-progress', JSON.stringify(prog));
         } else if (window.__perfect && !prev.perfect) {
           prev.perfect = true;
@@ -962,7 +1021,8 @@
       var idx = OWPUZZLES.indexOf(OWPUZZLES.filter(function (p) { return p.id === puzzle.id; })[0]);
       for (var i = 1; i <= OWPUZZLES.length; i++) {
         var cand = OWPUZZLES[(idx + i) % OWPUZZLES.length];
-        if (!(prog[cand.id] && prog[cand.id].solved)) { location.href = '?p=' + cand.id; return; }
+        var ce = progEntry(prog, cand);
+        if (!(ce && ce.solved)) { location.href = '?p=' + cand.id; return; }
       }
       location.href = './';
     }

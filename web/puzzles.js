@@ -628,11 +628,11 @@ var OWPUZZLES = [
     difficulty: 2,
     name: 'Cut the Bowstring',
     author: 'owpuzzle',
-    brief: 'Kill the marked longbowman this turn.',
+    brief: 'Destroy as much enemy strength as you can this turn.',
     lesson: 'A Rout advance is not optional: when a further target is attackable from the vacated tile, the kill carries you into it. Pick kills whose empty tile points where you want to ride — the biggest target may pull you the wrong way.',
     orders: 3,
     radius: 4,
-    objective: { kind: 'killList', targets: [5] },
+    objective: { kind: 'maxKill', count: 160 },
     units: [
       { player: 0, type: 'UNIT_HORSEMAN', q: 0, r: 0 },
       { player: 1, type: 'UNIT_WARRIOR', q: 0, r: -1, hp: 12 },

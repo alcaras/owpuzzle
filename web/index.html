@@ -48,6 +48,9 @@
   .order-pip.spent { background: #d8c8ac; }
   .str-killed { color: #b0483c; white-space: nowrap; }
   .str-killed b { font-size: 16px; }
+  .iconstyle-btn { background: none; border: 1px solid rgba(140,130,110,0.45); color: var(--muted);
+    font-size: 11px; padding: 2px 8px; border-radius: 10px; cursor: pointer; }
+  .iconstyle-btn:hover { color: var(--accent); border-color: var(--accent); }
   #main-row {
     display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;
     gap: 10px; width: 100%; max-width: 900px;
@@ -183,6 +186,7 @@
     <div class="brief" id="p-brief"></div>
     <div class="back-link" id="back-link"></div>
     <div id="auth-widget" style="font-size:12.5px;margin-top:5px;color:var(--muted)"></div>
+    <div style="margin-top:3px"><button id="btn-iconstyle" class="iconstyle-btn"></button></div>
   </header>
   <div id="home"></div>
   <div class="hud">
