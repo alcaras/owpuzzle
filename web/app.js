@@ -102,6 +102,12 @@
 
   function loadCommunityPuzzles() {
     fetch('/api/puzzles').then(function (r) { return r.json(); }).then(function (d) {
+      // fold the server's cross-device solved list into the library display
+      var changed = false;
+      (d.puzzles || []).forEach(function (x) {
+        if (x.solvedByMe && !SERVER_SOLVED[x.slug]) { SERVER_SOLVED[x.slug] = true; changed = true; }
+      });
+      if (changed && window.__renderLibrary) window.__renderLibrary();
       var ICONS0 = (typeof OWICONS !== 'undefined') ? OWICONS : {};
       var community = (d.puzzles || []).filter(function (x) { return x.status === 'approved'; });
       if (!community.length) return;
@@ -168,6 +174,10 @@
     }).catch(function () {});
   }
 
+  // SERVER_SOLVED: slugs this signed-in account has solved (from /api/puzzles)
+  // — local progress is per-browser, the server knows across devices.
+  var SERVER_SOLVED = {};
+
   // ---------- library home ----------
   if (!puzzle && !remotePending) {
     document.getElementById('day-label').textContent = 'COMBAT PUZZLES';
@@ -179,10 +189,21 @@
     document.querySelector('.controls').style.display = 'none';
     var home = document.getElementById('home');
     home.classList.add('show');
+    window.__renderLibrary = renderLibrary;
+    renderLibrary();
+    return; // no game to run
+  }
+
+  function renderLibrary() {
+    var home = document.getElementById('home');
     var ICONS0 = (typeof OWICONS !== 'undefined') ? OWICONS : {};
     var prog = {};
     try { prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}'); } catch (e) {}
-    var solvedCount = OWPUZZLES.filter(function (p) { var e = progEntry(prog, p); return e && e.solved; }).length;
+    function isSolved(p) {
+      var e = progEntry(prog, p);
+      return (e && e.solved) || !!SERVER_SOLVED[p.id];
+    }
+    var solvedCount = OWPUZZLES.filter(isSolved).length;
     var GROUPS = [
       { n: 1, title: 'Basics — one unit, one rule' },
       { n: 2, title: 'Tactics — combined arms' },
@@ -203,7 +224,7 @@
       html += '<h2 class="group">' + g.title + '</h2><div class="grid">';
       html += list.map(function (p) {
         var pe = progEntry(prog, p);
-        var done = pe && pe.solved;
+        var done = isSolved(p);
         var perf = pe && pe.perfect;
         var heroU = (p.hero != null && p.units[p.hero]) ||
           p.units.filter(function (u) { return u.player === 0; })[0];
@@ -230,7 +251,6 @@
         else btn.textContent = d.error || d.message || 'sign in with Discord first';
       }).catch(function () { btn.textContent = 'server not available'; });
     });
-    return; // no game to run
   }
   if (puzzle) boot(puzzle);
 
@@ -1029,9 +1049,18 @@
   }
 
   document.getElementById('btn-next').addEventListener('click', function () {
-    // Advance in DISPLAY order (Basics -> Tactics -> Challenges), next unsolved
-    // after the current puzzle. Predictable for everyone — rated matchmaking
-    // lives behind the home page's "Play rated puzzle" button only.
+    // Signed in: rated matchmaking. Anonymous (or API failure): next unsolved
+    // in DISPLAY order (Basics -> Tactics -> Challenges).
+    var btn = this;
+    if (ME) {
+      fetch('/api/next').then(function (r) { return r.json(); }).then(function (d) {
+        if (d.slug) location.href = '?p=' + d.slug;
+        else btn.textContent = d.message || 'queue exhausted!';
+      }).catch(advanceLocal);
+      return;
+    }
+    advanceLocal();
+    function advanceLocal() {
     var prog = {};
     try { prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}'); } catch (e) {}
     var list = [];
@@ -1045,6 +1074,7 @@
       if (!(ce && ce.solved)) { location.href = '?p=' + cand.id; return; }
     }
     location.href = './';
+    }
   });
   document.getElementById('btn-share').addEventListener('click', function () {
     var used = puzzle.orders - state.orders;
