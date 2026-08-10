@@ -1281,9 +1281,10 @@ var OWPUZZLES = [
     "author": "mined from a real game",
     "brief": "Destroy as much enemy strength as you can this turn.",
     "lesson": "Trees halve ranged fire and do nothing against a charge \u2014 and a Rout kill carries the elephant into the wood, where the next man can be taken from behind.",
-    "orders": 3,
+    "slowVerify": true,
+    "orders": 5,
     "radius": 3,
-    "objective": { "kind": "maxKill", "count": 100 },
+    "objective": { "kind": "maxKill", "count": 150 },
     "tiles": [
       {
         "q": -2,

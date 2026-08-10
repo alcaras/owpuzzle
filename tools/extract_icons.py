@@ -16,10 +16,15 @@ import re
 data = open(os.path.join(ROOT, "web", "data.js")).read()
 units = sorted(set(re.findall(r'"(UNIT_[A-Z0-9_]+)"', data)))
 
+# tribal variants without their own portrait borrow the base unit's art
+PORTRAIT_ALIAS = {
+    "UNIT_BEJA_ARCHER": "archer",
+    "UNIT_MEDJAY_ARCHER": "archer",
+}
 icons = {}
 with tempfile.TemporaryDirectory() as td:
     for u in units:
-        slug = u.replace("UNIT_", "").lower()
+        slug = PORTRAIT_ALIAS.get(u, u.replace("UNIT_", "").lower())
         p = os.path.join(SRC, slug + ".png")
         if not os.path.exists(p):
             continue
