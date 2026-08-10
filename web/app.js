@@ -1029,24 +1029,22 @@
   }
 
   document.getElementById('btn-next').addEventListener('click', function () {
-    var btn = this;
-    if (ME) {
-      fetch('/api/next').then(function (r) { return r.json(); }).then(function (d) {
-        if (d.slug) location.href = '?p=' + d.slug;
-        else btn.textContent = d.message || 'queue exhausted!';
-      }).catch(function () { advanceLocal(); });
-    } else advanceLocal();
-    function advanceLocal() {
-      var prog = {};
-      try { prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}'); } catch (e) {}
-      var idx = OWPUZZLES.indexOf(OWPUZZLES.filter(function (p) { return p.id === puzzle.id; })[0]);
-      for (var i = 1; i <= OWPUZZLES.length; i++) {
-        var cand = OWPUZZLES[(idx + i) % OWPUZZLES.length];
-        var ce = progEntry(prog, cand);
-        if (!(ce && ce.solved)) { location.href = '?p=' + cand.id; return; }
-      }
-      location.href = './';
+    // Advance in DISPLAY order (Basics -> Tactics -> Challenges), next unsolved
+    // after the current puzzle. Predictable for everyone — rated matchmaking
+    // lives behind the home page's "Play rated puzzle" button only.
+    var prog = {};
+    try { prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}'); } catch (e) {}
+    var list = [];
+    [1, 2, 3].forEach(function (d) {
+      OWPUZZLES.forEach(function (p) { if ((p.difficulty || 2) === d) list.push(p); });
+    });
+    var idx = list.indexOf(list.filter(function (p) { return p.id === puzzle.id; })[0]);
+    for (var i = 1; i <= list.length; i++) {
+      var cand = list[(idx + i) % list.length];
+      var ce = progEntry(prog, cand);
+      if (!(ce && ce.solved)) { location.href = '?p=' + cand.id; return; }
     }
+    location.href = './';
   });
   document.getElementById('btn-share').addEventListener('click', function () {
     var used = puzzle.orders - state.orders;
