@@ -39,8 +39,10 @@ function analyze(p, pool, t0) {
   var init = E.loadPuzzle(probe);
   var truncated = false, explored = 0;
 
-  // Phase 1: max strength killable within the pool.
-  var bestStr = 0;
+  // Phase 1: max strength killable within the pool. Seeded with the current
+  // count when it exists — a proven-reachable value — so pruning bites from
+  // the first node and the search is a pure "can anything exceed it?" check.
+  var bestStr = p.objective.count || 0;
   var seen1 = {};
   (function rec(s) {
     if (truncated) return;
