@@ -389,17 +389,22 @@ app.get('/api/hall', (req, res) => {
     FROM users u ORDER BY solved DESC, perfect DESC, u.created_at ASC LIMIT 100`).all();
   const total = db.prepare(
     `SELECT COUNT(*) n FROM puzzles WHERE status IN ('core','approved')`).get().n;
-  res.json({
-    total,
-    players: rows.filter(r => r.solved > 0).map((r, i) => ({
-      rank: i + 1, name: r.name, avatar: avatarUrl(r.discord_id, r.avatar, 64),
-      solved: r.solved,
-      perfect: r.perfect, authored: r.authored,
+  // Standard competition ranking: equal (solved, perfect) shares a rank and
+  // the next distinct score skips ahead — two players on 36/36 are BOTH 1st.
+  const ranked = rows.filter(r => r.solved > 0);
+  let lastKey = null, lastRank = 0;
+  const players = ranked.map((r, i) => {
+    const key = r.solved + ':' + r.perfect;
+    if (key !== lastKey) { lastRank = i + 1; lastKey = key; }
+    return {
+      rank: lastRank, name: r.name, avatar: avatarUrl(r.discord_id, r.avatar, 64),
+      solved: r.solved, perfect: r.perfect, authored: r.authored,
       me: !!user && r.id === user.id,
       // player Elo is private: only ever disclosed to the player themselves
       rating: (!!user && r.id === user.id) ? Math.round(r.rating) : undefined,
-    })),
+    };
   });
+  res.json({ total, players });
 });
 
 // Profile + achievement gallery. Defaults to the signed-in player.
