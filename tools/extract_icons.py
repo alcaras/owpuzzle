@@ -16,15 +16,27 @@ import re
 data = open(os.path.join(ROOT, "web", "data.js")).read()
 units = sorted(set(re.findall(r'"(UNIT_[A-Z0-9_]+)"', data)))
 
-# tribal variants without their own portrait borrow the base unit's art
-PORTRAIT_ALIAS = {
-    "UNIT_BEJA_ARCHER": "archer",
-    "UNIT_MEDJAY_ARCHER": "archer",
-}
+# The game tells us which art each unit uses: unit.xml's <zPortraitName> /
+# <zIconName> point at another unit for tribal and variant units (the Beja
+# archer draws the Meroitic archer, for one). Read that mapping rather than
+# guessing — guessing made two different units share one portrait.
+XML = "/Users/dominik/Library/Application Support/Steam/steamapps/common/Old World/Reference/XML/Infos/unit.xml"
+ART_ALIAS = {}
+try:
+    _x = open(XML).read()
+    for _m in re.finditer(r"<zType>(UNIT_[A-Z0-9_]+)</zType>(.*?)(?=<zType>|\Z)", _x, re.S):
+        _t, _body = _m.group(1), _m.group(2)
+        _p = (re.search(r"<zPortraitName>(UNIT_[A-Z0-9_]+)</zPortraitName>", _body)
+              or re.search(r"<zIconName>(UNIT_[A-Z0-9_]+)</zIconName>", _body))
+        if _p and _p.group(1) != _t:
+            ART_ALIAS[_t] = _p.group(1)
+    print(f"art aliases from unit.xml: {len(ART_ALIAS)}")
+except FileNotFoundError:
+    print("unit.xml not found — no art aliases")
 icons = {}
 with tempfile.TemporaryDirectory() as td:
     for u in units:
-        slug = PORTRAIT_ALIAS.get(u, u.replace("UNIT_", "").lower())
+        slug = ART_ALIAS.get(u, u).replace("UNIT_", "").lower()
         p = os.path.join(SRC, slug + ".png")
         if not os.path.exists(p):
             continue
@@ -38,10 +50,7 @@ with tempfile.TemporaryDirectory() as td:
 # extracted sprites -> FLAG_UNIT_* keys. Alias tribal variants without their
 # own icon to a sensible base silhouette.
 FLAG_SRC = "/Users/dominik/Library/CloudStorage/Dropbox/cc/per-ankh/static/sprites/units-icons"
-FLAG_ALIAS = {
-    "UNIT_BEJA_ARCHER": "UNIT_ARCHER",
-    "UNIT_MEDJAY_ARCHER": "UNIT_ARCHER",
-}
+FLAG_ALIAS = ART_ALIAS  # same mapping, straight from the game XML
 flag_files = os.listdir(FLAG_SRC)
 n_flag = 0
 with tempfile.TemporaryDirectory() as td3:
