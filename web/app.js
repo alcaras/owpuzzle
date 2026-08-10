@@ -112,7 +112,8 @@
       grid.className = 'grid';
       grid.innerHTML = community.map(function (x) {
         var pz = x.puzzle;
-        var heroU = pz.units.filter(function (u) { return u.player === 0; })[0];
+        var heroU = (pz.hero != null && pz.units[pz.hero]) ||
+          pz.units.filter(function (u) { return u.player === 0; })[0];
         var hero = heroU && unitIcon(heroU.type);
         var foes = pz.units.filter(function (u) { return u.player === 1; }).map(function (u) {
           var ic = unitIcon(u.type);
@@ -204,7 +205,8 @@
         var pe = progEntry(prog, p);
         var done = pe && pe.solved;
         var perf = pe && pe.perfect;
-        var heroU = p.units.filter(function (u) { return u.player === 0; })[0];
+        var heroU = (p.hero != null && p.units[p.hero]) ||
+          p.units.filter(function (u) { return u.player === 0; })[0];
         var hero = heroU && unitIcon(heroU.type);
         var foes = p.units.filter(function (u) { return u.player === 1; }).map(function (u) {
           var ic = unitIcon(u.type);
