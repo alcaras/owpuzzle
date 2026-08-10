@@ -104,6 +104,28 @@ try { db.exec('ALTER TABLE attempts ADD COLUMN perfect INTEGER'); } catch (e) {}
 try { db.exec('ALTER TABLE attempts ADD COLUMN damage_taken INTEGER'); } catch (e) {}
 try { db.exec('ALTER TABLE attempts ADD COLUMN units_lost INTEGER'); } catch (e) {}
 
+// Manually-inserted puzzles (a submission repaired by hand, say) can end up
+// with author_name but no author_id, which silently costs the author their
+// Architect / Beloved achievements. Reconcile by exact name match, ignoring
+// the house bylines. Idempotent, runs at startup.
+const HOUSE_AUTHORS = ['owpuzzle', 'mined from a real game'];
+function linkAuthors() {
+  const rows = db.prepare(`SELECT id, author_name FROM puzzles
+    WHERE author_id IS NULL AND author_name IS NOT NULL`).all()
+    .filter(r => !HOUSE_AUTHORS.includes(r.author_name));
+  const find = db.prepare('SELECT id FROM users WHERE name = ?');
+  const set = db.prepare('UPDATE puzzles SET author_id = ? WHERE id = ?');
+  let n = 0;
+  const tx = db.transaction(() => {
+    for (const r of rows) {
+      const u = find.get(r.author_name);
+      if (u) { set.run(u.id, r.id); n++; }
+    }
+  });
+  tx();
+  return n;
+}
+
 // Replay historical attempts through the engine to fill the new columns.
 // Cheap (one pass over a few hundred short lines) and idempotent.
 function backfillAttempts(replay) {
@@ -125,4 +147,4 @@ function backfillAttempts(replay) {
   return rows.length;
 }
 
-module.exports = { db, seedCorePuzzles, backfillAttempts };
+module.exports = { db, seedCorePuzzles, backfillAttempts, linkAuthors };

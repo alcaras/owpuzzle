@@ -5,7 +5,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
-const { db, seedCorePuzzles, backfillAttempts } = require('./db');
+const { db, seedCorePuzzles, backfillAttempts, linkAuthors } = require('./db');
 const { computeAchievements, LIVE } = require('./achievements');
 const glicko = require('./glicko');
 const E = require(path.join(__dirname, '..', 'web', 'engine.js'));
@@ -22,6 +22,8 @@ const FAILED_REQUEUE_HOURS = 24;
 const seeded = seedCorePuzzles();
 const backfilled = backfillAttempts((puzzle, line) => replayLine(puzzle, line));
 if (backfilled) console.log(`backfilled ${backfilled} attempt rows`);
+const linked = linkAuthors();
+if (linked) console.log(`linked ${linked} puzzle(s) to their author account`);
 console.log(`seeded ${seeded} core puzzles`);
 
 const app = express();
