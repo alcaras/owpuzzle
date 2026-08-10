@@ -116,15 +116,19 @@ function renderProfile() {
     });
     h += '</div>';
 
-    if (d.recent && d.recent.length) {
-      h += '<h2>Recently conquered</h2><ul class="recent">';
-      d.recent.forEach(function (r) {
-        h += '<li><a href="/?p=' + esc(r.slug) + '">' + esc(r.name) + '</a>' +
-          (r.perfect ? ' ⭐' : '') +
-          ' <span style="color:var(--muted)">— ' + r.orders + ' orders · ' +
-          esc((r.at || '').slice(0, 10)) + '</span></li>';
+    if (d.conquests && d.conquests.length) {
+      h += '<h2>Conquests — hardest first</h2>' +
+        '<table><tr><th>Puzzle</th><th class="num">Elo</th><th class="num">Orders</th>' +
+        '<th class="num">Par</th><th>Beaten</th></tr>';
+      d.conquests.forEach(function (r) {
+        h += '<tr><td><a href="/?p=' + esc(r.slug) + '">' + esc(r.name) + '</a></td>' +
+          '<td class="num"><b>' + r.rating + '</b></td>' +
+          '<td class="num">' + r.orders + '</td>' +
+          '<td class="num">' + (r.perfect ? '⭐' : '—') + '</td>' +
+          '<td>' + esc((r.at || '').slice(0, 10)) + '</td></tr>';
       });
-      h += '</ul>';
+      h += '</table><p class="note" style="text-align:left;margin-top:6px">' +
+        'A puzzle\u2019s rating is revealed once you beat it.</p>';
     }
     h += '<p class="note" style="margin-top:22px"><a href="hall.html">← hall of fame</a></p>';
     el.innerHTML = h;

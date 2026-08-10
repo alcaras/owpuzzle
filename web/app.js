@@ -130,7 +130,7 @@
           (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
           '<div class="body"><div class="card-head"><h3>' + pz.name + '</h3>' +
           '<span class="meta">by ' + (x.author || '?') +
-          (x.rating ? ' · elo ' + x.rating : '') + '</span></div>' +
+          (cDone && x.rating ? ' · elo ' + x.rating : '') + '</span></div>' +
           '<p>' + (pz.brief || '') + '</p>' +
           '<div class="foes"><span class="vs">VS</span>' + foes + '</div></div></a>';
       }).join('');
@@ -241,7 +241,7 @@
           (done ? '<span class="done">' + (perf ? '\u2b50' : '\u2713') + '</span>' : '') +
           (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
           '<div class="body"><div class="card-head"><h3>' + p.name + '</h3>' +
-          '<span class="meta">' + (SERVER_RATING[p.id] ? 'elo ' + SERVER_RATING[p.id] : '') + '</span></div>' +
+          '<span class="meta">' + (done && SERVER_RATING[p.id] ? 'elo ' + SERVER_RATING[p.id] : '') + '</span></div>' +
           '<p>' + p.brief + '</p>' +
           '<div class="foes"><span class="vs">VS</span>' + foes + '</div></div></a>';
       }).join('');
@@ -1037,6 +1037,11 @@
           b.textContent += ' Rating ' + (d.ratingDelta >= 0 ? '+' : '') + d.ratingDelta +
             ' → ' + d.user.rating + '.';
           ME = d.user; renderAuth();
+        }
+        // the puzzle's own Elo is disclosed only once you have beaten it
+        if (d.solved && d.puzzleRating) {
+          var rb = document.getElementById('result-body');
+          rb.textContent += ' This puzzle is rated ' + d.puzzleRating + '.';
         }
         if (d.unlocked && d.unlocked.length) celebrate(d.unlocked);
       }).catch(function () {});

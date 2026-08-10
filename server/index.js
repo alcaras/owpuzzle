@@ -246,7 +246,9 @@ app.post('/api/attempt', (req, res) => {
   const unlocked = computeAchievements(db, user.id).achievements
     .filter(a => a.earned && !earnedBefore.has(a.id))
     .map(a => ({ id: a.id, icon: a.icon, name: a.name, desc: a.desc }));
-  res.json({ solved, perfect, rated, ratingDelta, user: publicUser(fresh), unlocked });
+  res.json({ solved, perfect, rated, ratingDelta, user: publicUser(fresh), unlocked,
+             puzzleRating: Math.round(db.prepare('SELECT rating FROM puzzles WHERE id = ?')
+               .get(row.id).rating) });
 });
 
 // Submissions: collected as-is into the review queue; admins verify locally.
@@ -390,21 +392,27 @@ app.get('/api/profile', (req, res) => {
     : user;
   if (!target) return res.status(404).json({ error: 'no such player' });
   const { achievements, stats } = computeAchievements(db, target.id);
-  const recent = db.prepare(`
-    SELECT p.slug, p.json, a.solved, a.perfect, a.orders_used, a.created_at
+  // every puzzle this player has defeated, hardest (highest rated) first —
+  // puzzle Elo is only disclosed for puzzles you have actually beaten
+  const conquests = db.prepare(`
+    SELECT p.slug, p.json, p.rating, MAX(a.perfect) perfect,
+           MIN(a.orders_used) orders_used, MIN(a.created_at) first_at
     FROM attempts a JOIN puzzles p ON p.id = a.puzzle_id
     WHERE a.user_id = ? AND a.solved = 1 AND ${LIVE}
-    GROUP BY p.id ORDER BY a.created_at DESC LIMIT 8`).all(target.id)
+    GROUP BY p.id ORDER BY p.rating DESC`).all(target.id)
     .map(r => ({
-      slug: r.slug, name: (() => { try { return JSON.parse(r.json).name; } catch (e) { return r.slug; } })(),
-      perfect: !!r.perfect, orders: r.orders_used, at: r.created_at,
+      slug: r.slug,
+      name: (() => { try { return JSON.parse(r.json).name; } catch (e) { return r.slug; } })(),
+      rating: Math.round(r.rating), perfect: !!r.perfect,
+      orders: r.orders_used, at: r.first_at,
     }));
+  const recent = conquests.slice().sort((a, b) => (b.at || '').localeCompare(a.at || '')).slice(0, 8);
   res.json({
     player: {
       name: target.name, avatar: target.avatar, rating: Math.round(target.rating),
       since: target.created_at, me: !!user && target.id === user.id,
     },
-    stats, achievements, recent,
+    stats, achievements, recent, conquests,
   });
 });
 
