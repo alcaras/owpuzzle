@@ -106,6 +106,8 @@
       var changed = false;
       (d.puzzles || []).forEach(function (x) {
         if (x.solvedByMe && !SERVER_SOLVED[x.slug]) { SERVER_SOLVED[x.slug] = true; changed = true; }
+        if (x.perfectByMe && !SERVER_PERFECT[x.slug]) { SERVER_PERFECT[x.slug] = true; changed = true; }
+        if (x.rating && SERVER_RATING[x.slug] !== x.rating) { SERVER_RATING[x.slug] = x.rating; changed = true; }
       });
       if (changed && window.__renderLibrary) window.__renderLibrary();
       var ICONS0 = (typeof OWICONS !== 'undefined') ? OWICONS : {};
@@ -125,8 +127,12 @@
           var ic = unitIcon(u.type);
           return ic ? '<img src="' + ic + '" alt="">' : '';
         }).join('');
-        return '<a class="card' + (x.solvedByMe ? ' solved' : '') + '" href="?p=' + x.slug + '">' +
-          (x.solvedByMe ? '<span class="done">\u2713</span>' : '') +
+        var cPe = null;
+        try { cPe = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}')[x.slug]; } catch (e) {}
+        var cDone = x.solvedByMe || !!(cPe && cPe.solved);
+        var cPerf = x.perfectByMe || !!(cPe && cPe.perfect);
+        return '<a class="card' + (cDone ? ' solved' : '') + '" href="?p=' + x.slug + '">' +
+          (cDone ? '<span class="done">' + (cPerf ? '\u2b50' : '\u2713') + '</span>' : '') +
           (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
           '<div class="body"><div class="card-head"><h3>' + pz.name + '</h3>' +
           '<span class="meta">by ' + (x.author || '?') +
@@ -177,7 +183,7 @@
 
   // SERVER_SOLVED: slugs this signed-in account has solved (from /api/puzzles)
   // — local progress is per-browser, the server knows across devices.
-  var SERVER_SOLVED = {};
+  var SERVER_SOLVED = {}, SERVER_PERFECT = {}, SERVER_RATING = {};
 
   // ---------- library home ----------
   if (!puzzle && !remotePending) {
@@ -229,7 +235,7 @@
       html += list.map(function (p) {
         var pe = progEntry(prog, p);
         var done = isSolved(p);
-        var perf = pe && pe.perfect;
+        var perf = (pe && pe.perfect) || !!SERVER_PERFECT[p.id];
         var heroU = (p.hero != null && p.units[p.hero]) ||
           p.units.filter(function (u) { return u.player === 0; })[0];
         var hero = heroU && unitIcon(heroU.type);

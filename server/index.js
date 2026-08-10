@@ -376,8 +376,10 @@ app.get('/api/hall', (req, res) => {
     total,
     players: rows.filter(r => r.solved > 0).map((r, i) => ({
       rank: i + 1, name: r.name, avatar: r.avatar, solved: r.solved,
-      perfect: r.perfect, authored: r.authored, rating: Math.round(r.rating),
+      perfect: r.perfect, authored: r.authored,
       me: !!user && r.id === user.id,
+      // player Elo is private: only ever disclosed to the player themselves
+      rating: (!!user && r.id === user.id) ? Math.round(r.rating) : undefined,
     })),
   });
 });
@@ -409,8 +411,10 @@ app.get('/api/profile', (req, res) => {
   const recent = conquests.slice().sort((a, b) => (b.at || '').localeCompare(a.at || '')).slice(0, 8);
   res.json({
     player: {
-      name: target.name, avatar: target.avatar, rating: Math.round(target.rating),
+      name: target.name, avatar: target.avatar,
       since: target.created_at, me: !!user && target.id === user.id,
+      // private: your rating is yours alone
+      rating: (!!user && target.id === user.id) ? Math.round(target.rating) : undefined,
     },
     stats, achievements, recent, conquests,
   });

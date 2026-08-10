@@ -71,7 +71,7 @@ function renderHall() {
     var h = '<p class="note">' + d.players.length + ' player' + (d.players.length === 1 ? '' : 's') +
       ' · ' + d.total + ' puzzles live · <a href="?me=1">my achievements</a></p>' +
       '<table><tr><th class="rank">#</th><th>Player</th><th class="num">Solved</th>' +
-      '<th class="num">Perfect</th><th class="num">Made</th><th class="num">Elo</th></tr>';
+      '<th class="num">Perfect</th><th class="num">Made</th></tr>';
     d.players.forEach(function (p) {
       h += '<tr class="' + (p.me ? 'me' : '') + '">' +
         '<td class="rank">' + (MEDAL[p.rank] ? '<span class="medal">' + MEDAL[p.rank] + '</span>' : p.rank) + '</td>' +
@@ -79,8 +79,7 @@ function renderHall() {
         '<a href="?u=' + encodeURIComponent(p.name) + '"><b>' + esc(p.name) + '</b></a></td>' +
         '<td class="num"><b>' + p.solved + '</b> <span style="color:var(--muted)">/ ' + d.total + '</span></td>' +
         '<td class="num">' + (p.perfect ? '⭐ ' + p.perfect : '—') + '</td>' +
-        '<td class="num">' + (p.authored || '—') + '</td>' +
-        '<td class="num">' + p.rating + '</td></tr>';
+        '<td class="num">' + (p.authored || '—') + '</td></tr>';
     });
     el.innerHTML = h + '</table>';
   }).catch(function () { el.textContent = 'server not available'; });
@@ -98,7 +97,7 @@ function renderProfile() {
       '<span><b>' + s.solved + '</b> solved</span>' +
       '<span><b>' + s.perfect + '</b> perfect ⭐</span>' +
       '<span><b>' + earned + '</b>/' + d.achievements.length + ' achievements</span>' +
-      '<span><b>' + p.rating + '</b> rating</span>' +
+      (p.rating != null ? '<span><b>' + p.rating + '</b> rating</span>' : '') +
       (s.authored ? '<span><b>' + s.authored + '</b> puzzle' + (s.authored === 1 ? '' : 's') + ' made</span>' : '') +
       '</div></div></div>';
 
