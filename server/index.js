@@ -397,7 +397,10 @@ app.get('/api/hall', (req, res) => {
         WHERE a.user_id = u.id AND a.solved = 1 AND a.perfect = 1 AND ${LIVE}) perfect,
       (SELECT COUNT(*) FROM puzzles p
         WHERE p.author_id = u.id AND p.status = 'approved') authored
-    FROM users u ORDER BY solved DESC, perfect DESC, u.created_at ASC LIMIT 100`).all();
+    FROM users u
+    -- ties are ordered by (hidden) rating, then seniority; the rank itself is
+    -- still shared, so equal records share a place
+    ORDER BY solved DESC, perfect DESC, u.rating DESC, u.created_at ASC LIMIT 100`).all();
   const total = db.prepare(
     `SELECT COUNT(*) n FROM puzzles WHERE status IN ('core','approved')`).get().n;
   // Standard competition ranking: equal (solved, perfect) shares a rank and
