@@ -936,6 +936,50 @@
     finish(E.checkObjective(state, puzzle.objective));
   }
 
+  // ---------- achievement unlock celebration ----------
+  // Cards fly in one after another with a burst of gold sparks; tap to
+  // dismiss, or they retire themselves. Respects prefers-reduced-motion.
+  function celebrate(list) {
+    var wrap = document.getElementById('achv-pop');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'achv-pop';
+      document.body.appendChild(wrap);
+    }
+    var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    list.forEach(function (a, i) {
+      setTimeout(function () {
+        var card = document.createElement('div');
+        card.className = 'achv-card';
+        card.innerHTML =
+          '<div class="achv-ico">' + a.icon + '</div>' +
+          '<div><div class="achv-head">Achievement unlocked</div>' +
+          '<div class="achv-name">' + a.name + '</div>' +
+          '<div class="achv-desc">' + a.desc + '</div></div>';
+        wrap.appendChild(card);
+        if (!calm) {
+          // gold sparks bursting from the medal
+          for (var k = 0; k < 14; k++) {
+            var sp = document.createElement('i');
+            sp.className = 'achv-spark';
+            var ang = (Math.PI * 2 * k) / 14, dist = 34 + (k % 4) * 11;
+            sp.style.setProperty('--dx', (Math.cos(ang) * dist).toFixed(1) + 'px');
+            sp.style.setProperty('--dy', (Math.sin(ang) * dist).toFixed(1) + 'px');
+            sp.style.animationDelay = (k * 12) + 'ms';
+            card.appendChild(sp);
+          }
+        }
+        card.addEventListener('click', function () { retire(card); });
+        setTimeout(function () { retire(card); }, 6000);
+      }, i * 900);
+    });
+    function retire(card) {
+      if (card.classList.contains('gone')) return;
+      card.classList.add('gone');
+      setTimeout(function () { card.remove(); }, 450);
+    }
+  }
+
   function finish(won) {
     finished = true;
     selected = null;
@@ -993,6 +1037,7 @@
             ' → ' + d.user.rating + '.';
           ME = d.user; renderAuth();
         }
+        if (d.unlocked && d.unlocked.length) celebrate(d.unlocked);
       }).catch(function () {});
     }
     if (won) {

@@ -214,6 +214,10 @@ app.post('/api/attempt', (req, res) => {
   const puzzle = JSON.parse(row.json);
   const { solved, ordersUsed, perfect, damageTaken, unitsLost } = replayLine(puzzle, line);
 
+  // achievement snapshot BEFORE this attempt lands, to diff what it unlocked
+  const earnedBefore = new Set(
+    computeAchievements(db, user.id).achievements.filter(a => a.earned).map(a => a.id));
+
   const prior = db.prepare(
     'SELECT COUNT(*) n FROM attempts WHERE user_id = ? AND puzzle_id = ?').get(user.id, row.id).n;
   const rated = prior === 0;
@@ -239,7 +243,10 @@ app.post('/api/attempt', (req, res) => {
          JSON.stringify(line || []), perfect ? 1 : 0, damageTaken, unitsLost);
 
   const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
-  res.json({ solved, perfect, rated, ratingDelta, user: publicUser(fresh) });
+  const unlocked = computeAchievements(db, user.id).achievements
+    .filter(a => a.earned && !earnedBefore.has(a.id))
+    .map(a => ({ id: a.id, icon: a.icon, name: a.name, desc: a.desc }));
+  res.json({ solved, perfect, rated, ratingDelta, user: publicUser(fresh), unlocked });
 });
 
 // Submissions: collected as-is into the review queue; admins verify locally.

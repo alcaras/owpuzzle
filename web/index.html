@@ -176,6 +176,48 @@
   .hex.reach-glow { fill-opacity: 0.9; }
   .unit-chip { cursor: pointer; }
   .dmg-preview { font-family: Georgia, serif; font-weight: bold; pointer-events: none; }
+  /* ---------- achievement unlock ---------- */
+  #achv-pop { position:fixed; z-index:60; left:50%; bottom:26px; transform:translateX(-50%);
+    display:flex; flex-direction:column; gap:10px; align-items:center; pointer-events:none; }
+  .achv-card {
+    position:relative; pointer-events:auto; cursor:pointer;
+    display:flex; gap:12px; align-items:center;
+    background:linear-gradient(135deg,#2b2415,#3b3018);
+    color:#f6ecd2; border:1.5px solid #d4a12c; border-radius:12px;
+    padding:11px 18px 11px 14px; min-width:262px; max-width:min(92vw,380px);
+    box-shadow:0 8px 30px rgba(0,0,0,.45), inset 0 0 22px rgba(212,161,44,.16);
+    animation:achv-in .62s cubic-bezier(.16,1.32,.42,1) both;
+  }
+  .achv-card.gone { animation:achv-out .42s ease-in forwards; }
+  .achv-ico { font-size:31px; line-height:1; animation:achv-pulse 1.5s ease-in-out 2; }
+  .achv-head { font-size:10px; letter-spacing:2.4px; text-transform:uppercase; color:#d4a12c; }
+  .achv-name { font-size:17px; font-weight:bold; margin:1px 0 2px; }
+  .achv-desc { font-size:11.5px; color:#c3b48f; line-height:1.3; }
+  /* sweeping sheen across the card */
+  .achv-card::after {
+    content:''; position:absolute; inset:0; border-radius:12px; pointer-events:none;
+    background:linear-gradient(105deg,transparent 34%,rgba(255,238,190,.42) 50%,transparent 66%);
+    background-size:260% 100%; animation:achv-sheen 1.15s ease-out .28s 1;
+  }
+  .achv-spark {
+    position:absolute; left:27px; top:50%; width:6px; height:6px; border-radius:50%;
+    background:#ffdc7a; box-shadow:0 0 7px #ffcf4d; pointer-events:none;
+    animation:achv-spark .85s ease-out forwards;
+  }
+  @keyframes achv-in {
+    0% { opacity:0; transform:translateY(26px) scale(.82); }
+    100% { opacity:1; transform:translateY(0) scale(1); } }
+  @keyframes achv-out {
+    to { opacity:0; transform:translateY(-14px) scale(.95); } }
+  @keyframes achv-pulse {
+    0%,100% { transform:scale(1) rotate(0); } 28% { transform:scale(1.28) rotate(-9deg); } }
+  @keyframes achv-sheen { from { background-position:150% 0; } to { background-position:-90% 0; } }
+  @keyframes achv-spark {
+    from { opacity:1; transform:translate(0,0) scale(1); }
+    to { opacity:0; transform:translate(var(--dx),var(--dy)) scale(.25); } }
+  @media (prefers-reduced-motion: reduce) {
+    .achv-card, .achv-ico { animation:none; }
+    .achv-card::after { display:none; } }
 </style>
 </head>
 <body>
