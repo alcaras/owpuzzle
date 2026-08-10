@@ -89,33 +89,53 @@ function computeAchievements(db, userId, persist) {
   // EXCEPTION: the three author/time badges do not scale with the library —
   // 20 authored puzzles or 60 distinct solvers would be unreachable forever
   // AND unhideable (their cap is unbounded), so they keep practical targets.
+  // Two layers:
+  //  * EARLY / DEED badges keep their own plain names — they mark a first
+  //    time or a single feat, and they are what a new player chases.
+  //  * COGNOMEN badges sit above them, and their target is the cognomen's own
+  //    iLegitimacy from cognomen.xml (The Great gives 100 -> 100 solves), so
+  //    the high tier scales with the library and unhides as it grows.
   const defs = [
-    ['🩸', 'first-blood', 'The Warrior', 'Solve 10 puzzles.', solvedTotal, 10, liveTotal],
-    ['⚔️', 'veteran', 'The Valiant', 'Solve 30 puzzles.', solvedTotal, 30, liveTotal],
-    ['🏛️', 'consul', 'The Mighty', 'Solve 40 puzzles.', solvedTotal, 40, liveTotal],
-    ['🏆', 'legion', 'The Great', 'Solve 100 puzzles.', solvedTotal, 100, liveTotal],
-    ['⭐', 'perfectionist', 'The Able', 'Solve 30 puzzles at par.', perfectTotal, 30, liveTotal],
-    ['👑', 'completionist', 'The Conqueror', 'Solve 40 puzzles at par.', perfectTotal, 40, liveTotal],
-    ['🌟', 'flawless', 'The Magnificent', 'Solve 90 puzzles at par.', perfectTotal, 90, liveTotal],
-    ['🎯', 'first-sight', 'The Ready', 'Hit par on your first attempt 30 times.',
-      firstTryPerfect, 30, liveTotal],
-    ['🛡️', 'untouchable', 'The White Death', 'Win 60 puzzles without taking damage.',
-      cleanTotal, 60, liveTotal],
-    ['🪖', 'not-a-scratch', 'The Invincible', 'Win 70 puzzles without taking damage.',
-      cleanTotal, 70, liveTotal],
-    ['🧗', 'challenger', 'The Intrepid', 'Solve 50 Challenge-tier puzzles.',
-      challenges.done, 50, challenges.total],
-    ['🤝', 'good-company', 'The Good', 'Solve 50 community-made puzzles.',
-      community.done, 50, community.total],
-    ['💀', 'butcher', 'The Destroyer', 'Reach the destruction ceiling 20 times.',
-      maxKill.done, 20, maxKill.total],
-    ['🔁', 'stubborn', 'The Avenger', 'Beat 40 puzzles that had beaten you.',
-      comebacks, 40, liveTotal],
-    ['⚡', 'blitz', 'The Scourge', 'Solve 50 puzzles in a single day.', bestDay, 50, liveTotal],
-    ['📅', 'campaigner', 'The Old', 'Solve puzzles on 5 different days.', distinctDays, 5, Infinity],
+    // -- first steps -----------------------------------------------------
+    ['🩸', 'first-blood', 'First Blood', 'Solve your first puzzle.', solvedTotal, 1, liveTotal],
+    ['🛡️', 'untouchable', 'Untouchable', 'Win a puzzle without taking a single point of damage.',
+      cleanTotal, 1, liveTotal],
+    ['🎯', 'first-sight', 'At First Sight', 'Hit par on your very first attempt at a puzzle.',
+      firstTryPerfect, 1, liveTotal],
+    ['🔁', 'stubborn', 'Stubborn', 'Come back and beat a puzzle that beat you.', comebacks, 1, liveTotal],
+    ['💀', 'butcher', 'Butcher', 'Reach the destruction ceiling on 3 puzzles.', maxKill.done, 3, maxKill.total],
+    ['🤝', 'good-company', 'Good Company', 'Solve 3 community-made puzzles.', community.done, 3, community.total],
+    ['⭐', 'perfectionist', 'Perfectionist', 'Solve 5 puzzles at par.', perfectTotal, 5, liveTotal],
+    ['⚡', 'blitz', 'Blitz', 'Solve 5 puzzles in a single day.', bestDay, 5, liveTotal],
+    ['📅', 'campaigner', 'Campaigner', 'Solve puzzles on 5 different days.', distinctDays, 5, Infinity],
+    ['⚔️', 'veteran', 'Veteran', 'Solve 10 puzzles.', solvedTotal, 10, liveTotal],
+    ['🪖', 'not-a-scratch', 'Not a Scratch', 'Win 10 puzzles without taking damage.', cleanTotal, 10, liveTotal],
+    ['🧗', 'challenger', 'Challenger', 'Solve 10 Challenge-tier puzzles.', challenges.done, 10, challenges.total],
+    ['🌟', 'flawless', 'Flawless', 'Solve 20 puzzles at par.', perfectTotal, 20, liveTotal],
+    ['🏛️', 'consul', 'Consul', 'Solve 25 puzzles.', solvedTotal, 25, liveTotal],
     ['📜', 'architect', 'The Architect', 'Get a puzzle of your own approved.', authored, 1, Infinity],
     ['🎖️', 'beloved', 'The Beloved', 'Have 5 different players solve a puzzle you made.',
       authoredSolvers, 5, Infinity],
+    // -- cognomens: target == the title's Legitimacy in cognomen.xml -----
+    ['🗡️', 'cog-valiant', 'The Valiant', 'Solve 30 puzzles.', solvedTotal, 30, liveTotal],
+    ['🏇', 'cog-mighty', 'The Mighty', 'Solve 40 puzzles.', solvedTotal, 40, liveTotal],
+    ['🏆', 'legion', 'The Great', 'Solve 100 puzzles.', solvedTotal, 100, liveTotal],
+    ['🎖️', 'cog-able', 'The Able', 'Solve 30 puzzles at par.', perfectTotal, 30, liveTotal],
+    ['👑', 'completionist', 'The Conqueror', 'Solve 40 puzzles at par.', perfectTotal, 40, liveTotal],
+    ['✨', 'cog-magnificent', 'The Magnificent', 'Solve 90 puzzles at par.', perfectTotal, 90, liveTotal],
+    ['❄️', 'cog-white-death', 'The White Death', 'Win 60 puzzles without taking damage.',
+      cleanTotal, 60, liveTotal],
+    ['🛡️', 'cog-invincible', 'The Invincible', 'Win 70 puzzles without taking damage.',
+      cleanTotal, 70, liveTotal],
+    ['⛰️', 'cog-intrepid', 'The Intrepid', 'Solve 50 Challenge-tier puzzles.',
+      challenges.done, 50, challenges.total],
+    ['☠️', 'cog-destroyer', 'The Destroyer', 'Reach the destruction ceiling 20 times.',
+      maxKill.done, 20, maxKill.total],
+    ['🔥', 'cog-scourge', 'The Scourge', 'Solve 50 puzzles in a single day.', bestDay, 50, liveTotal],
+    ['⚖️', 'cog-avenger', 'The Avenger', 'Beat 40 puzzles that had beaten you.', comebacks, 40, liveTotal],
+    ['🏺', 'cog-old', 'The Old', 'Solve puzzles on 40 different days.', distinctDays, 40, Infinity],
+    ['🎯', 'cog-ready', 'The Ready', 'Hit par on your first attempt 30 times.',
+      firstTryPerfect, 30, liveTotal],
   ];
 
   // Immutability: a badge already earned stays earned even if the live

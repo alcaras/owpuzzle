@@ -28,7 +28,7 @@ if (linked) console.log(`linked ${linked} puzzle(s) to their author account`);
 // good even as the library grows or puzzles are retired
 {
   // thresholds changed (cognomen legitimacy) — re-grant against the new bar
-  const wiped = resetAchievementsOnce('achv_reset_legitimacy_thresholds');
+  const wiped = resetAchievementsOnce('achv_reset_two_tier_v3');
   if (wiped) console.log(`cleared ${wiped} achievement grant(s) for re-evaluation`);
   const before = db.prepare('SELECT COUNT(*) n FROM user_achievements').get().n;
   for (const u of db.prepare('SELECT id FROM users').all()) computeAchievements(db, u.id, true);
