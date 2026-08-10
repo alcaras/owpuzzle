@@ -5,7 +5,8 @@
 const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
-const { db, seedCorePuzzles } = require('./db');
+const { db, seedCorePuzzles, backfillAttempts } = require('./db');
+const { computeAchievements, LIVE } = require('./achievements');
 const glicko = require('./glicko');
 const E = require(path.join(__dirname, '..', 'web', 'engine.js'));
 const SOLVER = require(path.join(__dirname, '..', 'web', 'solver.js'));
@@ -19,6 +20,8 @@ const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || ''; // submission
 const FAILED_REQUEUE_HOURS = 24;
 
 const seeded = seedCorePuzzles();
+const backfilled = backfillAttempts((puzzle, line) => replayLine(puzzle, line));
+if (backfilled) console.log(`backfilled ${backfilled} attempt rows`);
 console.log(`seeded ${seeded} core puzzles`);
 
 const app = express();
@@ -128,10 +131,18 @@ function replayLine(puzzle, line) {
     return { solved: false, ordersUsed: puzzle.orders - s.orders };
   }
   const pool = E.poolOrders(puzzle);
+  const solved = E.checkObjective(s, puzzle.objective);
+  let damageTaken = 0, unitsLost = 0;
+  for (const u of s.units) {
+    if (u.player !== 0) continue;
+    damageTaken += E.hpMax(u) - Math.max(0, u.hp);
+    if (u.hp <= 0) unitsLost++;
+  }
   return {
-    solved: E.checkObjective(s, puzzle.objective),
+    solved,
     ordersUsed: pool - s.orders,
-    perfect: E.checkObjective(s, puzzle.objective) && (pool - s.orders) <= puzzle.orders,
+    perfect: solved && (pool - s.orders) <= puzzle.orders,
+    damageTaken, unitsLost,
   };
 }
 
@@ -143,11 +154,13 @@ app.get('/api/puzzles', (req, res) => {
   const rows = db.prepare(`
     SELECT id, slug, json, status, author_name, rating, rd, attempts, solves
     FROM puzzles WHERE status IN ('core', 'approved') ORDER BY id`).all();
-  let solved = {};
+  let solved = {}, perfect = {};
   if (user) {
     for (const r of db.prepare(
-      'SELECT DISTINCT puzzle_id FROM attempts WHERE user_id = ? AND solved = 1').all(user.id)) {
+      `SELECT puzzle_id, MAX(perfect) perfect FROM attempts
+       WHERE user_id = ? AND solved = 1 GROUP BY puzzle_id`).all(user.id)) {
       solved[r.puzzle_id] = true;
+      if (r.perfect) perfect[r.puzzle_id] = true;
     }
   }
   res.json({
@@ -155,6 +168,7 @@ app.get('/api/puzzles', (req, res) => {
       id: r.id, slug: r.slug, puzzle: JSON.parse(r.json), status: r.status,
       author: r.author_name, rating: Math.round(r.rating),
       attempts: r.attempts, solves: r.solves, solvedByMe: !!solved[r.id],
+      perfectByMe: !!perfect[r.id],
     })),
   });
 });
@@ -198,7 +212,7 @@ app.post('/api/attempt', (req, res) => {
   const row = db.prepare(`SELECT * FROM puzzles WHERE slug = ? AND status IN ('core','approved')`).get(slug);
   if (!row) return res.status(404).json({ error: 'unknown puzzle' });
   const puzzle = JSON.parse(row.json);
-  const { solved, ordersUsed, perfect } = replayLine(puzzle, line);
+  const { solved, ordersUsed, perfect, damageTaken, unitsLost } = replayLine(puzzle, line);
 
   const prior = db.prepare(
     'SELECT COUNT(*) n FROM attempts WHERE user_id = ? AND puzzle_id = ?').get(user.id, row.id).n;
@@ -218,9 +232,11 @@ app.post('/api/attempt', (req, res) => {
   }
   db.prepare(`UPDATE puzzles SET attempts = attempts + 1, solves = solves + ? WHERE id = ?`)
     .run(solved ? 1 : 0, row.id);
-  db.prepare(`INSERT INTO attempts (user_id, puzzle_id, solved, rated, orders_used, line)
-              VALUES (?, ?, ?, ?, ?, ?)`)
-    .run(user.id, row.id, solved ? 1 : 0, rated ? 1 : 0, ordersUsed, JSON.stringify(line || []));
+  db.prepare(`INSERT INTO attempts
+                (user_id, puzzle_id, solved, rated, orders_used, line, perfect, damage_taken, units_lost)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(user.id, row.id, solved ? 1 : 0, rated ? 1 : 0, ordersUsed,
+         JSON.stringify(line || []), perfect ? 1 : 0, damageTaken, unitsLost);
 
   const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
   res.json({ solved, perfect, rated, ratingDelta, user: publicUser(fresh) });
@@ -302,30 +318,88 @@ app.post('/api/review/:slug', (req, res) => {
 app.get('/api/admin/stats', (req, res) => {
   const user = userFromReq(req);
   if (!user || !user.is_admin) return res.status(403).json({ error: 'admin only' });
+  const showAll = req.query.all === '1';
   const puzzles = db.prepare(`
     SELECT slug, json, status, author_name, rating, rd, attempts, solves, created_at
-    FROM puzzles ORDER BY rating DESC`).all().map(r => ({
+    FROM puzzles ${showAll ? '' : `WHERE status IN ('core','approved','pending')`}
+    ORDER BY rating DESC`).all().map(r => ({
       slug: r.slug, name: JSON.parse(r.json).name, status: r.status,
       author: r.author_name, rating: Math.round(r.rating), rd: Math.round(r.rd),
       attempts: r.attempts, solves: r.solves,
     }));
   const users = db.prepare(`
     SELECT u.name, u.rating, u.rd, u.created_at,
-      (SELECT COUNT(DISTINCT puzzle_id) FROM attempts a WHERE a.user_id = u.id AND a.solved = 1) solved,
+      (SELECT COUNT(DISTINCT puzzle_id) FROM attempts a
+        WHERE a.user_id = u.id AND a.solved = 1 AND ${LIVE}) solved,
       (SELECT COUNT(*) FROM attempts a WHERE a.user_id = u.id) attempts
     FROM users u ORDER BY u.rating DESC`).all().map(r => ({
       name: r.name, rating: Math.round(r.rating), rd: Math.round(r.rd),
       solved: r.solved, attempts: r.attempts, since: r.created_at,
     }));
-  res.json({ puzzles, users });
+  res.json({ puzzles, users, filtered: !showAll });
 });
 
 app.get('/api/leaderboard', (req, res) => {
   const users = db.prepare(`
     SELECT name, avatar, rating, rd,
-      (SELECT COUNT(DISTINCT puzzle_id) FROM attempts a WHERE a.user_id = users.id AND solved = 1) solved
+      (SELECT COUNT(DISTINCT puzzle_id) FROM attempts a
+        WHERE a.user_id = users.id AND solved = 1 AND ${LIVE}) solved
     FROM users WHERE rd < 250 ORDER BY rating DESC LIMIT 50`).all();
   res.json({ users: users.map(u => ({ name: u.name, avatar: u.avatar, rating: Math.round(u.rating), solved: u.solved })) });
+});
+
+// Hall of Fame: ranked by puzzles COMPLETED (not rating). Open to anyone
+// signed in; ties break on perfect solves, then earliest joiner.
+app.get('/api/hall', (req, res) => {
+  const user = userFromReq(req);
+  if (!user) return res.status(401).json({ error: 'sign in to see the hall of fame' });
+  const rows = db.prepare(`
+    SELECT u.id, u.name, u.avatar, u.rating, u.created_at,
+      (SELECT COUNT(DISTINCT puzzle_id) FROM attempts a
+        WHERE a.user_id = u.id AND a.solved = 1 AND ${LIVE}) solved,
+      (SELECT COUNT(DISTINCT puzzle_id) FROM attempts a
+        WHERE a.user_id = u.id AND a.solved = 1 AND a.perfect = 1 AND ${LIVE}) perfect,
+      (SELECT COUNT(*) FROM puzzles p
+        WHERE p.author_id = u.id AND p.status = 'approved') authored
+    FROM users u ORDER BY solved DESC, perfect DESC, u.created_at ASC LIMIT 100`).all();
+  const total = db.prepare(
+    `SELECT COUNT(*) n FROM puzzles WHERE status IN ('core','approved')`).get().n;
+  res.json({
+    total,
+    players: rows.filter(r => r.solved > 0).map((r, i) => ({
+      rank: i + 1, name: r.name, avatar: r.avatar, solved: r.solved,
+      perfect: r.perfect, authored: r.authored, rating: Math.round(r.rating),
+      me: r.id === user.id,
+    })),
+  });
+});
+
+// Profile + achievement gallery. Defaults to the signed-in player.
+app.get('/api/profile', (req, res) => {
+  const user = userFromReq(req);
+  if (!user) return res.status(401).json({ error: 'sign in to see profiles' });
+  const name = req.query.name;
+  const target = name
+    ? db.prepare('SELECT * FROM users WHERE name = ?').get(name)
+    : user;
+  if (!target) return res.status(404).json({ error: 'no such player' });
+  const { achievements, stats } = computeAchievements(db, target.id);
+  const recent = db.prepare(`
+    SELECT p.slug, p.json, a.solved, a.perfect, a.orders_used, a.created_at
+    FROM attempts a JOIN puzzles p ON p.id = a.puzzle_id
+    WHERE a.user_id = ? AND a.solved = 1 AND ${LIVE}
+    GROUP BY p.id ORDER BY a.created_at DESC LIMIT 8`).all(target.id)
+    .map(r => ({
+      slug: r.slug, name: (() => { try { return JSON.parse(r.json).name; } catch (e) { return r.slug; } })(),
+      perfect: !!r.perfect, orders: r.orders_used, at: r.created_at,
+    }));
+  res.json({
+    player: {
+      name: target.name, avatar: target.avatar, rating: Math.round(target.rating),
+      since: target.created_at, me: target.id === user.id,
+    },
+    stats, achievements, recent,
+  });
 });
 
 // serve a submitted/approved puzzle definition to the play page

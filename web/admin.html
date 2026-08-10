@@ -30,10 +30,15 @@
   <div id="content" class="note">loading…</div>
 </div>
 <script>
-fetch('/api/admin/stats').then(r => r.json()).then(d => {
+var showAll = new URLSearchParams(location.search).get('all') === '1';
+fetch('/api/admin/stats' + (showAll ? '?all=1' : '')).then(r => r.json()).then(d => {
   if (d.error) { document.getElementById('content').textContent = d.error + ' — sign in as admin first'; return; }
   function esc(x) { return String(x == null ? '' : x).replace(/</g, '&lt;'); }
-  var h = '<h2>Puzzle ratings (' + d.puzzles.length + ')</h2><table><tr>' +
+  var h = '<h2>Puzzle ratings (' + d.puzzles.length + ')</h2>' +
+    '<p class="note" style="text-align:left;margin:0 0 8px">' + (showAll
+      ? 'showing every row including retired/rejected \u00b7 <a href="?">hide them</a>'
+      : 'live + pending only \u00b7 <a href="?all=1">show retired &amp; rejected</a>') + '</p>' +
+    '<table><tr>' +
     '<th>Puzzle</th><th>Status</th><th>Author</th><th class="num">Rating</th><th class="num">±RD</th>' +
     '<th class="num">Attempts</th><th class="num">Solves</th><th class="num">Solve %</th></tr>';
   d.puzzles.forEach(function (p) {

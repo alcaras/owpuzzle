@@ -216,6 +216,9 @@
     }
     var html = invite + '<div class="progress" id="rated-row" style="margin-bottom:8px">' +
       '<button class="rated-btn" id="btn-rated">▶ Play rated puzzle</button></div>' +
+      '<div class="progress" style="margin-bottom:6px">' +
+      '<a href="hall.html">🏆 Hall of Fame</a> · ' +
+      '<a href="hall.html?me=1">my achievements</a></div>' +
       '<div class="progress">Solved <b>' + solvedCount + '</b> of ' + OWPUZZLES.length +
       (solvedCount === OWPUZZLES.length && solvedCount > 0 ? ' — the whole library! ⚔️' : '') + '</div>';
     GROUPS.forEach(function (g) {

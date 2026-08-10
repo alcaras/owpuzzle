@@ -98,5 +98,31 @@ function seedCorePuzzles() {
 }
 
 try { db.exec('ALTER TABLE puzzles ADD COLUMN notes TEXT'); } catch (e) {}
+// Per-attempt outcome details (achievements + the PERFECT star on any device).
+// NULL on rows written before this existed — backfilled from the stored line.
+try { db.exec('ALTER TABLE attempts ADD COLUMN perfect INTEGER'); } catch (e) {}
+try { db.exec('ALTER TABLE attempts ADD COLUMN damage_taken INTEGER'); } catch (e) {}
+try { db.exec('ALTER TABLE attempts ADD COLUMN units_lost INTEGER'); } catch (e) {}
 
-module.exports = { db, seedCorePuzzles };
+// Replay historical attempts through the engine to fill the new columns.
+// Cheap (one pass over a few hundred short lines) and idempotent.
+function backfillAttempts(replay) {
+  const rows = db.prepare(`
+    SELECT a.id, a.line, p.json FROM attempts a
+    JOIN puzzles p ON p.id = a.puzzle_id
+    WHERE a.perfect IS NULL`).all();
+  if (!rows.length) return 0;
+  const up = db.prepare(
+    'UPDATE attempts SET perfect = ?, damage_taken = ?, units_lost = ? WHERE id = ?');
+  const tx = db.transaction(() => {
+    for (const r of rows) {
+      let out = { perfect: false, damageTaken: 0, unitsLost: 0 };
+      try { out = replay(JSON.parse(r.json), JSON.parse(r.line || '[]')); } catch (e) {}
+      up.run(out.perfect ? 1 : 0, out.damageTaken | 0, out.unitsLost | 0, r.id);
+    }
+  });
+  tx();
+  return rows.length;
+}
+
+module.exports = { db, seedCorePuzzles, backfillAttempts };
