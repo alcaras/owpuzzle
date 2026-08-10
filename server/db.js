@@ -138,6 +138,20 @@ function linkAuthors() {
   return n;
 }
 
+// One-time resets while the achievement system is still being designed.
+// Immutability protects players from LOSING a badge to later balance changes,
+// but during design we want the grants to reflect the current thresholds.
+// Bump the sentinel to wipe and re-grant; each runs at most once.
+db.exec(`CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT,
+         at TEXT NOT NULL DEFAULT (datetime('now')));`);
+function resetAchievementsOnce(sentinel) {
+  const seen = db.prepare('SELECT 1 FROM meta WHERE k = ?').get(sentinel);
+  if (seen) return 0;
+  const n = db.prepare('DELETE FROM user_achievements').run().changes;
+  db.prepare('INSERT INTO meta (k, v) VALUES (?, ?)').run(sentinel, 'done');
+  return n;
+}
+
 // Replay historical attempts through the engine to fill the new columns.
 // Cheap (one pass over a few hundred short lines) and idempotent.
 function backfillAttempts(replay) {
@@ -159,4 +173,4 @@ function backfillAttempts(replay) {
   return rows.length;
 }
 
-module.exports = { db, seedCorePuzzles, backfillAttempts, linkAuthors };
+module.exports = { db, seedCorePuzzles, backfillAttempts, linkAuthors, resetAchievementsOnce };

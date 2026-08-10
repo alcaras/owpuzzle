@@ -5,7 +5,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
-const { db, seedCorePuzzles, backfillAttempts, linkAuthors } = require('./db');
+const { db, seedCorePuzzles, backfillAttempts, linkAuthors, resetAchievementsOnce } = require('./db');
 const { computeAchievements, LIVE } = require('./achievements');
 const glicko = require('./glicko');
 const E = require(path.join(__dirname, '..', 'web', 'engine.js'));
@@ -27,6 +27,9 @@ if (linked) console.log(`linked ${linked} puzzle(s) to their author account`);
 // record every achievement currently met, so existing players keep them for
 // good even as the library grows or puzzles are retired
 {
+  // thresholds changed (cognomen legitimacy) — re-grant against the new bar
+  const wiped = resetAchievementsOnce('achv_reset_legitimacy_thresholds');
+  if (wiped) console.log(`cleared ${wiped} achievement grant(s) for re-evaluation`);
   const before = db.prepare('SELECT COUNT(*) n FROM user_achievements').get().n;
   for (const u of db.prepare('SELECT id FROM users').all()) computeAchievements(db, u.id, true);
   const after = db.prepare('SELECT COUNT(*) n FROM user_achievements').get().n;
