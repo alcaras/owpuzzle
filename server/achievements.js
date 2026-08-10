@@ -79,32 +79,43 @@ function computeAchievements(db, userId, persist) {
   const challenges = cover(r => r.status === 'core' && (r.p.difficulty || 2) === 3);
   const community = cover(r => r.status === 'approved');
   const maxKill = cover(r => (r.p.objective || {}).kind === 'maxKill');
+  const liveTotal = live.length;
 
   // --- the gallery ---------------------------------------------------------
+  // Threshold == the cognomen's Legitimacy in cognomen.xml, so the title you
+  // earn is worth what the game says it is worth, and the ladder scales with
+  // the library (The Great gives 100 legitimacy -> 100 solves). Anything not
+  // yet attainable is hidden until it is.
+  // EXCEPTION: the three author/time badges do not scale with the library —
+  // 20 authored puzzles or 60 distinct solvers would be unreachable forever
+  // AND unhideable (their cap is unbounded), so they keep practical targets.
   const defs = [
-    ['🩸', 'first-blood', 'The Warrior', 'Solve your first puzzle.', solvedTotal, 1],
-    ['⚔️', 'veteran', 'The Valiant', 'Solve 10 puzzles.', solvedTotal, 10],
-    ['🏛️', 'consul', 'The Mighty', 'Solve 25 puzzles.', solvedTotal, 25],
-    ['🏆', 'legion', 'The Great', 'Solve 50 puzzles.', solvedTotal, 50],
-    ['👑', 'completionist', 'The Conqueror', 'Clear the whole library in a single sweep.',
-      core.done + community.done, core.total + community.total || 1],
-    ['🧗', 'challenger', 'The Intrepid', 'Solve 12 Challenge-tier puzzles.', challenges.done, 12],
-    ['🤝', 'good-company', 'The Good', 'Solve 3 community-made puzzles.', community.done, 3],
-    ['⭐', 'perfectionist', 'The Able', 'Solve 5 puzzles at par.', perfectTotal, 5],
-    ['🌟', 'flawless', 'The Magnificent', 'Solve 20 puzzles at par.', perfectTotal, 20],
-    ['🎯', 'first-sight', 'The Ready', 'Hit par on your very first attempt at a puzzle.',
-      firstTryPerfect, 1],
-    ['🛡️', 'untouchable', 'The White Death', 'Win a puzzle without taking a single point of damage.',
-      cleanTotal, 1],
-    ['🪖', 'not-a-scratch', 'The Invincible', 'Win 10 puzzles without taking damage.', cleanTotal, 10],
-    ['💀', 'butcher', 'The Destroyer', 'Reach the destruction ceiling on 3 open-slaughter puzzles.',
-      maxKill.done, 3],
-    ['🔁', 'stubborn', 'The Avenger', 'Come back and beat a puzzle that beat you.', comebacks, 1],
-    ['⚡', 'blitz', 'The Scourge', 'Solve 5 puzzles in a single day.', bestDay, 5],
-    ['📅', 'campaigner', 'The Old', 'Solve puzzles on 5 different days.', distinctDays, 5],
-    ['📜', 'architect', 'The Architect', 'Get a puzzle of your own approved.', authored, 1],
+    ['🩸', 'first-blood', 'The Warrior', 'Solve 10 puzzles.', solvedTotal, 10, liveTotal],
+    ['⚔️', 'veteran', 'The Valiant', 'Solve 30 puzzles.', solvedTotal, 30, liveTotal],
+    ['🏛️', 'consul', 'The Mighty', 'Solve 40 puzzles.', solvedTotal, 40, liveTotal],
+    ['🏆', 'legion', 'The Great', 'Solve 100 puzzles.', solvedTotal, 100, liveTotal],
+    ['⭐', 'perfectionist', 'The Able', 'Solve 30 puzzles at par.', perfectTotal, 30, liveTotal],
+    ['👑', 'completionist', 'The Conqueror', 'Solve 40 puzzles at par.', perfectTotal, 40, liveTotal],
+    ['🌟', 'flawless', 'The Magnificent', 'Solve 90 puzzles at par.', perfectTotal, 90, liveTotal],
+    ['🎯', 'first-sight', 'The Ready', 'Hit par on your first attempt 30 times.',
+      firstTryPerfect, 30, liveTotal],
+    ['🛡️', 'untouchable', 'The White Death', 'Win 60 puzzles without taking damage.',
+      cleanTotal, 60, liveTotal],
+    ['🪖', 'not-a-scratch', 'The Invincible', 'Win 70 puzzles without taking damage.',
+      cleanTotal, 70, liveTotal],
+    ['🧗', 'challenger', 'The Intrepid', 'Solve 50 Challenge-tier puzzles.',
+      challenges.done, 50, challenges.total],
+    ['🤝', 'good-company', 'The Good', 'Solve 50 community-made puzzles.',
+      community.done, 50, community.total],
+    ['💀', 'butcher', 'The Destroyer', 'Reach the destruction ceiling 20 times.',
+      maxKill.done, 20, maxKill.total],
+    ['🔁', 'stubborn', 'The Avenger', 'Beat 40 puzzles that had beaten you.',
+      comebacks, 40, liveTotal],
+    ['⚡', 'blitz', 'The Scourge', 'Solve 50 puzzles in a single day.', bestDay, 50, liveTotal],
+    ['📅', 'campaigner', 'The Old', 'Solve puzzles on 5 different days.', distinctDays, 5, Infinity],
+    ['📜', 'architect', 'The Architect', 'Get a puzzle of your own approved.', authored, 1, Infinity],
     ['🎖️', 'beloved', 'The Beloved', 'Have 5 different players solve a puzzle you made.',
-      authoredSolvers, 5],
+      authoredSolvers, 5, Infinity],
   ];
 
   // Immutability: a badge already earned stays earned even if the live
@@ -113,7 +124,7 @@ function computeAchievements(db, userId, persist) {
     'SELECT achv_id, earned_at FROM user_achievements WHERE user_id = ?')
     .all(userId).map(r => [r.achv_id, r.earned_at]));
 
-  const list = defs.map(([icon, id, name, desc, progress, target]) => {
+  const list = defs.map(([icon, id, name, desc, progress, target, cap]) => {
     const meetsNow = progress >= target;
     return {
       id, icon, name, desc,
@@ -123,8 +134,12 @@ function computeAchievements(db, userId, persist) {
       // shown when the badge is kept on record but the counter has since
       // slipped (e.g. a puzzle it counted was retired)
       retained: !meetsNow && held.has(id),
+      // not achievable with today's library (e.g. 50 solves when 36 exist)
+      impossible: target > (cap == null ? Infinity : cap),
     };
-  });
+  })
+  // hide what cannot currently be earned — unless it is already held
+  .filter(a => a.earned || !a.impossible);
 
   if (persist) {
     const ins = db.prepare(
