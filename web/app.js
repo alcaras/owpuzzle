@@ -859,13 +859,21 @@
     // shows the breakdown and arms the target; the second tap strikes.
     if (selected != null) {
       var can = E.attackTargets(state, E.unitById(state, selected)).some(function (t) { return t.id === id; });
-      if (!can) return;
+      if (!can) {
+        // not a legal target — on touch, show the unit's info card instead
+        // (there is no hover on mobile)
+        if (!CAN_HOVER) showUnitInfo(id);
+        return;
+      }
       if (!CAN_HOVER && armedTarget !== id) {
         armedTarget = id;
         showPreviewPanel(id);
         return;
       }
       act({ type: 'attack', unit: selected, target: id });
+    } else if (!CAN_HOVER) {
+      // nothing selected: on touch, a tap on an enemy opens its info card
+      showUnitInfo(id);
     }
   }
 

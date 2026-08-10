@@ -3,7 +3,6 @@
 // it through the same engine.js the browser uses.
 'use strict';
 const express = require('express');
-const { Worker } = require('worker_threads');
 const crypto = require('crypto');
 const path = require('path');
 const { db, seedCorePuzzles } = require('./db');
@@ -227,8 +226,7 @@ app.post('/api/attempt', (req, res) => {
   res.json({ solved, perfect, rated, ratingDelta, user: publicUser(fresh) });
 });
 
-// Submissions: earn the right by solving every core puzzle. The solver is the
-// gatekeeper: must be solvable; winningLines reported to the reviewer.
+// Submissions: collected as-is into the review queue; admins verify locally.
 app.post('/api/submit', (req, res) => {
   const user = userFromReq(req);
   if (!user) return res.status(401).json({ error: 'not logged in' });
@@ -256,45 +254,27 @@ app.post('/api/submit', (req, res) => {
       !(p.tiles || []).some(t => t.city === 1)) {
     return res.status(400).json({ error: 'capture objective needs an enemy city tile' });
   }
+  // does it even load? (broken tiles/targets throw) — cheap, synchronous
+  try { E.loadPuzzle(p); } catch (e) {
+    return res.status(400).json({ error: 'puzzle does not load: ' + e.message });
+  }
   const slug = (p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) +
     '-' + crypto.randomBytes(3).toString('hex'));
   p.id = slug;
   p.author = user.name;
+  // No server-side solving: submissions land in the review queue as-is and
+  // are verified locally by the admins (the async worker gave silent fails).
   db.prepare(`INSERT INTO puzzles (slug, json, status, author_id, author_name, rating, notes)
-              VALUES (?, ?, 'validating', ?, ?, 1200, 'solver running…')`)
+              VALUES (?, ?, 'pending', ?, ?, 1200, 'awaiting review')`)
     .run(slug, JSON.stringify(p), user.id, user.name);
-
-  // validate off-thread; the site stays responsive and the submitter polls
-  const w = new Worker(path.join(__dirname, 'solve-worker.js'), {
-    workerData: { puzzle: p, opts: { maxStates: 2000000, maxMs: 240000 } },
-  });
-  const finish = (status, notes) => {
-    db.prepare('UPDATE puzzles SET status = ?, notes = ? WHERE slug = ?').run(status, notes, slug);
-    if (status === 'pending' && DISCORD_WEBHOOK_URL) {
-      fetch(DISCORD_WEBHOOK_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: `New puzzle submission: **${p.name}** by ${user.name}. ${notes} Review: ${BASE_URL}/?p=${slug}` }),
-      }).catch(() => {});
-    }
-  };
-  w.on('message', (r) => {
-    if (r.error) return finish('autorejected', 'failed to load: ' + r.error);
-    if (r.updatedPuzzle) {
-      db.prepare('UPDATE puzzles SET json = ? WHERE slug = ?').run(JSON.stringify(r.updatedPuzzle), slug);
-      p.orders = r.updatedPuzzle.orders;
-    }
-    if (r.best && r.best.met) {
-      finish('pending', `Verified solvable at par ${p.orders}; ${r.winCount || '?'} winning outcome(s)` +
-        (r.truncated ? ' (search truncated)' : '') + '. Solution: ' + (r.solution || []).join(' → '));
-    } else {
-      finish('autorejected', r.truncated
-        ? 'verification gave up after 4 minutes without finding a solution — reduce the par, movers, or board'
-        : 'not solvable at that par');
-    }
-  });
-  w.on('error', (e) => finish('autorejected', 'solver crashed: ' + e.message));
-
-  res.json({ ok: true, slug, status: 'validating' });
+  if (DISCORD_WEBHOOK_URL) {
+    fetch(DISCORD_WEBHOOK_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: `New puzzle submission: **${p.name}** by ${user.name}. Review: ${BASE_URL}/?p=${slug}` }),
+    }).catch(() => {});
+  }
+  res.json({ ok: true, slug, status: 'pending',
+    message: "Thanks for submitting your puzzle — we'll review it!" });
 });
 
 app.get('/api/submit-status/:slug', (req, res) => {

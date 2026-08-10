@@ -4,6 +4,12 @@
   'use strict';
   var E = OWENGINE;
   var ICONS = (typeof OWICONS !== 'undefined') ? OWICONS : {};
+  var ICON_STYLE = 'portrait';
+  try { ICON_STYLE = localStorage.getItem('owpuzzle-iconstyle') || 'portrait'; } catch (e) {}
+  function unitIcon(type) {
+    return ICON_STYLE === 'flag' ? (ICONS['FLAG_' + type] || ICONS[type])
+                                 : (ICONS[type] || ICONS['FLAG_' + type]);
+  }
   var BOARD_BG = '#0b0c0f';
   var TERRAIN_FILL = {
     TERRAIN_TEMPERATE: 'rgb(104,138,74)', TERRAIN_LUSH: 'rgb(74,110,56)',
@@ -73,11 +79,10 @@
   }
   function refreshPromoList() {
     var t = sel.value;
-    Array.prototype.forEach.call(promoSel.options, function (o) {
-      var ok = promoValidFor(o.value, t);
-      o.disabled = !ok;
-      o.style.display = ok ? '' : 'none';
-      if (!ok) o.selected = false;
+    Array.prototype.forEach.call(promoList.querySelectorAll('label'), function (lab) {
+      var ok = promoValidFor(lab.dataset.eff, t);
+      lab.classList.toggle('off', !ok);
+      if (!ok) lab.querySelector('input').checked = false;
     });
   }
 
@@ -125,16 +130,56 @@
     o.textContent = t.replace('UNIT_', '').toLowerCase().replace(/_/g, ' ');
     sel.appendChild(o);
   });
-  var promoSel = document.getElementById('u-promo');
+  var promoList = document.getElementById('u-promo-list');
   PROMO_ROSTER.forEach(function (t) {
-    var o = document.createElement('option');
-    o.value = t;
-    o.textContent = t.replace('EFFECTUNIT_', '').toLowerCase().replace(/_/g, ' ');
-    promoSel.appendChild(o);
+    var lab = document.createElement('label');
+    lab.dataset.eff = t;
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = t;
+    lab.appendChild(cb);
+    var pic = ICONS['EFFECT_' + t.replace('EFFECTUNIT_', '')];
+    if (pic) {
+      var img = document.createElement('img');
+      img.src = pic; img.alt = '';
+      lab.appendChild(img);
+    }
+    lab.appendChild(document.createTextNode(
+      t.replace('EFFECTUNIT_', '').toLowerCase().replace(/_/g, ' ')));
+    promoList.appendChild(lab);
   });
+  function checkedPromos() {
+    return Array.prototype.filter.call(
+      promoList.querySelectorAll('input:checked'),
+      function (cb) { return !cb.closest('label').classList.contains('off'); }
+    ).map(function (cb) { return cb.value; });
+  }
 
   sel.onchange = refreshPromoList;
   setTimeout(refreshPromoList, 0);
+
+  // live pool preview: par -> the order pool players will actually get
+  var poolView = document.getElementById('pool-view');
+  function refreshPool() {
+    var par = +document.getElementById('p-orders').value || 1;
+    if (poolView) poolView.textContent = E.poolOrders({ orders: par });
+  }
+  document.getElementById('p-orders').oninput = refreshPool;
+  setTimeout(refreshPool, 0);
+
+  // unit art toggle (shared setting with the game view)
+  var styleBtn = document.getElementById('btn-iconstyle');
+  if (styleBtn) {
+    var styleLabel = function () {
+      styleBtn.textContent = 'Unit art: ' + (ICON_STYLE === 'flag' ? 'Icons' : 'Portraits') + ' \u21c4';
+    };
+    styleLabel();
+    styleBtn.onclick = function () {
+      ICON_STYLE = ICON_STYLE === 'flag' ? 'portrait' : 'flag';
+      try { localStorage.setItem('owpuzzle-iconstyle', ICON_STYLE); } catch (e) {}
+      styleLabel(); render();
+    };
+  }
 
   document.getElementById('p-radius').onchange = function () {
     radius = +this.value; rebuildBoard(); render();
@@ -181,7 +226,7 @@
         units.splice(idx, 1);
         targets = targets.filter(function (i) { return i !== idx; }).map(function (i) { return i > idx ? i - 1 : i; });
       } else {
-        var promos = Array.prototype.filter.call(promoSel.options, function (o) { return o.selected; }).map(function (o) { return o.value; });
+        var promos = checkedPromos();
         var hp = parseInt(document.getElementById('u-hp').value, 10);
         units.push({
           player: +document.getElementById('u-side').value,
@@ -262,48 +307,16 @@
     localStorage.setItem('owpuzzle-draft', JSON.stringify(buildPuzzle()));
     location.href = './?draft=1';
   };
-  document.getElementById('btn-check').onclick = function () {
-    var p = buildPuzzle();
-    if (!p.units.some(function (u) { return u.player === 0; })) return out('Place at least one blue unit first.');
-    if (!p.units.some(function (u) { return u.player === 1; })) return out('Place at least one red unit first.');
-    out('solving…');
-    setTimeout(function () {
-      try {
-        var r = OWSOLVER.solve(p, { maxStates: 150000, maxMs: 25000 });
-        if (r.best && r.best.met) {
-          out('SOLVABLE — ' + r.winCount + ' distinct winning outcome(s)' +
-            (r.winCount === 1 ? ' (unique!)' : ' (consider tightening)') +
-            (r.truncated ? ' [search truncated]' : '') + '\n\nBest line:\n' +
-            OWSOLVER.describeLine(p, r.line).map(function (s, i) { return (i + 1) + '. ' + s; }).join('\n'));
-        } else {
-          out('NOT SOLVABLE within ' + p.orders + ' orders' + (r.truncated ? ' [search truncated — may be too big]' : '') +
-            '. Adjust HP, positions, or the budget.');
-        }
-      } catch (e) { out('solver error: ' + e.message); }
-    }, 30);
-  };
   document.getElementById('btn-submit').onclick = function () {
     var p = buildPuzzle();
-    out('submitting… (the server verifies with the solver; up to ~20s for complex boards)');
+    out('submitting\u2026');
     fetch('/api/submit', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ puzzle: p }),
     }).then(function (r) { return r.json(); }).then(function (d) {
-      if (d.error) return out('✗ ' + d.error);
-      out('✓ Received as "' + d.slug + '" — the solver is verifying it now (can take a few minutes for big boards)…');
-      var tries = 0;
-      (function poll() {
-        if (++tries > 60) return out('still verifying — check back later; it will appear in the review queue when done.');
-        setTimeout(function () {
-          fetch('/api/submit-status/' + d.slug).then(function (r) { return r.json(); }).then(function (st) {
-            if (st.status === 'validating') { out('⏳ verifying… (' + (tries * 5) + 's)'); poll(); }
-            else if (st.status === 'pending') out('✓ VERIFIED and queued for review!\n' + (st.notes || ''));
-            else if (st.status === 'autorejected') out('✗ rejected by the solver: ' + (st.notes || ''));
-            else out('status: ' + st.status + ' — ' + (st.notes || ''));
-          }).catch(function () { poll(); });
-        }, 5000);
-      })();
-    }).catch(function () { out('✗ network error (are you logged in?)'); });
+      if (d.error) return out('\u2717 ' + d.error);
+      out('\u2713 ' + (d.message || "Thanks for submitting your puzzle \u2014 we'll review it!"));
+    }).catch(function () { out('\u2717 network error (are you logged in?)'); });
   };
 
   // ---------- render ----------
@@ -360,10 +373,18 @@
       var x = cx(u), y = cy(u);
       S.push('<g pointer-events="none">');
       S.push('<circle cx="' + x + '" cy="' + (y + SIZE * 0.24) + '" r="' + SIZE * 0.52 + '" fill="' + PCOL[u.player] + '" stroke="' + BOARD_BG + '" stroke-width="1.6"/>');
-      var ic = ICONS[u.type];
-      if (ic) S.push('<image href="' + ic + '" x="' + (x - SIZE * 0.4) + '" y="' + (y - SIZE * 0.16) + '" width="' + SIZE * 0.8 + '" height="' + SIZE * 0.8 + '"/>');
+      var ic = unitIcon(u.type);
+      var isFlag = !!ic && ic === ICONS['FLAG_' + u.type];
+      if (ic && isFlag) S.push('<image href="' + ic + '" x="' + (x - SIZE * 0.32) + '" y="' + (y - SIZE * 0.08) + '" width="' + SIZE * 0.64 + '" height="' + SIZE * 0.64 + '"/>');
+      else if (ic) S.push('<image href="' + ic + '" x="' + (x - SIZE * 0.4) + '" y="' + (y - SIZE * 0.16) + '" width="' + SIZE * 0.8 + '" height="' + SIZE * 0.8 + '"/>');
       if (u.general) S.push('<polygon points="' + (x - SIZE * 0.5) + ',' + (y - SIZE * 0.52) + ' ' + (x - SIZE * 0.5 + 14) + ',' + (y - SIZE * 0.52 + 4) + ' ' + (x - SIZE * 0.5) + ',' + (y - SIZE * 0.52 + 8) + '" fill="#ffd23e" stroke="' + BOARD_BG + '"/>');
-      if ((u.promotions || []).length) S.push('<text x="' + (x + SIZE * 0.44) + '" y="' + (y - SIZE * 0.3) + '" text-anchor="middle" font-size="13" fill="#ffd23e" stroke="' + BOARD_BG + '" stroke-width="2" paint-order="stroke">★</text>');
+      (u.promotions || []).forEach(function (pr, pi) {
+        var bx = x + SIZE * 0.44, by = y - SIZE * 0.3 + pi * 15;
+        S.push('<circle cx="' + bx + '" cy="' + by + '" r="8" fill="#ffd23e" stroke="' + BOARD_BG + '" stroke-width="1.2"/>');
+        var pic = ICONS['EFFECT_' + pr.replace('EFFECTUNIT_', '')];
+        if (pic) S.push('<image href="' + pic + '" x="' + (bx - 6.5) + '" y="' + (by - 6.5) + '" width="13" height="13"/>');
+        else S.push('<text x="' + bx + '" y="' + (by + 1) + '" text-anchor="middle" dominant-baseline="middle" font-size="9" fill="#14161c">★</text>');
+      });
       if (u.anchored) S.push('<text x="' + (x - SIZE * 0.44) + '" y="' + (y + SIZE * 0.05) + '" text-anchor="middle" font-size="13" pointer-events="none">⚓</text>');
       if (u.hp != null) S.push('<text x="' + x + '" y="' + (y + SIZE * 0.86) + '" text-anchor="middle" font-size="11" font-weight="bold" fill="#fff" stroke="' + BOARD_BG + '" stroke-width="2.5" paint-order="stroke" font-family="system-ui">' + u.hp + '</text>');
       if (targets.indexOf(i) >= 0) {

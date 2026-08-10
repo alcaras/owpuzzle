@@ -989,7 +989,9 @@
   // from what they are given.
   function poolOrders(p) {
     if (p.pool) return p.pool;
-    return p.orders <= 5 ? 10 : p.orders <= 10 ? 15 : 20;
+    // par+5 slack, rounded up to the next multiple of 5 so par can't be
+    // back-derived from the pool (1-5 -> 10, 6-10 -> 15, 11-15 -> 20, ...).
+    return Math.ceil((p.orders + 5) / 5) * 5;
   }
 
   // opts.play: grant the forgiving pool (par + slack orders, generous
@@ -1027,7 +1029,8 @@
     if (obj.kind === 'killTarget') checkTarget(obj.target);
     var play = opts && opts.play;
     var orders = play ? poolOrders(p) : p.orders;
-    var training = play ? Math.max(p.training || 0, 300) : (p.training || 0);
+    // play grants 300 training unless the author explicitly set a budget
+    var training = play ? (p.training != null ? p.training : 300) : (p.training || 0);
     return { tiles: tiles, units: units, orders: orders, training: training,
       par: p.orders, objective: p.objective, log: [] };
   }

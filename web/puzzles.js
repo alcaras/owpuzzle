@@ -153,35 +153,159 @@ var OWPUZZLES = [
     ],
   },
   {
-    id: 'the-low-road',
-    difficulty: 1,
-    name: 'The Low Road',
-    author: 'owpuzzle',
-    brief: 'Kill the wounded archer.',
-    lesson: 'Roads carry you further per move. Five flat tiles is three moves on grass — but only two on the road. The hills are shorter and slower still.',
-    orders: 3,
-    radius: 3,
-    objective: { kind: 'killAll' },
-    tiles: [
-      { q: -2, r: 0, height: 'HEIGHT_HILL' },
-      { q: -1, r: 0, height: 'HEIGHT_HILL' },
-      { q: 0, r: 0, height: 'HEIGHT_HILL' },
-      { q: 1, r: 0, height: 'HEIGHT_HILL' },
-      { q: -2, r: -1, height: 'HEIGHT_MOUNTAIN' },
-      { q: -1, r: -1, height: 'HEIGHT_MOUNTAIN' },
-      { q: 0, r: -1, height: 'HEIGHT_MOUNTAIN' },
-      { q: 1, r: -1, height: 'HEIGHT_MOUNTAIN' },
-      { q: 2, r: -1, height: 'HEIGHT_MOUNTAIN' },
-      { q: -3, r: 1, road: true },
-      { q: -2, r: 1, road: true },
-      { q: -1, r: 1, road: true },
-      { q: 0, r: 1, road: true },
-      { q: 1, r: 1, road: true },
-    ],
-    units: [
-      { player: 0, type: 'UNIT_WARRIOR', q: -3, r: 0 },
-      { player: 1, type: 'UNIT_ARCHER', q: 2, r: 0, hp: 4 },
-    ],
+   "id": "the-low-road",
+   "difficulty": 1,
+   "name": "The Low Road",
+   "author": "owpuzzle",
+   "brief": "Kill the wounded archer.",
+   "lesson": "Movement is a budget, not a tile count. The coastal road is the long way round and still the cheap way: road tiles cost a fraction of open ground, and the hill trail costs double. When there is a road, ride it.",
+   "orders": 3,
+   "radius": 3,
+   "objective": {
+    "kind": "killAll"
+   },
+   "tiles": [
+    {
+     "q": -1,
+     "r": 0,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": 0,
+     "r": 0,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": 1,
+     "r": 0,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": 2,
+     "r": 0,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": -2,
+     "r": -1,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": -1,
+     "r": -1,
+     "height": "HEIGHT_HILL"
+    },
+    {
+     "q": 0,
+     "r": -1,
+     "height": "HEIGHT_HILL"
+    },
+    {
+     "q": 1,
+     "r": -1,
+     "height": "HEIGHT_HILL"
+    },
+    {
+     "q": 2,
+     "r": -1,
+     "height": "HEIGHT_HILL"
+    },
+    {
+     "q": 3,
+     "r": -1,
+     "height": "HEIGHT_HILL"
+    },
+    {
+     "q": -2,
+     "r": 0,
+     "road": true
+    },
+    {
+     "q": -2,
+     "r": 1,
+     "road": true
+    },
+    {
+     "q": -1,
+     "r": 1,
+     "road": true
+    },
+    {
+     "q": 0,
+     "r": 1,
+     "road": true
+    },
+    {
+     "q": 1,
+     "r": 1,
+     "road": true
+    },
+    {
+     "q": 2,
+     "r": 1,
+     "road": true
+    },
+    {
+     "q": -3,
+     "r": 2,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": -3,
+     "r": 3,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": -2,
+     "r": 2,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": -2,
+     "r": 3,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": -1,
+     "r": 2,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": -1,
+     "r": 3,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 0,
+     "r": 2,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 0,
+     "r": 3,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 1,
+     "r": 2,
+     "terrain": "TERRAIN_WATER"
+    }
+   ],
+   "units": [
+    {
+     "player": 0,
+     "type": "UNIT_WARRIOR",
+     "q": -2,
+     "r": 0
+    },
+    {
+     "player": 1,
+     "type": "UNIT_ARCHER",
+     "q": 3,
+     "r": 0,
+     "hp": 4
+    }
+   ]
   },
   {
     id: 'over-the-hills',
@@ -786,21 +910,46 @@ var OWPUZZLES = [
     ],
   },
   {
-    id: 'butchers-work',
-    difficulty: 1,
-    name: "Butcher's Work",
-    author: 'owpuzzle',
-    brief: 'Kill all three enemies.',
-    lesson: 'Swordsmen strike infantry at +50% and CLEAVE both flanks of the swing at HALF damage. Against a packed line, one cut is a massacre.',
-    orders: 2,
-    radius: 3,
-    objective: { kind: 'killAll' },
-    units: [
-      { player: 0, type: 'UNIT_SWORDSMAN', q: -1, r: -1 },
-      { player: 1, type: 'UNIT_WARRIOR', q: 1, r: 0, hp: 18 },
-      { player: 1, type: 'UNIT_WARRIOR', q: 1, r: -1, hp: 9 },
-      { player: 1, type: 'UNIT_WARRIOR', q: 0, r: 1, hp: 9 },
-    ],
+   "id": "butchers-work",
+   "difficulty": 1,
+   "name": "Butcher's Work",
+   "author": "owpuzzle",
+   "brief": "Kill all three warriors this turn.",
+   "lesson": "The swing is the weapon: a swordsman's cleave strikes both flank tiles of the cut at half damage, and swords bite infantry at +50%. Don't spend your one attack on the easy kill - step to where a single cut carves all three.",
+   "orders": 2,
+   "radius": 3,
+   "objective": {
+    "kind": "killAll"
+   },
+   "units": [
+    {
+     "player": 0,
+     "type": "UNIT_SWORDSMAN",
+     "q": 0,
+     "r": -1
+    },
+    {
+     "player": 1,
+     "type": "UNIT_WARRIOR",
+     "q": 1,
+     "r": 0,
+     "hp": 18
+    },
+    {
+     "player": 1,
+     "type": "UNIT_WARRIOR",
+     "q": 1,
+     "r": -1,
+     "hp": 9
+    },
+    {
+     "player": 1,
+     "type": "UNIT_WARRIOR",
+     "q": 0,
+     "r": 1,
+     "hp": 9
+    }
+   ]
   },
   {
     id: 'ships-of-the-desert',
