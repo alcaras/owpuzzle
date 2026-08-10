@@ -122,13 +122,13 @@ function renderProfile() {
         '<th class="num">Par</th><th>Beaten</th></tr>';
       d.conquests.forEach(function (r) {
         h += '<tr><td><a href="/?p=' + esc(r.slug) + '">' + esc(r.name) + '</a></td>' +
-          '<td class="num"><b>' + r.rating + '</b></td>' +
+          '<td class="num">' + (r.rating != null ? '<b>' + r.rating + '</b>' : '—') + '</td>' +
           '<td class="num">' + r.orders + '</td>' +
           '<td class="num">' + (r.perfect ? '⭐' : '—') + '</td>' +
           '<td>' + esc((r.at || '').slice(0, 10)) + '</td></tr>';
       });
       h += '</table><p class="note" style="text-align:left;margin-top:6px">' +
-        'A puzzle\u2019s rating is revealed once you beat it.</p>';
+        'A puzzle\u2019s rating is revealed once <em>you</em> beat it.</p>';
     }
     h += '<p class="note" style="margin-top:22px"><a href="hall.html">← hall of fame</a></p>';
     el.innerHTML = h;

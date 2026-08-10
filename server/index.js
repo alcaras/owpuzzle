@@ -180,7 +180,9 @@ app.get('/api/puzzles', (req, res) => {
   res.json({
     puzzles: rows.map(r => ({
       id: r.id, slug: r.slug, puzzle: JSON.parse(r.json), status: r.status,
-      author: r.author_name, rating: Math.round(r.rating),
+      author: r.author_name,
+      // puzzle Elo is disclosed only to players who have beaten it
+      rating: solved[r.id] ? Math.round(r.rating) : undefined,
       attempts: r.attempts, solves: r.solves, solvedByMe: !!solved[r.id],
       perfectByMe: !!perfect[r.id],
     })),
@@ -214,7 +216,6 @@ app.get('/api/next', (req, res) => {
   const pick = scored[0].r;
   res.json({
     id: pick.id, slug: pick.slug, puzzle: JSON.parse(pick.json),
-    rating: Math.round(pick.rating),
     rated: !pick.last_attempt,                                // only first attempt is rated
   });
 });
@@ -411,6 +412,11 @@ app.get('/api/profile', (req, res) => {
   const { achievements, stats } = computeAchievements(db, target.id);
   // every puzzle this player has defeated, hardest (highest rated) first —
   // puzzle Elo is only disclosed for puzzles you have actually beaten
+  // ratings in the conquest list are only shown for puzzles the VIEWER has
+  // beaten — reading someone else's profile must not disclose them
+  const viewerBeat = new Set(user ? db.prepare(`
+    SELECT p.slug FROM attempts a JOIN puzzles p ON p.id = a.puzzle_id
+    WHERE a.user_id = ? AND a.solved = 1`).all(user.id).map(r => r.slug) : []);
   const conquests = db.prepare(`
     SELECT p.slug, p.json, p.rating, MAX(a.perfect) perfect,
            MIN(a.orders_used) orders_used, MIN(a.created_at) first_at
@@ -420,7 +426,8 @@ app.get('/api/profile', (req, res) => {
     .map(r => ({
       slug: r.slug,
       name: (() => { try { return JSON.parse(r.json).name; } catch (e) { return r.slug; } })(),
-      rating: Math.round(r.rating), perfect: !!r.perfect,
+      rating: viewerBeat.has(r.slug) ? Math.round(r.rating) : undefined,
+      perfect: !!r.perfect,
       orders: r.orders_used, at: r.first_at,
     }));
   const recent = conquests.slice().sort((a, b) => (b.at || '').localeCompare(a.at || '')).slice(0, 8);
@@ -443,7 +450,13 @@ app.get('/api/puzzle/:slug', (req, res) => {
   if (row.status === 'pending' && !(user && (user.is_admin || user.id === row.author_id))) {
     return res.status(403).json({ error: 'pending review' });
   }
-  res.json({ slug: row.slug, puzzle: JSON.parse(row.json), status: row.status, rating: Math.round(row.rating) });
+  const beaten = user && db.prepare(
+    'SELECT 1 FROM attempts WHERE user_id = ? AND puzzle_id = ? AND solved = 1 LIMIT 1')
+    .get(user.id, row.id);
+  res.json({
+    slug: row.slug, puzzle: JSON.parse(row.json), status: row.status,
+    rating: beaten ? Math.round(row.rating) : undefined,
+  });
 });
 
 app.listen(PORT, () => console.log(`owpuzzle server on :${PORT}`));
