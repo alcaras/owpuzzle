@@ -111,10 +111,12 @@
         if (x.perfectByMe && !SERVER_PERFECT[x.slug]) { SERVER_PERFECT[x.slug] = true; changed = true; }
         if (x.rating && SERVER_RATING[x.slug] !== x.rating) { SERVER_RATING[x.slug] = x.rating; changed = true; }
       });
-      if (changed && window.__renderLibrary) window.__renderLibrary();
       var ICONS0 = (typeof OWICONS !== 'undefined') ? OWICONS : {};
       var community = (d.puzzles || []).filter(function (x) { return x.status === 'approved'; });
+      // assign BEFORE re-rendering — the library total counts these
+      if (community.length !== COMMUNITY.length) changed = true;
       COMMUNITY = community;
+      if (changed && window.__renderLibrary) window.__renderLibrary();
       if (!community.length) return;
       var home = document.getElementById('home');
       var sec = document.createElement('div');
