@@ -926,6 +926,17 @@
     if (puzzle.objective.kind === 'maxKill') {
       var killStr = E.strKilledOf(state);
       var kills = E.killsOf(state);
+      if (!puzzle.objective.count) {
+        // draft test-play: the ceiling is computed at review, so the game
+        // cannot judge "maximum" — report the tally without a verdict.
+        document.getElementById('result-title').textContent = '⚔️ Turn complete';
+        document.getElementById('result-body').textContent =
+          'You destroyed ' + kills + ' unit' + (kills === 1 ? '' : 's') + ' (' + fmt10(killStr) +
+          ' strength) in ' + used + ' orders. The target ceiling is set during review — ' +
+          'this draft cannot score itself.';
+        window.__perfect = false; window.__won = false;
+        return;
+      }
       if (won) {
         body = '\u2b50 MAXIMUM DESTRUCTION \u2014 ' + kills + ' kills, ' + fmt10(killStr) +
           ' strength: the most possible!' +
