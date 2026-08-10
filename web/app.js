@@ -114,6 +114,7 @@
       if (changed && window.__renderLibrary) window.__renderLibrary();
       var ICONS0 = (typeof OWICONS !== 'undefined') ? OWICONS : {};
       var community = (d.puzzles || []).filter(function (x) { return x.status === 'approved'; });
+      COMMUNITY = community;
       if (!community.length) return;
       var home = document.getElementById('home');
       var sec = document.createElement('div');
@@ -186,6 +187,9 @@
   // SERVER_SOLVED: slugs this signed-in account has solved (from /api/puzzles)
   // — local progress is per-browser, the server knows across devices.
   var SERVER_SOLVED = {}, SERVER_PERFECT = {}, SERVER_RATING = {};
+  // community puzzles shown on this page — counted in the library total so
+  // the home count matches the Hall of Fame (which counts every live puzzle)
+  var COMMUNITY = [];
 
   // ---------- library home ----------
   if (!puzzle && !remotePending) {
@@ -212,14 +216,20 @@
       var e = progEntry(prog, p);
       return (e && e.solved) || !!SERVER_SOLVED[p.id];
     }
-    var solvedCount = OWPUZZLES.filter(isSolved).length;
+    var communitySolved = COMMUNITY.filter(function (x) {
+      var e = null;
+      try { e = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}')[x.slug]; } catch (err) {}
+      return x.solvedByMe || !!(e && e.solved);
+    }).length;
+    var solvedCount = OWPUZZLES.filter(isSolved).length + communitySolved;
+    var libraryTotal = OWPUZZLES.length + COMMUNITY.length;
     var GROUPS = [
       { n: 1, title: 'Basics — one unit, one rule' },
       { n: 2, title: 'Tactics — combined arms' },
       { n: 3, title: 'Challenges' },
     ];
     var invite = '';
-    if (solvedCount === OWPUZZLES.length && solvedCount > 0) {
+    if (solvedCount === libraryTotal && solvedCount > 0) {
       invite = '<div class="progress" style="margin-bottom:6px">🏆 You have conquered the whole library — ' +
         '<a href="editor.html"><b>build one of your own?</b></a></div>';
     }
@@ -228,8 +238,8 @@
       '<div class="progress" style="margin-bottom:6px">' +
       '<a href="hall.html">🏆 Hall of Fame</a> · ' +
       '<a href="hall.html?me=1">my achievements</a></div>' +
-      '<div class="progress">Solved <b>' + solvedCount + '</b> of ' + OWPUZZLES.length +
-      (solvedCount === OWPUZZLES.length && solvedCount > 0 ? ' — the whole library! ⚔️' : '') + '</div>';
+      '<div class="progress">Solved <b>' + solvedCount + '</b> of ' + libraryTotal +
+      (solvedCount === libraryTotal && solvedCount > 0 ? ' — the whole library! ⚔️' : '') + '</div>';
     GROUPS.forEach(function (g) {
       var list = OWPUZZLES.filter(function (p) { return (p.difficulty || 2) === g.n; });
       if (!list.length) return;
