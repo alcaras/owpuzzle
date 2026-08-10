@@ -24,6 +24,14 @@ const backfilled = backfillAttempts((puzzle, line) => replayLine(puzzle, line));
 if (backfilled) console.log(`backfilled ${backfilled} attempt rows`);
 const linked = linkAuthors();
 if (linked) console.log(`linked ${linked} puzzle(s) to their author account`);
+// record every achievement currently met, so existing players keep them for
+// good even as the library grows or puzzles are retired
+{
+  const before = db.prepare('SELECT COUNT(*) n FROM user_achievements').get().n;
+  for (const u of db.prepare('SELECT id FROM users').all()) computeAchievements(db, u.id, true);
+  const after = db.prepare('SELECT COUNT(*) n FROM user_achievements').get().n;
+  if (after > before) console.log(`recorded ${after - before} achievement(s) as permanent`);
+}
 console.log(`seeded ${seeded} core puzzles`);
 
 const app = express();
@@ -233,7 +241,7 @@ app.post('/api/attempt', (req, res) => {
 
   // achievement snapshot BEFORE this attempt lands, to diff what it unlocked
   const earnedBefore = new Set(
-    computeAchievements(db, user.id).achievements.filter(a => a.earned).map(a => a.id));
+    computeAchievements(db, user.id, true).achievements.filter(a => a.earned).map(a => a.id));
 
   const prior = db.prepare(
     'SELECT COUNT(*) n FROM attempts WHERE user_id = ? AND puzzle_id = ?').get(user.id, row.id).n;
@@ -260,7 +268,7 @@ app.post('/api/attempt', (req, res) => {
          JSON.stringify(line || []), perfect ? 1 : 0, damageTaken, unitsLost);
 
   const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
-  const unlocked = computeAchievements(db, user.id).achievements
+  const unlocked = computeAchievements(db, user.id, true).achievements
     .filter(a => a.earned && !earnedBefore.has(a.id))
     .map(a => ({ id: a.id, icon: a.icon, name: a.name, desc: a.desc }));
   res.json({ solved, perfect, rated, ratingDelta, user: publicUser(fresh), unlocked,
@@ -416,7 +424,7 @@ app.get('/api/profile', (req, res) => {
     ? db.prepare('SELECT * FROM users WHERE name = ?').get(name)
     : user;
   if (!target) return res.status(404).json({ error: 'no such player' });
-  const { achievements, stats } = computeAchievements(db, target.id);
+  const { achievements, stats } = computeAchievements(db, target.id, true);
   // every puzzle this player has defeated, hardest (highest rated) first —
   // puzzle Elo is only disclosed for puzzles you have actually beaten
   // ratings in the conquest list are only shown for puzzles the VIEWER has

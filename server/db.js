@@ -98,6 +98,18 @@ function seedCorePuzzles() {
 }
 
 try { db.exec('ALTER TABLE puzzles ADD COLUMN notes TEXT'); } catch (e) {}
+
+// Achievements are IMMUTABLE: once earned they are written here and never
+// recomputed away. Live counters can legitimately fall (a puzzle you solved
+// gets retired, the library grows past a coverage badge), but a badge you
+// have already been shown must never vanish.
+db.exec(`
+CREATE TABLE IF NOT EXISTS user_achievements (
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  achv_id TEXT NOT NULL,
+  earned_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, achv_id)
+);`);
 // Per-attempt outcome details (achievements + the PERFECT star on any device).
 // NULL on rows written before this existed — backfilled from the stored line.
 try { db.exec('ALTER TABLE attempts ADD COLUMN perfect INTEGER'); } catch (e) {}

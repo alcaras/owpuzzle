@@ -118,7 +118,8 @@ function renderProfile() {
       var pct = Math.round(100 * a.progress / a.target);
       h += '<div class="badge ' + (a.earned ? 'earned' : 'locked') + '">' +
         '<div class="ico">' + a.icon + '</div><div style="min-width:0">' +
-        '<div class="nm">' + esc(a.name) + (a.earned ? ' ✓' : '') + '</div>' +
+        '<div class="nm">' + esc(a.name) + (a.earned ? ' ✓' : '') +
+          (a.retained ? '<span title="kept on record" style="color:var(--muted)"> (held)</span>' : '') + '</div>' +
         '<div class="ds">' + esc(a.desc) + '</div>' +
         (a.earned || a.target === 1 ? '' :
           '<div class="bar"><i style="width:' + pct + '%"></i></div>' +

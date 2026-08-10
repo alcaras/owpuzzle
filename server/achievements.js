@@ -10,7 +10,7 @@
 
 const LIVE = `puzzle_id IN (SELECT id FROM puzzles WHERE status IN ('core','approved'))`;
 
-function computeAchievements(db, userId) {
+function computeAchievements(db, userId, persist) {
   const one = (sql, ...a) => db.prepare(sql).get(...a) || {};
   const all = (sql, ...a) => db.prepare(sql).all(...a);
 
@@ -78,12 +78,11 @@ function computeAchievements(db, userId) {
     ['🩸', 'first-blood', 'First Blood', 'Solve your first puzzle.', solvedTotal, 1],
     ['⚔️', 'veteran', 'Veteran', 'Solve 10 puzzles.', solvedTotal, 10],
     ['🏛️', 'consul', 'Consul', 'Solve 25 puzzles.', solvedTotal, 25],
-    ['👑', 'completionist', 'Completionist', 'Solve every puzzle in the core library.',
-      core.done, core.total || 1],
-    ['🧗', 'challenger', 'Challenger', 'Solve every Challenge-tier puzzle.',
-      challenges.done, challenges.total || 1],
-    ['🤝', 'good-company', 'Good Company', 'Solve every community-made puzzle.',
-      community.done, community.total || 1],
+    ['🏆', 'legion', 'Legion', 'Solve 50 puzzles.', solvedTotal, 50],
+    ['👑', 'completionist', 'Completionist', 'Clear the whole library in a single sweep.',
+      core.done + community.done, core.total + community.total || 1],
+    ['🧗', 'challenger', 'Challenger', 'Solve 12 Challenge-tier puzzles.', challenges.done, 12],
+    ['🤝', 'good-company', 'Good Company', 'Solve 3 community-made puzzles.', community.done, 3],
     ['⭐', 'perfectionist', 'Perfectionist', 'Solve 5 puzzles at par.', perfectTotal, 5],
     ['🌟', 'flawless', 'Flawless', 'Solve 20 puzzles at par.', perfectTotal, 20],
     ['🎯', 'first-sight', 'At First Sight', 'Hit par on your very first attempt at a puzzle.',
@@ -92,7 +91,7 @@ function computeAchievements(db, userId) {
       cleanTotal, 1],
     ['🪖', 'not-a-scratch', 'Not a Scratch', 'Win 10 puzzles without taking damage.', cleanTotal, 10],
     ['💀', 'butcher', 'Butcher', 'Reach the destruction ceiling on 3 open-slaughter puzzles.',
-      maxKill.done, Math.min(3, maxKill.total || 3)],
+      maxKill.done, 3],
     ['🔁', 'stubborn', 'Stubborn', 'Come back and beat a puzzle that beat you.', comebacks, 1],
     ['⚡', 'blitz', 'Blitz', 'Solve 5 puzzles in a single day.', bestDay, 5],
     ['📅', 'campaigner', 'Campaigner', 'Solve puzzles on 5 different days.', distinctDays, 5],
@@ -101,11 +100,33 @@ function computeAchievements(db, userId) {
       authoredSolvers, 5],
   ];
 
-  const list = defs.map(([icon, id, name, desc, progress, target]) => ({
-    id, icon, name, desc,
-    progress: Math.min(progress, target), target,
-    earned: progress >= target,
-  }));
+  // Immutability: a badge already earned stays earned even if the live
+  // counter later falls (retired puzzles, a growing library).
+  const held = new Map(db.prepare(
+    'SELECT achv_id, earned_at FROM user_achievements WHERE user_id = ?')
+    .all(userId).map(r => [r.achv_id, r.earned_at]));
+
+  const list = defs.map(([icon, id, name, desc, progress, target]) => {
+    const meetsNow = progress >= target;
+    return {
+      id, icon, name, desc,
+      progress: Math.min(progress, target), target,
+      earned: meetsNow || held.has(id),
+      earnedAt: held.get(id) || null,
+      // shown when the badge is kept on record but the counter has since
+      // slipped (e.g. a puzzle it counted was retired)
+      retained: !meetsNow && held.has(id),
+    };
+  });
+
+  if (persist) {
+    const ins = db.prepare(
+      'INSERT OR IGNORE INTO user_achievements (user_id, achv_id) VALUES (?, ?)');
+    const tx = db.transaction(() => {
+      for (const a of list) if (a.earned && !held.has(a.id)) ins.run(userId, a.id);
+    });
+    tx();
+  }
 
   return {
     achievements: list,
