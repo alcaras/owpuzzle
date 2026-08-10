@@ -358,8 +358,7 @@ app.get('/api/leaderboard', (req, res) => {
 // Hall of Fame: ranked by puzzles COMPLETED (not rating). Open to anyone
 // signed in; ties break on perfect solves, then earliest joiner.
 app.get('/api/hall', (req, res) => {
-  const user = userFromReq(req);
-  if (!user) return res.status(401).json({ error: 'sign in to see the hall of fame' });
+  const user = userFromReq(req); // optional — the hall is public
   const rows = db.prepare(`
     SELECT u.id, u.name, u.avatar, u.rating, u.created_at,
       (SELECT COUNT(DISTINCT puzzle_id) FROM attempts a
@@ -376,16 +375,16 @@ app.get('/api/hall', (req, res) => {
     players: rows.filter(r => r.solved > 0).map((r, i) => ({
       rank: i + 1, name: r.name, avatar: r.avatar, solved: r.solved,
       perfect: r.perfect, authored: r.authored, rating: Math.round(r.rating),
-      me: r.id === user.id,
+      me: !!user && r.id === user.id,
     })),
   });
 });
 
 // Profile + achievement gallery. Defaults to the signed-in player.
 app.get('/api/profile', (req, res) => {
-  const user = userFromReq(req);
-  if (!user) return res.status(401).json({ error: 'sign in to see profiles' });
+  const user = userFromReq(req); // optional — named profiles are public
   const name = req.query.name;
+  if (!name && !user) return res.status(401).json({ error: 'sign in to see your own profile' });
   const target = name
     ? db.prepare('SELECT * FROM users WHERE name = ?').get(name)
     : user;
@@ -403,7 +402,7 @@ app.get('/api/profile', (req, res) => {
   res.json({
     player: {
       name: target.name, avatar: target.avatar, rating: Math.round(target.rating),
-      since: target.created_at, me: target.id === user.id,
+      since: target.created_at, me: !!user && target.id === user.id,
     },
     stats, achievements, recent,
   });

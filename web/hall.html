@@ -69,7 +69,7 @@ function renderHall() {
     if (!d.players.length) { el.textContent = 'no solves yet — be the first!'; return; }
     var MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' };
     var h = '<p class="note">' + d.players.length + ' player' + (d.players.length === 1 ? '' : 's') +
-      ' · ' + d.total + ' puzzles live · <a href="?me=1">my profile</a></p>' +
+      ' · ' + d.total + ' puzzles live · <a href="?me=1">my achievements</a></p>' +
       '<table><tr><th class="rank">#</th><th>Player</th><th class="num">Solved</th>' +
       '<th class="num">Perfect</th><th class="num">Made</th></tr>';
     d.players.forEach(function (p) {
