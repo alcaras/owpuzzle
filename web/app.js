@@ -84,7 +84,9 @@
     var el = document.getElementById('auth-widget');
     if (!el) return;
     if (ME) {
-      el.innerHTML = '<b>' + ME.name + '</b> · rating <b>' + ME.rating + '</b>' +
+      el.innerHTML = (ME.avatar ? '<img src="' + ME.avatar + '" alt="" style="width:20px;height:20px;' +
+          'border-radius:50%;vertical-align:-5px;margin-right:5px;border:1px solid var(--edge)">' : '') +
+        '<b>' + ME.name + '</b> · rating <b>' + ME.rating + '</b>' +
         ' · <a href="editor.html">✎ create a puzzle</a>' + (ME.isAdmin ? ' · <a href="admin.html">admin</a>' : '') +
         (ME.completedAll ? ' 🏆' : '');
     } else {

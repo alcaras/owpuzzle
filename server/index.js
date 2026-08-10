@@ -34,6 +34,20 @@ function newSession(userId) {
   db.prepare('INSERT INTO sessions (token, user_id) VALUES (?, ?)').run(token, userId);
   return token;
 }
+// Discord stores an avatar HASH; the CDN URL needs the user id too. Users
+// with no avatar get one of Discord's default embeds (id >> 22 % 6 for the
+// post-discriminator username scheme).
+function avatarUrl(discordId, hash, size) {
+  size = size || 64;
+  if (hash) {
+    const ext = String(hash).startsWith('a_') ? 'gif' : 'png';
+    return `https://cdn.discordapp.com/avatars/${discordId}/${hash}.${ext}?size=${size}`;
+  }
+  let idx = 0;
+  try { idx = Number((BigInt(discordId) >> 22n) % 6n); } catch (e) { idx = 0; }
+  return `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
+}
+
 function userFromReq(req) {
   const m = /owp_session=([a-f0-9]{64})/.exec(req.headers.cookie || '');
   if (!m) return null;
@@ -113,7 +127,7 @@ function completedAll(user) {
 function publicUser(u) {
   if (!u) return null;
   return {
-    name: u.name, avatar: u.avatar, rating: Math.round(u.rating),
+    name: u.name, avatar: avatarUrl(u.discord_id, u.avatar, 32), rating: Math.round(u.rating),
     rd: Math.round(u.rd), isAdmin: !!u.is_admin,
     coreSolved: coreSolvedCount(u.id), coreTotal: coreCount(),
     canSubmit: true, completedAll: completedAll(u),
@@ -362,7 +376,7 @@ app.get('/api/leaderboard', (req, res) => {
 app.get('/api/hall', (req, res) => {
   const user = userFromReq(req); // optional — the hall is public
   const rows = db.prepare(`
-    SELECT u.id, u.name, u.avatar, u.rating, u.created_at,
+    SELECT u.id, u.name, u.avatar, u.discord_id, u.rating, u.created_at,
       (SELECT COUNT(DISTINCT puzzle_id) FROM attempts a
         WHERE a.user_id = u.id AND a.solved = 1 AND ${LIVE}) solved,
       (SELECT COUNT(DISTINCT puzzle_id) FROM attempts a
@@ -375,7 +389,8 @@ app.get('/api/hall', (req, res) => {
   res.json({
     total,
     players: rows.filter(r => r.solved > 0).map((r, i) => ({
-      rank: i + 1, name: r.name, avatar: r.avatar, solved: r.solved,
+      rank: i + 1, name: r.name, avatar: avatarUrl(r.discord_id, r.avatar, 64),
+      solved: r.solved,
       perfect: r.perfect, authored: r.authored,
       me: !!user && r.id === user.id,
       // player Elo is private: only ever disclosed to the player themselves
@@ -411,7 +426,7 @@ app.get('/api/profile', (req, res) => {
   const recent = conquests.slice().sort((a, b) => (b.at || '').localeCompare(a.at || '')).slice(0, 8);
   res.json({
     player: {
-      name: target.name, avatar: target.avatar,
+      name: target.name, avatar: avatarUrl(target.discord_id, target.avatar, 128),
       since: target.created_at, me: !!user && target.id === user.id,
       // private: your rating is yours alone
       rating: (!!user && target.id === user.id) ? Math.round(target.rating) : undefined,

@@ -25,11 +25,12 @@
   tr.me { background:rgba(184,134,11,0.14); }
   .rank { font-weight:bold; width:44px; }
   .medal { font-size:15px; }
-  .avatar { width:22px; height:22px; border-radius:50%; vertical-align:-6px; margin-right:6px; }
+  .avatar { width:24px; height:24px; border-radius:50%; vertical-align:-7px; margin-right:7px;
+           border:1px solid var(--edge); background:var(--bg); }
   /* profile */
   .phead { display:flex; align-items:center; gap:14px; background:var(--panel);
            border:1px solid var(--edge); border-radius:12px; padding:14px 16px; margin-top:10px; }
-  .phead img { width:56px; height:56px; border-radius:50%; }
+  .phead img { width:56px; height:56px; border-radius:50%; border:2px solid var(--edge); background:var(--bg); }
   .phead h3 { margin:0 0 3px; font-size:19px; }
   .pstats { display:flex; gap:16px; flex-wrap:wrap; color:var(--muted); font-size:12.5px; }
   .pstats b { color:var(--ink); font-size:15px; font-variant-numeric:tabular-nums; }
@@ -75,7 +76,7 @@ function renderHall() {
     d.players.forEach(function (p) {
       h += '<tr class="' + (p.me ? 'me' : '') + '">' +
         '<td class="rank">' + (MEDAL[p.rank] ? '<span class="medal">' + MEDAL[p.rank] + '</span>' : p.rank) + '</td>' +
-        '<td>' + (p.avatar ? '<img class="avatar" src="' + esc(p.avatar) + '" alt="">' : '') +
+        '<td><img class="avatar" src="' + esc(p.avatar) + '" alt="" loading="lazy">' +
         '<a href="?u=' + encodeURIComponent(p.name) + '"><b>' + esc(p.name) + '</b></a></td>' +
         '<td class="num"><b>' + p.solved + '</b> <span style="color:var(--muted)">/ ' + d.total + '</span></td>' +
         '<td class="num">' + (p.perfect ? '⭐ ' + p.perfect : '—') + '</td>' +
@@ -92,7 +93,7 @@ function renderProfile() {
     var p = d.player, s = d.stats;
     var earned = d.achievements.filter(function (a) { return a.earned; }).length;
     var h = '<div class="phead">' +
-      (p.avatar ? '<img src="' + esc(p.avatar) + '" alt="">' : '') +
+      '<img src="' + esc(p.avatar) + '" alt="">' +
       '<div><h3>' + esc(p.name) + '</h3><div class="pstats">' +
       '<span><b>' + s.solved + '</b> solved</span>' +
       '<span><b>' + s.perfect + '</b> perfect ⭐</span>' +
