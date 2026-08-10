@@ -1,4 +1,11 @@
-// Achievement gallery: everything is derived from the attempts table, so a
+// Achievement gallery. Titles are cognomens from the game's own
+// cognomen.xml (Warrior, Valiant, Mighty, Great, Conqueror, Intrepid, Able,
+// Magnificent, Invincible, White Death, Destroyer, Avenger, Scourge,
+// Architect, Beloved...), so the rewards read like Old World honorifics.
+// The `id` of an achievement is a permanent key — user_achievements rows
+// reference it — so titles may be reworded but ids must never change.
+//
+// Everything is derived from the attempts table, so a
 // player's badges follow their account, not a browser. Each entry reports
 // progress (n of target) whether or not it is earned, so locked badges still
 // show how close you are.
@@ -75,28 +82,28 @@ function computeAchievements(db, userId, persist) {
 
   // --- the gallery ---------------------------------------------------------
   const defs = [
-    ['🩸', 'first-blood', 'First Blood', 'Solve your first puzzle.', solvedTotal, 1],
-    ['⚔️', 'veteran', 'Veteran', 'Solve 10 puzzles.', solvedTotal, 10],
-    ['🏛️', 'consul', 'Consul', 'Solve 25 puzzles.', solvedTotal, 25],
-    ['🏆', 'legion', 'Legion', 'Solve 50 puzzles.', solvedTotal, 50],
-    ['👑', 'completionist', 'Completionist', 'Clear the whole library in a single sweep.',
+    ['🩸', 'first-blood', 'The Warrior', 'Solve your first puzzle.', solvedTotal, 1],
+    ['⚔️', 'veteran', 'The Valiant', 'Solve 10 puzzles.', solvedTotal, 10],
+    ['🏛️', 'consul', 'The Mighty', 'Solve 25 puzzles.', solvedTotal, 25],
+    ['🏆', 'legion', 'The Great', 'Solve 50 puzzles.', solvedTotal, 50],
+    ['👑', 'completionist', 'The Conqueror', 'Clear the whole library in a single sweep.',
       core.done + community.done, core.total + community.total || 1],
-    ['🧗', 'challenger', 'Challenger', 'Solve 12 Challenge-tier puzzles.', challenges.done, 12],
-    ['🤝', 'good-company', 'Good Company', 'Solve 3 community-made puzzles.', community.done, 3],
-    ['⭐', 'perfectionist', 'Perfectionist', 'Solve 5 puzzles at par.', perfectTotal, 5],
-    ['🌟', 'flawless', 'Flawless', 'Solve 20 puzzles at par.', perfectTotal, 20],
-    ['🎯', 'first-sight', 'At First Sight', 'Hit par on your very first attempt at a puzzle.',
+    ['🧗', 'challenger', 'The Intrepid', 'Solve 12 Challenge-tier puzzles.', challenges.done, 12],
+    ['🤝', 'good-company', 'The Good', 'Solve 3 community-made puzzles.', community.done, 3],
+    ['⭐', 'perfectionist', 'The Able', 'Solve 5 puzzles at par.', perfectTotal, 5],
+    ['🌟', 'flawless', 'The Magnificent', 'Solve 20 puzzles at par.', perfectTotal, 20],
+    ['🎯', 'first-sight', 'The Ready', 'Hit par on your very first attempt at a puzzle.',
       firstTryPerfect, 1],
-    ['🛡️', 'untouchable', 'Untouchable', 'Win a puzzle without taking a single point of damage.',
+    ['🛡️', 'untouchable', 'The White Death', 'Win a puzzle without taking a single point of damage.',
       cleanTotal, 1],
-    ['🪖', 'not-a-scratch', 'Not a Scratch', 'Win 10 puzzles without taking damage.', cleanTotal, 10],
-    ['💀', 'butcher', 'Butcher', 'Reach the destruction ceiling on 3 open-slaughter puzzles.',
+    ['🪖', 'not-a-scratch', 'The Invincible', 'Win 10 puzzles without taking damage.', cleanTotal, 10],
+    ['💀', 'butcher', 'The Destroyer', 'Reach the destruction ceiling on 3 open-slaughter puzzles.',
       maxKill.done, 3],
-    ['🔁', 'stubborn', 'Stubborn', 'Come back and beat a puzzle that beat you.', comebacks, 1],
-    ['⚡', 'blitz', 'Blitz', 'Solve 5 puzzles in a single day.', bestDay, 5],
-    ['📅', 'campaigner', 'Campaigner', 'Solve puzzles on 5 different days.', distinctDays, 5],
-    ['📜', 'architect', 'Architect', 'Get a puzzle of your own approved.', authored, 1],
-    ['🎖️', 'beloved', 'Beloved', 'Have 5 different players solve a puzzle you made.',
+    ['🔁', 'stubborn', 'The Avenger', 'Come back and beat a puzzle that beat you.', comebacks, 1],
+    ['⚡', 'blitz', 'The Scourge', 'Solve 5 puzzles in a single day.', bestDay, 5],
+    ['📅', 'campaigner', 'The Old', 'Solve puzzles on 5 different days.', distinctDays, 5],
+    ['📜', 'architect', 'The Architect', 'Get a puzzle of your own approved.', authored, 1],
+    ['🎖️', 'beloved', 'The Beloved', 'Have 5 different players solve a puzzle you made.',
       authoredSolvers, 5],
   ];
 
