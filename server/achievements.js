@@ -49,14 +49,6 @@ function computeAchievements(db, userId) {
      WHERE user_id = ? AND solved = 1 AND ${LIVE}
      GROUP BY date(created_at) ORDER BY n DESC LIMIT 1`, userId).n || 0;
 
-  // beat a puzzle rated well above your own — skill, not scheduling
-  const giantSlayer = one(
-    `SELECT COUNT(DISTINCT a.puzzle_id) n FROM attempts a
-     JOIN puzzles p ON p.id = a.puzzle_id
-     JOIN users u ON u.id = a.user_id
-     WHERE a.user_id = ? AND a.solved = 1 AND p.status IN ('core','approved')
-       AND p.rating >= u.rating + 100`, userId).n || 0;
-
   // authoring
   const authored = one(
     `SELECT COUNT(*) n FROM puzzles WHERE author_id = ? AND status = 'approved'`, userId).n || 0;
@@ -104,8 +96,6 @@ function computeAchievements(db, userId) {
     ['🔁', 'stubborn', 'Stubborn', 'Come back and beat a puzzle that beat you.', comebacks, 1],
     ['⚡', 'blitz', 'Blitz', 'Solve 5 puzzles in a single day.', bestDay, 5],
     ['📅', 'campaigner', 'Campaigner', 'Solve puzzles on 5 different days.', distinctDays, 5],
-    ['🗡️', 'giant-slayer', 'Giant Slayer', 'Beat a puzzle rated 100+ points above you.',
-      giantSlayer, 1],
     ['📜', 'architect', 'Architect', 'Get a puzzle of your own approved.', authored, 1],
     ['🎖️', 'beloved', 'Beloved', 'Have 5 different players solve a puzzle you made.',
       authoredSolvers, 5],

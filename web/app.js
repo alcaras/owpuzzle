@@ -129,7 +129,8 @@
           (x.solvedByMe ? '<span class="done">\u2713</span>' : '') +
           (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
           '<div class="body"><div class="card-head"><h3>' + pz.name + '</h3>' +
-          '<span class="meta">by ' + (x.author || '?') + '</span></div>' +
+          '<span class="meta">by ' + (x.author || '?') +
+          (x.rating ? ' · elo ' + x.rating : '') + '</span></div>' +
           '<p>' + (pz.brief || '') + '</p>' +
           '<div class="foes"><span class="vs">VS</span>' + foes + '</div></div></a>';
       }).join('');
@@ -240,7 +241,7 @@
           (done ? '<span class="done">' + (perf ? '\u2b50' : '\u2713') + '</span>' : '') +
           (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
           '<div class="body"><div class="card-head"><h3>' + p.name + '</h3>' +
-          '<span class="meta"></span></div>' +
+          '<span class="meta">' + (SERVER_RATING[p.id] ? 'elo ' + SERVER_RATING[p.id] : '') + '</span></div>' +
           '<p>' + p.brief + '</p>' +
           '<div class="foes"><span class="vs">VS</span>' + foes + '</div></div></a>';
       }).join('');
