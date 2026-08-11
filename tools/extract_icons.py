@@ -67,6 +67,18 @@ with tempfile.TemporaryDirectory() as td3:
             base64.b64encode(open(small, "rb").read()).decode()
         n_flag += 1
 
+# yield icons (orders, training) for the board HUD
+YIELD_SRC = "/Users/dominik/Library/CloudStorage/Dropbox/cc/owreference/dist/img/icons/yields"
+with tempfile.TemporaryDirectory() as tdy:
+    for y in ["orders", "training"]:
+        py = os.path.join(YIELD_SRC, y + ".png")
+        if not os.path.exists(py):
+            continue
+        small = os.path.join(tdy, y + ".png")
+        subprocess.run(["sips", "-Z", "40", py, "--out", small], check=True, capture_output=True)
+        icons["YIELD_" + y.upper()] = "data:image/png;base64," + \
+            base64.b64encode(open(small, "rb").read()).decode()
+
 # effect icons (promotions + innate abilities) from icons/effects
 EFF_SRC = "/Users/dominik/Library/CloudStorage/Dropbox/cc/owreference/dist/img/icons/effects"
 effs = sorted(set(re.findall(r'"(EFFECTUNIT_[A-Z0-9_]+)"', data)))

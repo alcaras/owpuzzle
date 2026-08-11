@@ -358,6 +358,17 @@
     var targets = (sel && !finished) ? E.attackTargets(state, sel) : [];
     var reachKeys = {}; reach.forEach(function (t) { reachKeys[E.key(t.q, t.r)] = t; });
     var targetIds = {}; targets.forEach(function (t) { targetIds[t.id] = true; });
+    // Spill damage (pierce / cleave / splash / circle) from the attack the
+    // player is currently looking at — previewed on the bystanders it hits,
+    // which the board never used to show.
+    var collateralPreview = {};
+    if (sel && !finished && previewFocus != null && targetIds[previewFocus]) {
+      try {
+        E.previewAttack(state, sel.id, previewFocus).collateral.forEach(function (c) {
+          if (c.damage > 0) collateralPreview[c.id] = c.damage;
+        });
+      } catch (e) {}
+    }
     var swapIds = {};
     if (sel && !finished) state.units.forEach(function (o) {
       if (o.player === 0 && E.canSwap(state, sel, o)) swapIds[o.id] = true;
@@ -512,9 +523,11 @@
         S.push('<text x="' + x + '" y="' + (y + SIZE * 0.24) + '" text-anchor="middle" dominant-baseline="middle" font-size="' + (SIZE * 0.55) + '" pointer-events="none">' + glyphFor(u) + '</text>');
       }
       var pv = isTarget ? E.previewAttack(state, sel.id, u.id) : null;
+      // spill from the focused attack (pierce / cleave / splash / circle)
+      var spill = collateralPreview[u.id];
       // HP pips, Old World style: two rows of boxes, one box per HP.
       // On attack preview, the boxes that would be lost turn red.
-      drawHpPips(S, x, y, u.hp, E.hpMax(u), pv ? pv.damage : 0);
+      drawHpPips(S, x, y, u.hp, E.hpMax(u), pv ? pv.damage : (spill || 0));
       // swap affordance: moving onto an adjacent friendly swaps — show a
       // tappable arrows badge on the ally's tile (no separate action needed)
       if (swapIds[u.id]) {
@@ -561,12 +574,36 @@
       }
       // damage preview on targets — the viewer's attack-flash language:
       // gold ⚔ for a hit, red ☠ for a kill (viewer :226-227)
+      if (!pv && spill) {
+        var sLabel = (spill >= u.hp ? '☠ ' : '✳ ') + '-' + spill;
+        S.push('<text x="' + x + '" y="' + (y - SIZE * 0.62) + '" text-anchor="middle" font-size="13" font-family="system-ui" font-weight="bold" fill="' + (spill >= u.hp ? '#ff5040' : '#ffd23e') + '" stroke="' + BOARD_BG + '" stroke-width="3" paint-order="stroke" pointer-events="none">' + sLabel + '</text>');
+      }
       if (pv) {
         var label = (pv.kills ? '☠ ' : '⚔ ') + '-' + pv.damage;
         S.push('<text x="' + x + '" y="' + (y - SIZE * 0.62) + '" text-anchor="middle" font-size="15" font-family="system-ui" font-weight="bold" fill="' + (pv.kills ? '#ff5040' : '#ffb020') + '" stroke="' + BOARD_BG + '" stroke-width="3" paint-order="stroke" pointer-events="none">' + label + '</text>');
       }
       S.push('</g>');
     });
+
+    // ---- on-board counters (Discord request): orders and training in the
+    // corner of the map itself, with the game's own yield icons, so you never
+    // have to look away from the board to know what you can still spend.
+    if (!finished) {
+      var hudX = minX + 10, hudY = minY + 10;
+      var oIco = ICONS['YIELD_ORDERS'], tIco = ICONS['YIELD_TRAINING'];
+      var showTraining = (state.training || 0) > 0;
+      var boxW = 62, boxH = showTraining ? 46 : 26;
+      S.push('<g pointer-events="none">');
+      S.push('<rect x="' + hudX + '" y="' + hudY + '" width="' + boxW + '" height="' + boxH +
+        '" rx="7" fill="rgba(10,12,16,0.62)" stroke="#3a3d46" stroke-width="1"/>');
+      if (oIco) S.push('<image href="' + oIco + '" x="' + (hudX + 5) + '" y="' + (hudY + 4) + '" width="17" height="17"/>');
+      S.push('<text x="' + (hudX + 27) + '" y="' + (hudY + 13) + '" dominant-baseline="middle" font-size="14" font-weight="bold" font-family="system-ui" fill="#ffd9a0">' + state.orders + '</text>');
+      if (showTraining) {
+        if (tIco) S.push('<image href="' + tIco + '" x="' + (hudX + 5) + '" y="' + (hudY + 24) + '" width="17" height="17"/>');
+        S.push('<text x="' + (hudX + 27) + '" y="' + (hudY + 33) + '" dominant-baseline="middle" font-size="14" font-weight="bold" font-family="system-ui" fill="#cfe3ff">' + state.training + '</text>');
+      }
+      S.push('</g>');
+    }
 
     S.push('</svg>');
     if (clips.length) S[1] = '<defs>' + clips.join('') + '</defs>';
@@ -604,8 +641,15 @@
       // pane never collapses, so the layout never shifts under the cursor.
       el.addEventListener('pointerenter', function () {
         if (!CAN_HOVER) return;
-        if (targetIds[uid]) showPreviewPanel(uid);
-        else showUnitInfo(uid);
+        if (targetIds[uid]) {
+          // focus this target so its pierce/cleave/splash spill is previewed
+          if (previewFocus !== uid) { previewFocus = uid; render(); }
+          showPreviewPanel(uid);
+        } else showUnitInfo(uid);
+      });
+      el.addEventListener('pointerleave', function () {
+        if (!CAN_HOVER || previewFocus !== uid) return;
+        previewFocus = null; render();
       });
     });
 
@@ -615,6 +659,7 @@
   // ---------- attack preview panel (game-style breakdown) ----------
   var CAN_HOVER = window.matchMedia && window.matchMedia('(hover: hover)').matches;
   var armedTarget = null; // touch: first tap arms + previews, second attacks
+  var previewFocus = null; // the target under the cursor (or armed on touch)
 
   function modLines(mods) {
     return mods.map(function (m) {
