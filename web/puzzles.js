@@ -2373,5 +2373,175 @@ var OWPUZZLES = [
       }
     ]
   },
+  {
+   "id": "the-two-fords",
+   "difficulty": 3,
+   "name": "The Two Fords",
+   "author": "owpuzzle",
+   "brief": "Destroy as much enemy strength as you can this turn.",
+   "lesson": "A ford is only a road while nothing holds it: units clamp the tiles around them, and you may never step from one controlled tile straight into another. A bolt that kills the sentry carries on through the gap it opens. And once the horse is across, its kills are its movement — so the shove that moves an enemy INTO the chain is worth more than the blow that kills one out of it.",
+   "orders": 12,
+   "radius": 4,
+   "training": 0,
+   "hero": 0,
+   "slowVerify": true,
+   "objective": {
+    "kind": "maxKill",
+    "count": 340
+   },
+   "tiles": [
+    {
+     "q": 0,
+     "r": -4,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 0,
+     "r": -3,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 0,
+     "r": -1,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 0,
+     "r": 0,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 0,
+     "r": 1,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 0,
+     "r": 3,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 0,
+     "r": 4,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 2,
+     "r": -2,
+     "height": "HEIGHT_HILL",
+     "vegetation": "VEGETATION_TREES"
+    },
+    {
+     "q": 3,
+     "r": -3,
+     "height": "HEIGHT_HILL",
+     "vegetation": "VEGETATION_TREES"
+    },
+    {
+     "q": 1,
+     "r": 0,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": 1,
+     "r": 1,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": 2,
+     "r": 0,
+     "height": "HEIGHT_MOUNTAIN"
+    }
+   ],
+   "units": [
+    {
+     "player": 0,
+     "type": "UNIT_CATAPHRACT",
+     "q": -3,
+     "r": 0
+    },
+    {
+     "player": 0,
+     "type": "UNIT_BALLISTA",
+     "q": -2,
+     "r": -2
+    },
+    {
+     "player": 0,
+     "type": "UNIT_WAR_ELEPHANT",
+     "q": -2,
+     "r": -1
+    },
+    {
+     "player": 0,
+     "type": "UNIT_ARCHER",
+     "q": -3,
+     "r": -1
+    },
+    {
+     "player": 1,
+     "type": "UNIT_WARRIOR",
+     "q": -1,
+     "r": -2,
+     "hp": 8
+    },
+    {
+     "player": 1,
+     "type": "UNIT_LEGIONARY",
+     "q": 1,
+     "r": -2,
+     "hp": 14
+    },
+    {
+     "player": 1,
+     "type": "UNIT_WARRIOR",
+     "q": 1,
+     "r": -3,
+     "hp": 8
+    },
+    {
+     "player": 1,
+     "type": "UNIT_SPEARMAN",
+     "q": 2,
+     "r": -3,
+     "hp": 10
+    },
+    {
+     "player": 1,
+     "type": "UNIT_ARCHER",
+     "q": 2,
+     "r": -2,
+     "hp": 8
+    },
+    {
+     "player": 1,
+     "type": "UNIT_LONGBOWMAN",
+     "q": 3,
+     "r": -2,
+     "hp": 10
+    },
+    {
+     "player": 1,
+     "type": "UNIT_PIKEMAN",
+     "q": 0,
+     "r": 2,
+     "hp": 8
+    },
+    {
+     "player": 1,
+     "type": "UNIT_AXEMAN",
+     "q": 1,
+     "r": 2,
+     "hp": 8
+    },
+    {
+     "player": 1,
+     "type": "UNIT_WARRIOR",
+     "q": -2,
+     "r": 3,
+     "hp": 3
+    }
+   ]
+  },
 ];
 if (typeof module !== 'undefined') module.exports = OWPUZZLES;

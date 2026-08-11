@@ -126,6 +126,26 @@ The OW-native forms of "the move that looks wrong":
 | maxKill / strength-per-order (decline the bait) | — | Leave Him |
 | Fatigue / force march (+training) | — | Over the Hills |
 | Real position (stacked rules) | — | The Charge at the River |
+| Multi-theatre battle (ZOC gate + pierce + rout ferry + push) | cataphract, ballista, elephant | The Two Fords |
+
+## Designing a large puzzle (par 10+)
+
+The binding constraint is VERIFICATION, not imagination. Search cost scales
+with the number of blue *movers*, not with unit count — so a big puzzle means
+**few blue units and many red**: 4 blue x ~3 actions = 12 orders, while 9 reds
+supply targets, zones of control and decoys almost for free.
+
+- `tools/macro_ceiling.js` / the macro search collapses move-steps into
+  (move + attack) macros; rout chains fall out as consecutive attack macros.
+  Move-ordering (most strength destroyed first) plus dropping moves that
+  neither attack nor park within reach is what makes 12-ply searches converge.
+- Length must come from INTERLOCKS, not from ten easy chores: one theatre's
+  solution should enable another's. Killing a polearm grants no rout advance,
+  so polearm units are the natural CHAIN-BREAKERS that stop one cavalry unit
+  soloing the board (the first draft of The Two Fords was won in 8 orders by
+  the cataphract alone until spearmen were placed to cut the ferry).
+- A decoy theatre that is never worth its orders is good design, not waste —
+  it is where the order budget goes to die.
 
 ## Not yet covered (needs engine work or design)
 

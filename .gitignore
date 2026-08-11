@@ -4,3 +4,4 @@ __pycache__/
 data/
 server/node_modules/
 submissions/
+web/_draft.html
