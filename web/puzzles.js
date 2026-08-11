@@ -2643,5 +2643,72 @@ var OWPUZZLES = [
     }
    ]
   },
+  {
+   "id": "the-anvil",
+   "difficulty": 3,
+   "name": "The Anvil",
+   "author": "owpuzzle",
+   "brief": "Kill all three legionaries this turn.",
+   "lesson": "A commander doubles his strength when he strikes a man who is pinned from the far side — and a pinned man cannot strike back. Your militia can barely scratch a legionary, but standing them opposite turns the charge from a scratch into a kill. Each kill carries the commander forward, so the next anvil must already be in place before he arrives.",
+   "orders": 6,
+   "radius": 4,
+   "hero": 0,
+   "slowVerify": true,
+   "objective": {
+    "kind": "killAll"
+   },
+   "units": [
+    {
+     "player": 0,
+     "type": "UNIT_HORSEMAN",
+     "q": -2,
+     "r": 0,
+     "general": true,
+     "promotions": [
+      "EFFECTUNIT_COMMANDER_LEADER"
+     ],
+     "name": "commander"
+    },
+    {
+     "player": 0,
+     "type": "UNIT_MILITIA",
+     "q": 1,
+     "r": 0
+    },
+    {
+     "player": 0,
+     "type": "UNIT_MILITIA",
+     "q": -2,
+     "r": -2
+    },
+    {
+     "player": 0,
+     "type": "UNIT_MILITIA",
+     "q": 2,
+     "r": -3
+    },
+    {
+     "player": 1,
+     "type": "UNIT_LEGIONARY",
+     "q": -1,
+     "r": 0,
+     "hp": 9
+    },
+    {
+     "player": 1,
+     "type": "UNIT_LEGIONARY",
+     "q": -1,
+     "r": -1,
+     "hp": 9
+    },
+    {
+     "player": 1,
+     "type": "UNIT_LEGIONARY",
+     "q": 0,
+     "r": -2,
+     "hp": 9
+    }
+   ]
+  },
 ];
 if (typeof module !== 'undefined') module.exports = OWPUZZLES;

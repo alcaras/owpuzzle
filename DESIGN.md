@@ -97,7 +97,10 @@ The OW-native forms of "the move that looks wrong":
    them (Last Stand caps lethal damage at hp−1); only collateral from an
    attack on a NEIGHBOUR finishes them, so that neighbour must be kept alive
    (*The Last Stand*).
-9. **The small kill that opens the map** — killing a cheap unit removes its
+9. **The anvil** — a unit that cannot kill anything can still decide the
+   fight by standing opposite: a commander leader gains +100% strength when
+   flanking, so weak troops are positioning, not damage (*The Anvil*).
+10. **The small kill that opens the map** — killing a cheap unit removes its
    zone of control, unlocking the path the real attack needs (*The Gatekeeper*).
 
 ## Ability coverage matrix
@@ -119,6 +122,7 @@ The OW-native forms of "the move that looks wrong":
 | Trees −50% vs ranged | (terrain) | Into the Woods |
 | River −50% melee | (terrain) | The Ford, Charge at the River |
 | Flanking (+saddleborn, counter-cancel) | cavalry | The Pincer |
+| Flanking modifier (+100% for a commander leader) | horseman general + militia | The Anvil |
 | Mounted +25% open terrain | all mounted | (visible in previews everywhere) |
 | Camel +50% vs horse | camel archer | Ships of the Desert |
 | Push | elephants | Trample |
