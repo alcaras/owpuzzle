@@ -121,6 +121,8 @@ The OW-native forms of "the move that looks wrong":
 | Ranged rout chain | palton cavalry | Parthian Tactics |
 | Trees −50% vs ranged | (terrain) | Into the Woods |
 | River −50% melee | (terrain) | The Ford, Charge at the River |
+| Land/water: melee −50% across the shoreline; ranged counts +1 hex | (terrain) | The Shore Riders |
+| Eagle Eye (ignores distance falloff) | palton cavalry | The Shore Riders |
 | Flanking (+saddleborn, counter-cancel) | cavalry | The Pincer |
 | Flanking modifier (+100% for a commander leader) | horseman general + militia | The Anvil |
 | Mounted +25% open terrain | all mounted | (visible in previews everywhere) |

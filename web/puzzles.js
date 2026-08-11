@@ -1378,7 +1378,7 @@ var OWPUZZLES = [
         "q": 0,
         "r": 0,
         "hp": 11
-      },
+      , "promotions": ["EFFECTUNIT_EAGLE_EYE"]},
       {
         "player": 0,
         "type": "UNIT_PALTON_CAVALRY",

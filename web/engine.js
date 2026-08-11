@@ -282,6 +282,13 @@
         if (isMelee(att) && riverBetween(state, from, to)) {
           add('attacking across river', sumEffect(att, 'iRiverAttackModifier'));
         }
+        // Unit.cs:8748 — a MELEE attack that crosses the shoreline (land at
+        // water or the reverse) is heavily penalised; Amphibious/Marines
+        // offset it via iWaterLandAttackModifier.
+        if (isMelee(att) && isWaterTile(from) !== isWaterTile(to)) {
+          add('attacking across the shoreline',
+            G.LAND_WATER_MODIFIER + sumEffect(att, 'iWaterLandAttackModifier'));
+        }
         add('distance', distanceModifier(att, from, to));
       }
     }
@@ -297,9 +304,13 @@
   }
 
   // Unit.distanceModifier (Unit.cs:6585): -20% per hex beyond the first.
+  // A RANGED shot that crosses the shoreline counts as one hex further
+  // (Unit.cs:6606), so even a point-blank shot from land at a ship takes the
+  // penalty. Eagle Eye (bIgnoresDistance) removes all of it.
   function distanceModifier(u, from, to) {
     if (hasEffectFlag(u, 'bIgnoresDistance')) return 0;
     var dist = hexDistance(from, to);
+    if (!isMelee(u) && isWaterTile(from) !== isWaterTile(to)) dist++;
     if (dist > 1) return G.DISTANCE_MODIFIER * (dist - 1);
     return 0;
   }
