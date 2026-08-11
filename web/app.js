@@ -956,6 +956,7 @@
     if (u.player === 0) {
       selected = (selected === id) ? null : id;
       armedTarget = null;
+      previewFocus = null;
       hidePreviewPanel();
       render();
       return;
@@ -972,6 +973,8 @@
       }
       if (!CAN_HOVER && armedTarget !== id) {
         armedTarget = id;
+        previewFocus = id;      // touch has no hover: arming IS the preview
+        render();
         showPreviewPanel(id);
         return;
       }
@@ -990,6 +993,7 @@
       lineLog.push(a);
       actionsUsed++;
       armedTarget = null;
+      previewFocus = null;
       hidePreviewPanel();
       var u = E.unitById(state, keepSel);
       selected = (u && u.hp > 0 && E.canAct(state, u)) ? keepSel : null;
@@ -1175,6 +1179,7 @@
     finished = false;
     selected = null;
     armedTarget = null;
+    previewFocus = null;
     hidePreviewPanel();
     document.getElementById('result').classList.remove('show');
     render();
@@ -1199,6 +1204,7 @@
     finished = false;
     actionsUsed = 0;
     armedTarget = null;
+    previewFocus = null;
     hidePreviewPanel();
     document.getElementById('result').classList.remove('show');
     render();
