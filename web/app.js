@@ -240,8 +240,9 @@
     var cleared = solvedCount === libraryTotal && solvedCount > 0;
     var html = invite +
       (cleared ? '' : '<div class="progress" id="rated-row" style="margin-bottom:8px">' +
-        '<button class="rated-btn" id="btn-rated">▶ ' +
-        (ME ? 'Play another puzzle' : 'Play rated puzzle') + '</button></div>') +
+        (ME ? '<button class="rated-btn" id="btn-rated">▶ Play another puzzle</button>'
+            : '<a class="rated-btn" href="/auth/discord" style="display:inline-block;text-decoration:none">Sign in with Discord</a>') +
+        '</div>') +
       '<div class="progress" style="margin-bottom:6px">' +
       '<a href="hall.html">🏆 Hall of Fame</a> · ' +
       '<a href="hall.html?me=1">my achievements</a></div>' +

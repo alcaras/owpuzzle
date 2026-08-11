@@ -93,7 +93,11 @@ The OW-native forms of "the move that looks wrong":
    enemy into a pierce/splash lane (*The Shove*).
 7. **Spend to save** — force march's 100 training / double orders, or eating a
    counterattack on purpose, because position is worth more than the cost.
-8. **The small kill that opens the map** — killing a cheap unit removes its
+8. **Kill by spill** — some enemies cannot be killed by the blow aimed at
+   them (Last Stand caps lethal damage at hp−1); only collateral from an
+   attack on a NEIGHBOUR finishes them, so that neighbour must be kept alive
+   (*The Last Stand*).
+9. **The small kill that opens the map** — killing a cheap unit removes its
    zone of control, unlocking the path the real attack needs (*The Gatekeeper*).
 
 ## Ability coverage matrix
@@ -127,6 +131,7 @@ The OW-native forms of "the move that looks wrong":
 | Fatigue / force march (+training) | — | Over the Hills |
 | Real position (stacked rules) | — | The Charge at the River |
 | Multi-theatre battle (ZOC gate + pierce + rout ferry + push) | cataphract, ballista, elephant | The Two Fords |
+| Last Stand (zealot) + splash finisher, attack ORDER | akkadian archer | The Last Stand |
 
 ## Designing a large puzzle (par 10+)
 
