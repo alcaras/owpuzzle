@@ -526,14 +526,21 @@
       if (u.player === 1 && mustKill[u.id] === true) {
         S.push('<text x="' + x + '" y="' + (y - SIZE * 0.66) + '" text-anchor="middle" dominant-baseline="middle" font-size="14" pointer-events="none">\ud83c\udfaf</text>');
       }
-      // general pennant: gold flag at top-left, like the game's general banner
-      if (u.general) {
-        var gx = x - SIZE * 0.5, gy = y - SIZE * 0.52;
-        S.push('<line x1="' + gx + '" y1="' + gy + '" x2="' + gx + '" y2="' + (gy + 16) + '" stroke="' + BOARD_BG + '" stroke-width="2" pointer-events="none"/>');
-        S.push('<polygon points="' + gx + ',' + gy + ' ' + (gx + 14) + ',' + (gy + 4) + ' ' + gx + ',' + (gy + 8) + '" fill="#ffd23e" stroke="' + BOARD_BG + '" stroke-width="1" pointer-events="none"/>');
+      // A general wears the game's own commander badge; a named leader wears
+      // the badge for THAT leader type (commander/tactician/zealot/hero...),
+      // which is the crowned icon the game itself uses.
+      var leadEff = E.effectsOf(u).filter(function (e) { return /_LEADER$/.test(e); })[0];
+      if (u.general || leadEff) {
+        var gico = ICONS['EFFECT_' + String(leadEff || 'EFFECTUNIT_COMMANDER').replace('EFFECTUNIT_', '')] ||
+                   ICONS['EFFECT_COMMANDER'];
+        var gx = x - SIZE * 0.46, gy = y - SIZE * 0.34;
+        if (gico) {
+          S.push('<circle cx="' + gx + '" cy="' + gy + '" r="9" fill="#ffd23e" stroke="' + BOARD_BG + '" stroke-width="1.2" pointer-events="none"/>');
+          S.push('<image href="' + gico + '" x="' + (gx - 7.5) + '" y="' + (gy - 7.5) + '" width="15" height="15" pointer-events="none"/>');
+        }
       }
       // promotion badges: the promotion's in-game icon on a gold disc
-      (u.promotions || []).forEach(function (pr, pi) {
+      (u.promotions || []).filter(function (pr) { return !/_LEADER$/.test(pr); }).forEach(function (pr, pi) {
         var effName = (E.DATA.promotions[pr] && E.DATA.promotions[pr].effect) || pr;
         var pic = ICONS['EFFECT_' + effName.replace('EFFECTUNIT_', '')];
         var bx = x + SIZE * 0.46, by = y - SIZE * 0.36 + pi * 16;
