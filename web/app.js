@@ -235,8 +235,13 @@
       invite = '<div class="progress" style="margin-bottom:6px">🏆 You have conquered the whole library — ' +
         '<a href="editor.html"><b>build one of your own?</b></a></div>';
     }
-    var html = invite + '<div class="progress" id="rated-row" style="margin-bottom:8px">' +
-      '<button class="rated-btn" id="btn-rated">▶ Play rated puzzle</button></div>' +
+    // nothing left to queue up once the library is cleared — the trophy line
+    // above already says so, so don't offer a button that can only fail
+    var cleared = solvedCount === libraryTotal && solvedCount > 0;
+    var html = invite +
+      (cleared ? '' : '<div class="progress" id="rated-row" style="margin-bottom:8px">' +
+        '<button class="rated-btn" id="btn-rated">▶ ' +
+        (ME ? 'Play another puzzle' : 'Play rated puzzle') + '</button></div>') +
       '<div class="progress" style="margin-bottom:6px">' +
       '<a href="hall.html">🏆 Hall of Fame</a> · ' +
       '<a href="hall.html?me=1">my achievements</a></div>' +
@@ -268,7 +273,8 @@
       html += '</div>';
     });
     home.innerHTML = html;
-    document.getElementById('btn-rated').addEventListener('click', function () {
+    var ratedBtn = document.getElementById('btn-rated');
+    if (ratedBtn) ratedBtn.addEventListener('click', function () {
       var btn = this;
       fetch('/api/next').then(function (r) { return r.json(); }).then(function (d) {
         if (d.slug) location.href = '?p=' + d.slug;
@@ -1007,7 +1013,30 @@
     var r = document.getElementById('result');
     r.classList.add('show');
     document.getElementById('result-title').textContent = won ? '⚔️ Victory!' : '💀 Not this time';
-    document.getElementById('btn-next').style.display = won ? '' : 'none';
+    // Only offer the button when there IS another puzzle, and name it for
+    // what it does: signed in there is no fixed order (the rated queue picks),
+    // so "another"; signed out we really do walk the library in order.
+    var nextBtn = document.getElementById('btn-next');
+    nextBtn.style.display = 'none';
+    window.__nextSlug = null;
+    if (won) {
+      if (ME) {
+        fetch('/api/next').then(function (r) { return r.json(); }).then(function (d) {
+          if (d && d.slug) {
+            window.__nextSlug = d.slug;
+            nextBtn.textContent = 'Play another puzzle ▶';
+            nextBtn.style.display = '';
+          }
+        }).catch(function () {});
+      } else {
+        var cand = nextUnsolvedLocal();
+        if (cand) {
+          window.__nextSlug = cand;
+          nextBtn.textContent = 'Next puzzle ▶';
+          nextBtn.style.display = '';
+        }
+      }
+    }
     var used = E.poolOrders(puzzle) - state.orders;
     var perfect = won && used <= puzzle.orders;
     var blueDmg = state.units.filter(function (u) { return u.player === 0; })
@@ -1122,19 +1151,9 @@
     render();
   }
 
-  document.getElementById('btn-next').addEventListener('click', function () {
-    // Signed in: rated matchmaking. Anonymous (or API failure): next unsolved
-    // in DISPLAY order (Basics -> Tactics -> Challenges).
-    var btn = this;
-    if (ME) {
-      fetch('/api/next').then(function (r) { return r.json(); }).then(function (d) {
-        if (d.slug) location.href = '?p=' + d.slug;
-        else btn.textContent = d.message || 'queue exhausted!';
-      }).catch(advanceLocal);
-      return;
-    }
-    advanceLocal();
-    function advanceLocal() {
+  // next unsolved puzzle in DISPLAY order (Basics -> Tactics -> Challenges),
+  // for anonymous play where an ordering genuinely exists
+  function nextUnsolvedLocal() {
     var prog = {};
     try { prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}'); } catch (e) {}
     var list = [];
@@ -1145,10 +1164,14 @@
     for (var i = 1; i <= list.length; i++) {
       var cand = list[(idx + i) % list.length];
       var ce = progEntry(prog, cand);
-      if (!(ce && ce.solved)) { location.href = '?p=' + cand.id; return; }
+      if (!(ce && ce.solved)) return cand.id;
     }
+    return null;
+  }
+
+  document.getElementById('btn-next').addEventListener('click', function () {
+    if (window.__nextSlug) { location.href = '?p=' + window.__nextSlug; return; }
     location.href = './';
-    }
   });
   document.getElementById('btn-share').addEventListener('click', function () {
     var used = puzzle.orders - state.orders;
