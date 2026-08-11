@@ -65,6 +65,10 @@ CREATE TABLE IF NOT EXISTS sessions (
 // FORCE_RESET: puzzles edited before this versioning existed (their new json
 // was already upserted, so the diff can't see the change). Retired once —
 // the versions>0 guard makes it idempotent.
+// Pulled from the live library (withdrawn after release). Rows are kept for
+// their attempt history but stop being served or counted.
+const RETIRED_SLUGS = ['the-last-stand'];
+
 const FORCE_RESET = ['nestor-charge', 'the-shore-riders', 'the-wood-line',
   'the-jungle-road', 'the-crossed-lanes', 'down-the-avenue', 'cut-the-bowstring'];
 function seedCorePuzzles() {
@@ -94,6 +98,9 @@ function seedCorePuzzles() {
     }
   });
   tx();
+  for (const slug of RETIRED_SLUGS) {
+    db.prepare(`UPDATE puzzles SET status = 'retired' WHERE slug = ? AND status != 'retired'`).run(slug);
+  }
   return PUZZLES.length;
 }
 
