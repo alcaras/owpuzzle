@@ -51,6 +51,9 @@
   .iconstyle-btn { background: none; border: 1px solid rgba(140,130,110,0.45); color: var(--muted);
     font-size: 11px; padding: 2px 8px; border-radius: 10px; cursor: pointer; }
   .iconstyle-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .steam-link { font-size: 12px; margin-top: 4px; }
+  .steam-link a { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--edge); }
+  .steam-link a:hover { color: var(--accent); border-bottom-color: var(--accent); }
   #main-row {
     display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;
     gap: 10px; width: 100%; max-width: 900px;
@@ -228,6 +231,7 @@
     <div class="brief" id="p-brief"></div>
     <div class="back-link" id="back-link"></div>
     <div id="auth-widget" style="font-size:12.5px;margin-top:5px;color:var(--muted)"></div>
+    <div class="steam-link"><a href="https://store.steampowered.com/app/597180/Old_World/" target="_blank" rel="noopener">Buy Old World on Steam</a></div>
     <div style="margin-top:3px"><button id="btn-iconstyle" class="iconstyle-btn"></button></div>
   </header>
   <div id="home"></div>

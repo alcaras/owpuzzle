@@ -724,6 +724,9 @@
     if (d.bRout) out.push('rout: advances on kill, may strike again');
     if (d.bPush) out.push('panic: pushes a surviving defender back one tile');
     if (d.bStun) out.push('stuns the defender');
+    if (d.bHealKill) out.push('heals fully when it kills');
+    if (d.bLaunchOffensive) out.push('can launch an offensive');
+    if (d.iActionsExtra) out.push('+' + d.iActionsExtra + ' action per turn');
     if (d.bLastStand) out.push('last stand: cannot be killed from above 1 HP');
     if (d.bIgnoresDistance) out.push('no ranged damage falloff with distance');
     if (d.bIgnoreZOC) out.push('ignores zones of control');
@@ -832,7 +835,18 @@
     });
     if (inf.bZOC) lines.push('exerts zone of control');
     var stateBits = [];
-    if (u.general) stateBits.push('carries a GENERAL');
+    // Name the KIND of general: a commander flanks, a zealot heals on a kill,
+    // a tactician stuns — "carries a general" alone tells you nothing.
+    var leadEffects = E.effectsOf(u).filter(function (e) { return /_LEADER$/.test(e); });
+    if (u.general || leadEffects.length) {
+      var kinds = leadEffects.map(function (e) {
+        return e.replace('EFFECTUNIT_', '').replace(/_LEADER$/, '')
+          .replace('TRAIT_', '').toLowerCase().replace(/_/g, ' ');
+      });
+      stateBits.push(kinds.length
+        ? 'carries a ' + kinds.join(' + ').toUpperCase() + ' general'
+        : 'carries a GENERAL');
+    }
     if (E.DATA.units[u.type].bUnlimber) {
       stateBits.push(u.unlimbered ? 'set up — ready to fire (-25% defense)' : 'packed up — must Set Up before firing');
     }
