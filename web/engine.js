@@ -708,6 +708,42 @@
   }
 
   // Attackable targets from the unit's current tile.
+  // ---- line of sight (Tile.isShotObstructed, Tile.cs:12384) ----------------
+  // Walk the tiles between shooter and target. A height with
+  // bRangedAttackBlock (mountain, volcano) blocks the shot — unless the line
+  // runs along a tile edge and the OTHER tile of that pair is clear. An
+  // off-board tile counts as blocking, as it does in the C#.
+  function cubeRound(x, y, z) {
+    var rx = Math.round(x), ry = Math.round(y), rz = Math.round(z);
+    var dx = Math.abs(rx - x), dy = Math.abs(ry - y), dz = Math.abs(rz - z);
+    if (dx > dy && dx > dz) rx = -ry - rz;
+    else if (dy > dz) ry = -rx - rz;
+    else rz = -rx - ry;
+    return { q: rx, r: rz };
+  }
+  function blocksShot(state, p) {
+    var t = tileAt(state, p.q, p.r);
+    if (!t) return true;                       // off the board blocks
+    var h = DATA.height[t.height];
+    return !!(h && h.bRangedAttackBlock);
+  }
+  function isShotObstructed(state, from, to) {
+    var n = hexDistance(from, to);
+    if (n < 2) return false;
+    var ax = from.q, az = from.r, ay = -ax - az;
+    var bx = to.q, bz = to.r, by = -bx - bz;
+    for (var i = 1; i < n; i++) {
+      var t = i / n;
+      var x = ax + (bx - ax) * t, y = ay + (by - ay) * t, z = az + (bz - az) * t;
+      // the pair straddling the line: an edge-running shot is blocked only if
+      // BOTH sides block
+      var p1 = cubeRound(x + 1e-6, y + 1e-6, z - 2e-6);
+      var p2 = cubeRound(x - 1e-6, y - 1e-6, z + 2e-6);
+      if (blocksShot(state, p1) && blocksShot(state, p2)) return true;
+    }
+    return false;
+  }
+
   function attackTargets(state, u) {
     if (!canAttack(state, u) || !canDamage(u)) return [];
     var out = [];
@@ -715,8 +751,9 @@
     state.units.forEach(function (t) {
       if (t.hp <= 0 || t.player === u.player) return;
       var dist = hexDistance(u, t);
-      if (isMelee(u) ? dist === 1 : (dist >= 1 && dist <= r)) {
-        // ranged line of sight: simplified (no blocking on small arenas)
+      if (isMelee(u)) {
+        if (dist === 1) out.push(t);
+      } else if (dist >= 1 && dist <= r && !isShotObstructed(state, u, t)) {
         out.push(t);
       }
     });
@@ -1047,7 +1084,7 @@
     nextStepOrderCost: nextStepOrderCost,
     canDamage: canDamage, fatigueLimit: fatigueLimit,
     movementPoints: movementPoints, reachableTiles: reachableTiles,
-    attackTargets: attackTargets, attackStrength: attackStrength,
+    attackTargets: attackTargets, isShotObstructed: isShotObstructed, attackStrength: attackStrength,
     defendStrength: defendStrength, attackUnitDamage: attackUnitDamage,
     counterAttackDamage: counterAttackDamage, previewAttack: previewAttack,
     explainAttack: explainAttack,

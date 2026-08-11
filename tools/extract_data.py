@@ -130,7 +130,7 @@ def simple_table(fname, keep):
     return out
 
 terrain = simple_table("terrain.xml", ["iMovementCost", "iUnitDamage", "bNoVegetation"])
-height = simple_table("height.xml", ["iMovementCost", "bElevation"])
+height = simple_table("height.xml", ["iMovementCost", "bElevation", "bRangedAttackBlock"])
 improvements = simple_table("improvement.xml", ["iDefenseModifier", "iDefenseModifierFriendly"])
 
 vegetation = {}

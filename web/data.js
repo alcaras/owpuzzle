@@ -1237,11 +1237,13 @@ var OWDATA = {
   },
   "HEIGHT_LAKE": {},
   "HEIGHT_MOUNTAIN": {
-   "bElevation": 1
+   "bElevation": 1,
+   "bRangedAttackBlock": 1
   },
   "HEIGHT_OCEAN": {},
   "HEIGHT_VOLCANO": {
-   "bElevation": 1
+   "bElevation": 1,
+   "bRangedAttackBlock": 1
   }
  },
  "improvements": {
