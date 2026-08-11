@@ -197,7 +197,12 @@
     if (mode === 'terrain' && terrainBrush) {
       var b = terrainBrush;
       if (b.kind === 'terrain') { t.terrain = b.value; if (b.value === 'TERRAIN_WATER') { t.height = 'HEIGHT_FLAT'; t.vegetation = null; } }
-      else if (b.kind === 'height') t.height = b.value;
+      else if (b.kind === 'height') {
+        t.height = b.value;
+        // water cannot be raised: a hill/mountain/volcano brush turns the
+        // tile into land, mirroring the water brush flattening the height
+        if (t.terrain === 'TERRAIN_WATER' && b.value !== 'HEIGHT_FLAT') t.terrain = 'TERRAIN_TEMPERATE';
+      }
       else if (b.kind === 'veg') t.vegetation = b.value;
       else if (b.kind === 'feature') {
         if (b.value === 'road') t.road = !t.road;

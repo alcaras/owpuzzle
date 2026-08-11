@@ -1051,7 +1051,10 @@
         for (var r = Math.max(-p.radius, -q - p.radius); r <= Math.min(p.radius, -q + p.radius); r++)
           tiles[key(q, r)] = { q: q, r: r, terrain: 'TERRAIN_TEMPERATE', height: 'HEIGHT_FLAT', vegetation: null, improvement: null, river: [], road: false, owner: null, city: null };
     }
+    var RAISED = { HEIGHT_HILL: 1, HEIGHT_MOUNTAIN: 1, HEIGHT_VOLCANO: 1 };
     (p.tiles || []).forEach(function (t) {
+      // water is never raised — a tile cannot be both a mountain and the sea
+      if (t.terrain === 'TERRAIN_WATER' && RAISED[t.height]) t.height = 'HEIGHT_FLAT';
       var base = tiles[key(t.q, t.r)] || { q: t.q, r: t.r, terrain: 'TERRAIN_TEMPERATE', height: 'HEIGHT_FLAT', vegetation: null, improvement: null, river: [], road: false, owner: null };
       Object.keys(t).forEach(function (k2) { base[k2] = t[k2]; });
       tiles[key(t.q, t.r)] = base;
