@@ -131,7 +131,8 @@ The OW-native forms of "the move that looks wrong":
 | Fatigue / force march (+training) | — | Over the Hills |
 | Real position (stacked rules) | — | The Charge at the River |
 | Multi-theatre battle (ZOC gate + pierce + rout ferry + push) | cataphract, ballista, elephant | The Two Fords |
-| Last Stand (zealot) + splash finisher, attack ORDER | akkadian archer | The Last Stand |
+| Ranged line of sight (mountains block, water does not) | (terrain) | The Man Beside Him |
+| Last Stand (zealot) + splash finisher, attack ORDER | akkadian archer | The Man Beside Him |
 
 ## Designing a large puzzle (par 10+)
 

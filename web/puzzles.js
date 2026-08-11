@@ -2543,5 +2543,105 @@ var OWPUZZLES = [
     }
    ]
   },
+  {
+   "id": "the-man-beside-him",
+   "slowVerify": true,
+   "difficulty": 3,
+   "name": "The Man Beside Him",
+   "author": "owpuzzle",
+   "brief": "Destroy as much enemy strength as you can this turn.",
+   "lesson": "A zealot never falls to the blow aimed at him: any strike that would kill one is cut short, leaving him standing on his last point of health. Only the spill from an attack on somebody ELSE finishes him — so the man beside him must be the one you shoot, and he must still be alive when you do.",
+   "orders": 7,
+   "radius": 4,
+   "hero": 1,
+   "tiles": [
+    {
+     "q": 3,
+     "r": 0,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 3,
+     "r": -1,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 1,
+     "r": 0,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 1,
+     "r": 1,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 3,
+     "r": -2,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 2,
+     "r": -2,
+     "terrain": "TERRAIN_WATER"
+    },
+    {
+     "q": 1,
+     "r": -1,
+     "terrain": "TERRAIN_WATER"
+    }
+   ],
+   "objective": {
+    "kind": "maxKill",
+    "count": 170
+   },
+   "units": [
+    {
+     "player": 0,
+     "type": "UNIT_CATAPHRACT",
+     "q": -1,
+     "r": 2
+    },
+    {
+     "player": 0,
+     "type": "UNIT_AKKADIAN_ARCHER",
+     "q": -1,
+     "r": 0
+    },
+    {
+     "player": 0,
+     "type": "UNIT_SWORDSMAN",
+     "q": -2,
+     "r": -1
+    },
+    {
+     "player": 1,
+     "type": "UNIT_SWORDSMAN",
+     "q": 2,
+     "r": 0,
+     "hp": 8,
+     "general": true,
+     "promotions": [
+      "EFFECTUNIT_ZEALOT"
+     ],
+     "name": "zealot general"
+    },
+    {
+     "player": 1,
+     "type": "UNIT_ARCHER",
+     "q": 2,
+     "r": -1,
+     "hp": 4,
+     "name": "standard-bearer"
+    },
+    {
+     "player": 1,
+     "type": "UNIT_WARRIOR",
+     "q": 0,
+     "r": 3,
+     "hp": 6
+    }
+   ]
+  },
 ];
 if (typeof module !== 'undefined') module.exports = OWPUZZLES;
