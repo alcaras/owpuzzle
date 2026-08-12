@@ -329,6 +329,34 @@
     navigator.clipboard && navigator.clipboard.writeText(j);
     out(j);
   };
+  // Paste JSON: the mirror of Copy JSON, so a puzzle can be moved between
+  // machines, kept in a file, or forked from one you already exported.
+  document.getElementById('btn-import').onclick = function () {
+    var box = document.getElementById('out');
+    box.innerHTML = '';
+    var ta = document.createElement('textarea');
+    ta.rows = 8; ta.style.width = '100%';
+    ta.placeholder = 'Paste a puzzle JSON here (as produced by Copy JSON), then hit Load.';
+    var go = document.createElement('button');
+    go.className = 'act'; go.textContent = 'Load';
+    go.style.marginTop = '6px';
+    go.onclick = function () {
+      var p;
+      try { p = JSON.parse(ta.value); } catch (e) { return out('✗ that is not valid JSON: ' + e.message); }
+      if (!p || !Array.isArray(p.units) || !p.units.length) return out('✗ no units in that JSON — is it a puzzle?');
+      try { E.loadPuzzle(JSON.parse(JSON.stringify(p))); } catch (e) {
+        return out('✗ the engine will not load it: ' + e.message);
+      }
+      try {
+        localStorage.setItem('owpuzzle-editor-autosave', JSON.stringify(p));
+        localStorage.removeItem('owpuzzle-draft-solution');
+      } catch (e) { return out('✗ could not stash it: ' + e.message); }
+      location.reload();
+    };
+    box.appendChild(ta);
+    box.appendChild(go);
+    ta.focus();
+  };
   document.getElementById('btn-test').onclick = function () {
     if (!units.some(function (u) { return u.player === 0; })) return out('Place at least one blue unit first.');
     localStorage.setItem('owpuzzle-draft', JSON.stringify(buildPuzzle()));
