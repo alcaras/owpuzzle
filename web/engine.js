@@ -1124,6 +1124,35 @@
   //            units:[{player,type,q,r,hp?,promotions?,fortifyTurns?,name?}] }
   // Bucketed order pool so players cannot back-calculate the hidden par
   // from what they are given.
+  // A content fingerprint for a puzzle, used to tell whether a draft changed
+  // between test play and submission. It must be canonical: the editor rebuilds
+  // its tile map when it restores from autosave, so the same board can come
+  // back with its tiles and units in a different order, and a naive
+  // JSON.stringify then reports a change that never happened.
+  function puzzleHash(p) {
+    function tidyUnit(u) {
+      return [u.player, u.type, u.q, u.r, u.hp == null ? -1 : u.hp,
+        (u.promotions || []).slice().sort().join('+'), u.general ? 1 : 0,
+        u.anchored ? 1 : 0, u.name || ''].join(':');
+    }
+    function tidyTile(t) {
+      return [t.q, t.r, t.terrain || '', t.height || '', t.vegetation || '',
+        t.improvement || '', (t.river || []).slice().sort().join(','),
+        t.city == null ? '' : t.city].join(':');
+    }
+    var parts = [
+      p.orders || 0, p.radius == null ? 3 : p.radius, p.training || 0,
+      p.objective ? p.objective.kind : '',
+      p.objective && p.objective.count ? p.objective.count : 0,
+      (p.objective && p.objective.targets ? p.objective.targets.slice().sort() : []).join(','),
+      (p.units || []).map(tidyUnit).sort().join('|'),
+      (p.tiles || []).map(tidyTile).sort().join('|'),
+    ].join(';');
+    var h = 5381;
+    for (var i = 0; i < parts.length; i++) h = ((h * 33) ^ parts.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+  }
+
   function poolOrders(p) {
     if (p.pool) return p.pool;
     // par+5 slack, rounded up to the next multiple of 5 so par can't be
@@ -1192,7 +1221,8 @@
     canMarch: canMarch, doMarch: doMarch, canUnlimber: canUnlimber, doUnlimber: doUnlimber,
     canSwap: canSwap, doSwap: doSwap,
     canAnchor: canAnchor, doAnchor: doAnchor, waterControlled: waterControlled,
-    poolOrders: poolOrders, killsOf: killsOf, strKilledOf: strKilledOf,
+    poolOrders: poolOrders,
+    puzzleHash: puzzleHash, killsOf: killsOf, strKilledOf: strKilledOf,
     nextStepOrderCost: nextStepOrderCost,
     canDamage: canDamage, fatigueLimit: fatigueLimit,
     movementPoints: movementPoints, reachableTiles: reachableTiles,

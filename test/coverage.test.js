@@ -35,8 +35,10 @@ const ACKNOWLEDGED = {
   bMultiTeams: 'two sides only',
   // gates on which units may carry an effect; matters for the editor's
   // promotion list rather than for resolving combat
-  abUnitTraitValid: 'effect applicability — editor concern, see backlog',
-  abUnitTraitInvalid: 'effect applicability — editor concern, see backlog',
+  // the editor already honours these when it offers promotions
+  // (editor.js promoValidFor); combat resolution never needs them
+  abUnitTraitValid: 'effect applicability — handled in the editor, not in combat',
+  abUnitTraitInvalid: 'effect applicability — handled in the editor, not in combat',
   // genuine gaps, written down so they stay visible
   bImmobilize: 'GAP: grappler',
   bPushWater: 'GAP: fireship shoving ships into open water',

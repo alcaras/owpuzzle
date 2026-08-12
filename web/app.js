@@ -65,13 +65,7 @@
   // the GAMEPLAY content (not brief/lesson text). A stored entry whose hash
   // no longer matches reads as unsolved. Entries without a hash predate this
   // and are trusted as-is.
-  function puzzleHash(p) {
-    var s = JSON.stringify([p.orders, p.radius, p.training || 0, p.tiles || null,
-      p.objective, p.units]);
-    var h = 5381;
-    for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
-    return h.toString(36);
-  }
+  var puzzleHash = E.puzzleHash;   // one canonical implementation, in the engine
   function progEntry(prog, p) {
     var e = prog[p.id];
     if (e && e.v && e.v !== puzzleHash(p)) return null; // content changed
@@ -328,7 +322,9 @@
 
   function boot(bootPuzzle) {
   puzzle = bootPuzzle;
-  document.getElementById('back-link').innerHTML = '<a href="./">← all puzzles</a>';
+  document.getElementById('back-link').innerHTML = puzzle.id === 'draft'
+    ? '<a href="editor.html">← back to the editor</a>'
+    : '<a href="./">← all puzzles</a>';
 
   // ---------- state ----------
   var history = [];       // stack of states for undo
@@ -1028,7 +1024,11 @@
     var bu = document.getElementById('btn-setup');
     bu.style.display = (selU && !finished && E.canUnlimber(state, selU)) ? '' : 'none';
     var be = document.getElementById('btn-endturn');
-    be.style.display = (puzzle.objective.kind === 'maxKill' && !finished) ? '' : 'none';
+    // A draft always needs an explicit End Turn: the author has to be able to
+    // finish and record their line whatever the objective is, including one
+    // they have not met. Without it a killAll draft simply strands them.
+    be.style.display =
+      ((puzzle.objective.kind === 'maxKill' || puzzle.id === 'draft') && !finished) ? '' : 'none';
 
     var st = document.getElementById('status');
     if (finished) { st.textContent = ''; return; }
@@ -1190,7 +1190,12 @@
           }
         }).catch(function () {});
     };
-    if (won) {
+    if (puzzle.id === 'draft') {
+      // a draft has nowhere to go next: the author wants their editor back,
+      // whether or not the line they just played met the objective
+      nextBtn.textContent = '← back to the editor';
+      nextBtn.style.display = '';
+    } else if (won) {
       if (ME) {
         // deliberately not called here — see the attempt POST below
       } else {
@@ -1324,6 +1329,7 @@
   document.getElementById('btn-endturn').addEventListener('click', function () {
     if (!finished) endTurnMaxKill();
   });
+
   document.getElementById('btn-march').addEventListener('click', function () {
     if (selected != null) act({ type: 'march', unit: selected });
   });
@@ -1366,6 +1372,7 @@
   }
 
   document.getElementById('btn-next').addEventListener('click', function () {
+    if (puzzle.id === 'draft') { location.href = 'editor.html'; return; }
     if (window.__nextSlug) { location.href = '?p=' + window.__nextSlug; return; }
     location.href = './';
   });

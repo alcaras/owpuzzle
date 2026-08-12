@@ -362,13 +362,7 @@
     localStorage.setItem('owpuzzle-draft', JSON.stringify(buildPuzzle()));
     location.href = './?draft=1';
   };
-  function puzzleHash(p) {
-    var str = JSON.stringify([p.orders, p.radius, p.training || 0, p.tiles || null,
-      p.objective, p.units]);
-    var h = 5381;
-    for (var i = 0; i < str.length; i++) h = ((h * 33) ^ str.charCodeAt(i)) >>> 0;
-    return h.toString(36);
-  }
+  var puzzleHash = E.puzzleHash;   // shared with the player, so a round trip matches
 
   document.getElementById('btn-submit').onclick = function () {
     var p = buildPuzzle();
@@ -510,38 +504,81 @@
       });
     });
   }
-  // autosave every render; restore on load
+  // ---------- load / autosave / undo ----------
+  // One way to put a board into the editor, used by the autosave restore and
+  // by undo alike — two restore paths would drift apart.
+  function applyState(saved) {
+    if (!saved || !saved.units) return;
+    radius = saved.radius || 3;
+    document.getElementById('p-radius').value = radius;
+    tiles = {};
+    rebuildBoard();
+    (saved.tiles || []).forEach(function (t) {
+      var k = t.q + ',' + t.r;
+      if (tiles[k]) Object.keys(t).forEach(function (f) { tiles[k][f] = t[f]; });
+      if (tiles[k] && !tiles[k].river) tiles[k].river = [];
+    });
+    units = (saved.units || []).map(function (u) {
+      return { player: u.player, type: u.type, q: u.q, r: u.r, hp: u.hp,
+        promotions: u.promotions, general: u.general, anchored: u.anchored };
+    });
+    targets = (saved.objective && saved.objective.kind === 'killList')
+      ? (saved.objective.targets || []) : [];
+    ['name', 'brief', 'lesson'].forEach(function (f) {
+      if (saved[f] != null) document.getElementById('p-' + f).value = saved[f];
+    });
+    if (saved.orders) document.getElementById('p-orders').value = saved.orders;
+    if (saved.training != null) document.getElementById('p-training').value = saved.training;
+    if (saved.objective) document.getElementById('p-objective').value = saved.objective.kind;
+  }
+
   var restoring = true;
-  try {
-    var saved = JSON.parse(localStorage.getItem('owpuzzle-editor-autosave') || 'null');
-    if (saved && saved.units) {
-      radius = saved.radius || 3;
-      document.getElementById('p-radius').value = radius;
-      rebuildBoard();
-      (saved.tiles || []).forEach(function (t) {
-        var k = t.q + ',' + t.r;
-        if (tiles[k]) Object.keys(t).forEach(function (f) { tiles[k][f] = t[f]; });
-        if (tiles[k] && !tiles[k].river) tiles[k].river = [];
-      });
-      units = (saved.units || []).map(function (u) {
-        return { player: u.player, type: u.type, q: u.q, r: u.r, hp: u.hp,
-          promotions: u.promotions, general: u.general, anchored: u.anchored };
-      });
-      if (saved.objective && saved.objective.kind === 'killList') targets = saved.objective.targets || [];
-      ['name', 'brief', 'lesson'].forEach(function (f) {
-        if (saved[f]) document.getElementById('p-' + f).value = saved[f];
-      });
-      if (saved.orders) document.getElementById('p-orders').value = saved.orders;
-      if (saved.training) document.getElementById('p-training').value = saved.training;
-      if (saved.objective) document.getElementById('p-objective').value = saved.objective.kind;
-    }
-  } catch (e) {}
+  try { applyState(JSON.parse(localStorage.getItem('owpuzzle-editor-autosave') || 'null')); }
+  catch (e) {}
   restoring = false;
+
+  // Undo history. Every render follows a change, so snapshotting there catches
+  // every edit — painting, placing, removing, retyping a field — without
+  // hunting down each mutation site.
+  var past = [], future = [], travelling = false;
+  var current = null;
+  function labelHistory() {
+    var u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
+    if (u) u.disabled = !past.length;
+    if (r) r.disabled = !future.length;
+  }
+  function travel(stack, other) {
+    if (!stack.length) return;
+    other.push(current);
+    var snap = stack.pop();
+    travelling = true;
+    applyState(JSON.parse(snap));
+    current = snap;
+    travelling = false;
+    render();
+    labelHistory();
+  }
+  document.getElementById('btn-undo').onclick = function () { travel(past, future); };
+  document.getElementById('btn-redo').onclick = function () { travel(future, past); };
+  document.addEventListener('keydown', function (e) {
+    if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test((e.target || {}).tagName || '')) return;
+    e.preventDefault();
+    if (e.shiftKey) travel(future, past); else travel(past, future);
+  });
+
   var origRender = render;
   render = function () {
     origRender();
-    if (!restoring) {
-      try { localStorage.setItem('owpuzzle-editor-autosave', JSON.stringify(buildPuzzle())); } catch (e) {}
+    if (restoring) return;
+    var snap;
+    try { snap = JSON.stringify(buildPuzzle()); } catch (e) { return; }
+    if (snap !== current) {
+      if (current !== null && !travelling) { past.push(current); future.length = 0; }
+      if (past.length > 100) past.shift();
+      current = snap;
+      labelHistory();
+      try { localStorage.setItem('owpuzzle-editor-autosave', snap); } catch (e) {}
     }
   };
   render();
