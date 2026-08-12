@@ -484,6 +484,16 @@ app.get('/api/profile', (req, res) => {
       orders: r.orders_used, at: r.first_at,
     }));
   const recent = conquests.slice().sort((a, b) => (b.at || '').localeCompare(a.at || '')).slice(0, 8);
+  // puzzles this player made, so a profile links to their work
+  const authored = db.prepare(`
+    SELECT slug, json, solves, rating FROM puzzles
+    WHERE author_id = ? AND status = 'approved' ORDER BY created_at`).all(target.id)
+    .map(r => ({
+      slug: r.slug,
+      name: (() => { try { return JSON.parse(r.json).name; } catch (e) { return r.slug; } })(),
+      solves: r.solves,
+      rating: viewerBeat.has(r.slug) ? Math.round(r.rating) : undefined,
+    }));
   res.json({
     player: {
       name: target.name, avatar: avatarUrl(target.discord_id, target.avatar, 128),
@@ -491,7 +501,7 @@ app.get('/api/profile', (req, res) => {
       // private: your rating is yours alone
       rating: (!!user && target.id === user.id) ? Math.round(target.rating) : undefined,
     },
-    stats, achievements, recent, conquests,
+    stats, achievements, recent, conquests, authored,
   });
 });
 

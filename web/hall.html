@@ -128,6 +128,17 @@ function renderProfile() {
     });
     h += '</div>';
 
+    if (d.authored && d.authored.length) {
+      h += '<h2>Puzzles made</h2>' +
+        '<table><tr><th>Puzzle</th><th class="num">Elo</th><th class="num">Solved by</th></tr>';
+      d.authored.forEach(function (r) {
+        h += '<tr><td><a href="/?p=' + esc(r.slug) + '">' + esc(r.name) + '</a></td>' +
+          '<td class="num">' + (r.rating != null ? '<b>' + r.rating + '</b>' : '—') + '</td>' +
+          '<td class="num">' + (r.solves || 0) + '</td></tr>';
+      });
+      h += '</table>';
+    }
+
     if (d.conquests && d.conquests.length) {
       h += '<h2>Conquests — hardest first</h2>' +
         '<table><tr><th>Puzzle</th><th class="num">Elo</th><th class="num">Orders</th>' +
