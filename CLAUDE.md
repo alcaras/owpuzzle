@@ -88,6 +88,13 @@ Verification cost scales with how many tiles the blue units might want. Few
 blue units and terrain that constrains their options keeps a board provable.
 A puzzle nobody can verify is a puzzle whose ceiling is a guess.
 
+## Making puzzles
+
+See **[docs/making-puzzles.md](docs/making-puzzles.md)** before designing one.
+The short version: the trick has to be *required*, not merely available —
+three of five drafts in one sitting were withdrawn because the verifier found
+a duller line that reached the same ceiling without using the idea.
+
 ## Verifiers
 
 Two independent implementations, deliberately:
