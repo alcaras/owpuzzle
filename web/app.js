@@ -329,6 +329,9 @@
   }
   // the game displays strength / 10 (a 50-strength unit shows "5")
   function fmt10(v) { return (v / 10).toFixed(1).replace(/\.0$/, ''); }
+  function prettyEffectName(e) {
+    return e.replace('EFFECTUNIT_', '').toLowerCase().replace(/_/g, ' ');
+  }
   function shortName(u) {
     return u.type.replace('UNIT_', '').replace(/_/g, ' ').toLowerCase();
   }
@@ -539,6 +542,14 @@
       if (u.player === 1 && mustKill[u.id] === true) {
         S.push('<text x="' + x + '" y="' + (y - SIZE * 0.66) + '" text-anchor="middle" dominant-baseline="middle" font-size="14" pointer-events="none">\ud83c\udfaf</text>');
       }
+      // statuses applied during the turn (disarmed = the game's broken sword)
+      (u.applied || []).forEach(function (st, si) {
+        var sic = ICONS['EFFECT_' + st.replace('EFFECTUNIT_', '')];
+        var sx = x - SIZE * 0.46, sy = y + SIZE * 0.34 - si * 15;
+        S.push('<circle cx="' + sx + '" cy="' + sy + '" r="9" fill="#b03030" stroke="' + BOARD_BG + '" stroke-width="1.2" pointer-events="none"/>');
+        if (sic) S.push('<image href="' + sic + '" x="' + (sx - 7) + '" y="' + (sy - 7) + '" width="14" height="14" pointer-events="none"/>');
+        else S.push('<text x="' + sx + '" y="' + (sy + 1) + '" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="#fff">✗</text>');
+      });
       // A general wears the game's own commander badge; a named leader wears
       // the badge for THAT leader type (commander/tactician/zealot/hero...),
       // which is the crowned icon the game itself uses.
@@ -855,6 +866,11 @@
     });
     if (inf.bZOC) lines.push('exerts zone of control');
     var stateBits = [];
+    (u.applied || []).forEach(function (st) {
+      stateBits.push(prettyEffectName(st) + ' (' +
+        (E.DATA.effects[st] && E.DATA.effects[st].iStrengthModifier
+          ? E.DATA.effects[st].iStrengthModifier + '% strength' : 'status') + ')');
+    });
     // Name the KIND of general: a commander flanks, a zealot heals on a kill,
     // a tactician stuns — "carries a general" alone tells you nothing.
     var leadEffects = E.effectsOf(u).filter(function (e) { return /_LEADER$/.test(e); });

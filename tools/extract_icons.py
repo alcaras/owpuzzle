@@ -67,6 +67,19 @@ with tempfile.TemporaryDirectory() as td3:
             base64.b64encode(open(small, "rb").read()).decode()
         n_flag += 1
 
+# status icons the board needs that live under unit_traits (the broken sword
+# the game shows on a disarmed unit)
+TRAIT_ICON_SRC = "/Users/dominik/Library/CloudStorage/Dropbox/cc/owreference/dist/img/icons/unit_traits"
+with tempfile.TemporaryDirectory() as tdt:
+    for name, key in [("disarm", "EFFECT_DISARMED")]:
+        pt = os.path.join(TRAIT_ICON_SRC, name + ".png")
+        if not os.path.exists(pt):
+            continue
+        small = os.path.join(tdt, name + ".png")
+        subprocess.run(["sips", "-Z", "40", pt, "--out", small], check=True, capture_output=True)
+        icons[key] = "data:image/png;base64," + \
+            base64.b64encode(open(small, "rb").read()).decode()
+
 # yield icons (orders, training) for the board HUD
 YIELD_SRC = "/Users/dominik/Library/CloudStorage/Dropbox/cc/owreference/dist/img/icons/yields"
 with tempfile.TemporaryDirectory() as tdy:
