@@ -1353,8 +1353,39 @@
   });
 
   // ---------- header ----------
+  // A community puzzle is not in the core list, so it has no "N of M" number —
+  // it has an author, and that is what belongs in the header instead.
   var pnum = OWPUZZLES.indexOf(puzzle) + 1;
-  document.getElementById('day-label').textContent = 'Combat Puzzles · ' + pnum + ' of ' + OWPUZZLES.length;
+  var isCore = pnum > 0;
+  var dayEl = document.getElementById('day-label');
+  dayEl.textContent = isCore
+    ? 'Combat Puzzles · ' + pnum + ' of ' + OWPUZZLES.length
+    : 'Combat Puzzles · community';
+  // the offline count knows only the core set; the library is core + community,
+  // so number this puzzle within the whole thing once the server answers
+  fetch('/api/puzzles').then(function (r) { return r.json(); }).then(function (d) {
+    var list = (d && d.puzzles) || [];
+    if (!list.length) return;
+    var i = list.findIndex(function (x) { return x.slug === puzzle.id; });
+    dayEl.textContent = 'Combat Puzzles · ' +
+      (i >= 0 ? (i + 1) + ' of ' + list.length : 'community');
+  }).catch(function () {});
+  var byEl = document.getElementById('p-author');
+  if (!isCore && puzzle.author) {
+    var prof = 'hall.html?u=' + encodeURIComponent(puzzle.author);
+    var safe = String(puzzle.author).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+    byEl.innerHTML = 'a puzzle by <a href="' + prof + '">' + safe + '</a>';
+    // their Discord portrait, if the server knows it — credit with a face on it
+    fetch('/api/profile?name=' + encodeURIComponent(puzzle.author))
+      .then(function (r) { return r.json(); }).then(function (d) {
+        if (d && d.player && d.player.avatar) {
+          byEl.innerHTML = 'a puzzle by <a href="' + prof + '">' +
+            '<img src="' + d.player.avatar + '" alt="">' + safe + '</a>';
+        }
+      }).catch(function () {});
+  }
   document.getElementById('p-name').textContent = puzzle.name;
   document.getElementById('p-brief').textContent = puzzle.brief;
   document.getElementById('library').innerHTML = '';

@@ -38,6 +38,13 @@
   header .day { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
   .puzzle-title { font-size: 17px; font-weight: bold; margin-top: 6px; color: var(--accent); }
   .brief { font-size: 14px; max-width: 480px; margin: 2px auto 0; padding: 0 8px; }
+  /* a community puzzle is somebody's work — say whose, and link to them */
+  .byline { font-size: 13px; margin-top: 4px; color: var(--muted); }
+  .byline a { color: var(--accent); font-weight: bold; text-decoration: none;
+    border-bottom: 1px solid rgba(194,90,58,.45); }
+  .byline a:hover { border-bottom-color: var(--accent); }
+  .byline img { width: 18px; height: 18px; border-radius: 50%; vertical-align: -4px;
+    margin-right: 4px; }
   .hud {
     display: flex; gap: 16px; align-items: center; justify-content: center;
     margin: 8px 0 0; font-size: 14px;
@@ -232,6 +239,7 @@
     <div class="day"><span id="day-label"></span></div>
     <div class="puzzle-title" id="p-name"></div>
     <div class="brief" id="p-brief"></div>
+    <div class="byline" id="p-author"></div>
     <div class="back-link" id="back-link"></div>
     <div id="auth-widget" style="font-size:12.5px;margin-top:5px;color:var(--muted)"></div>
     <div class="steam-link"><a href="https://store.steampowered.com/app/597180/Old_World/" target="_blank" rel="noopener">Buy Old World on Steam</a></div>
