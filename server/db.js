@@ -107,6 +107,8 @@ function seedCorePuzzles() {
 }
 
 try { db.exec('ALTER TABLE puzzles ADD COLUMN notes TEXT'); } catch (e) {}
+// display preferences follow the account, not the browser
+try { db.exec('ALTER TABLE users ADD COLUMN pref_unit_art TEXT'); } catch (e) {}
 
 // Achievements are IMMUTABLE: once earned they are written here and never
 // recomputed away. Live counters can legitimately fall (a puzzle you solved

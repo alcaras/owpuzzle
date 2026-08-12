@@ -140,7 +140,7 @@ function renderProfile() {
     // They are per-device (kept in localStorage), so say so.
     if (p.me) {
       h += '<h2>Settings</h2><div class="settings">' +
-        '<div><b>Unit art</b> <span class="ds">how units are drawn on the board — this device only</span></div>' +
+        '<div><b>Unit art</b> <span class="ds">how units are drawn on the board — saved to your account</span></div>' +
         '<div class="segmented" id="art-toggle">' +
         '<button data-art="portrait">Portraits</button>' +
         '<button data-art="flag">Icons</button></div></div>';
@@ -176,12 +176,22 @@ function renderProfile() {
     el.innerHTML = h;
     var seg = document.getElementById('art-toggle');
     if (seg) {
-      var cur = 'portrait';
-      try { cur = localStorage.getItem('owpuzzle-iconstyle') || 'portrait'; } catch (e) {}
+      // the account's stored choice is the truth; the browser copy is only a
+      // fallback for players who have not signed in
+      var cur = p.unitArt || 'portrait';
+      if (!p.unitArt) { try { cur = localStorage.getItem('owpuzzle-iconstyle') || 'portrait'; } catch (e) {} }
+      try { localStorage.setItem('owpuzzle-iconstyle', cur); } catch (e) {}
       Array.prototype.forEach.call(seg.querySelectorAll('button'), function (b) {
         if (b.getAttribute('data-art') === cur) b.classList.add('on');
         b.onclick = function () {
-          try { localStorage.setItem('owpuzzle-iconstyle', b.getAttribute('data-art')); } catch (e) {}
+          var val = b.getAttribute('data-art');
+          try { localStorage.setItem('owpuzzle-iconstyle', val); } catch (e) {}
+          // signed in, the choice belongs to the account and follows you to
+          // any browser; the local copy is just what this page paints with now
+          fetch('/api/settings', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ unitArt: val }),
+          }).catch(function () {});
           Array.prototype.forEach.call(seg.querySelectorAll('button'), function (o) { o.classList.remove('on'); });
           b.classList.add('on');
         };

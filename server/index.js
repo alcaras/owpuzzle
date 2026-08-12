@@ -144,6 +144,7 @@ function publicUser(u) {
     rd: Math.round(u.rd), isAdmin: !!u.is_admin,
     coreSolved: coreSolvedCount(u.id), coreTotal: coreCount(),
     canSubmit: true, completedAll: completedAll(u),
+    unitArt: u.pref_unit_art || null,
   };
 }
 
@@ -176,6 +177,19 @@ function replayLine(puzzle, line) {
 
 // ---------- API ----------
 app.get('/api/me', (req, res) => res.json({ user: publicUser(userFromReq(req)) }));
+
+// Display preferences belong to the account once you have one, so they follow
+// you between machines; signed out they stay in the browser.
+app.post('/api/settings', (req, res) => {
+  const user = userFromReq(req);
+  if (!user) return res.status(401).json({ error: 'not logged in' });
+  const art = req.body && req.body.unitArt;
+  if (art !== undefined) {
+    if (art !== 'portrait' && art !== 'flag') return res.status(400).json({ error: 'unknown unit art' });
+    db.prepare('UPDATE users SET pref_unit_art = ? WHERE id = ?').run(art, user.id);
+  }
+  res.json({ ok: true, user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(user.id)) });
+});
 
 app.get('/api/puzzles', (req, res) => {
   const user = userFromReq(req);
@@ -217,7 +231,9 @@ app.get('/api/next', (req, res) => {
       (SELECT MAX(solved) FROM attempts a WHERE a.puzzle_id = p.id AND a.user_id = @uid) ever_solved
     FROM puzzles p WHERE p.status IN ('core', 'approved')`).all({ uid: user.id });
   const now = Date.now();
+  const exclude = req.query.exclude;
   const eligible = rows.filter(r => {
+    if (exclude && r.slug === exclude) return false;          // never hand back the one just played
     if (r.ever_solved === 1) return false;                    // solved: done
     if (!r.last_attempt) return true;                         // unseen
     const ageH = (now - Date.parse(r.last_attempt + 'Z')) / 36e5;
@@ -500,6 +516,7 @@ app.get('/api/profile', (req, res) => {
       since: target.created_at, me: !!user && target.id === user.id,
       // private: your rating is yours alone
       rating: (!!user && target.id === user.id) ? Math.round(target.rating) : undefined,
+      unitArt: (!!user && target.id === user.id) ? (target.pref_unit_art || null) : undefined,
     },
     stats, achievements, recent, conquests, authored,
   });

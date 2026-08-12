@@ -99,6 +99,12 @@
   fetch('/api/me').then(function (r) { return r.json(); })
     .then(function (d) {
       ME = d.user; renderAuth();
+      // your account's unit-art choice wins over whatever this browser had
+      if (ME && ME.unitArt && ME.unitArt !== ICON_STYLE) {
+        ICON_STYLE = ME.unitArt;
+        try { localStorage.setItem('owpuzzle-iconstyle', ICON_STYLE); } catch (e) {}
+        if (window.__rerender) window.__rerender();
+      }
       var onHome = document.getElementById('home') &&
         document.getElementById('home').classList.contains('show');
       if (onHome) loadCommunityPuzzles();
@@ -1170,15 +1176,22 @@
     var nextBtn = document.getElementById('btn-next');
     nextBtn.style.display = 'none';
     window.__nextSlug = null;
-    if (won) {
-      if (ME) {
-        fetch('/api/next').then(function (r) { return r.json(); }).then(function (d) {
-          if (d && d.slug) {
+    // Ask for the next puzzle only AFTER this solve has been recorded, or the
+    // queue does not yet know you have beaten this one and hands it straight
+    // back. `exclude` covers the case where the write is still settling.
+    window.__offerNext = function () {
+      fetch('/api/next?exclude=' + encodeURIComponent(puzzle.id))
+        .then(function (r) { return r.json(); }).then(function (d) {
+          if (d && d.slug && d.slug !== puzzle.id) {
             window.__nextSlug = d.slug;
             nextBtn.textContent = 'Play another puzzle ▶';
             nextBtn.style.display = '';
           }
         }).catch(function () {});
+    };
+    if (won) {
+      if (ME) {
+        // deliberately not called here — see the attempt POST below
       } else {
         var cand = nextUnsolvedLocal();
         if (cand) {
@@ -1244,7 +1257,8 @@
           rb.textContent += ' This puzzle is rated ' + d.puzzleRating + '.';
         }
         if (d.unlocked && d.unlocked.length) celebrate(d.unlocked);
-      }).catch(function () {});
+        if (won && window.__offerNext) window.__offerNext();
+      }).catch(function () { if (won && window.__offerNext) window.__offerNext(); });
     }
     if (puzzle.id === 'draft') {
       // the author's own play of their puzzle IS the claimed solution
