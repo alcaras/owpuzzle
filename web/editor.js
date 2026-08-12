@@ -364,6 +364,18 @@
   };
   var puzzleHash = E.puzzleHash;   // shared with the player, so a round trip matches
 
+  function submitWith(p, sol) {
+    out('submitting\u2026 (with your solution: ' + (sol.strength / 10) + ' STR in ' + sol.orders + ' orders)');
+    fetch('/api/submit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ puzzle: p, solution: sol }),
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.error) return out('\u2717 ' + d.error);
+      out('\u2713 ' + (d.message || "Thanks for submitting your puzzle \u2014 we'll review it!"));
+      loadMine();
+    }).catch(function () { out('\u2717 network error (are you logged in?)'); });
+  }
+
   document.getElementById('btn-submit').onclick = function () {
     var p = buildPuzzle();
     // A submission must come with the author's own solution: play it through
@@ -371,6 +383,26 @@
     // total and the order count — the things the editor cannot compute.
     var sol = null;
     try { sol = JSON.parse(localStorage.getItem('owpuzzle-draft-solution') || 'null'); } catch (e) {}
+    // if this browser could not keep the recording, ask the server for its copy
+    if (!sol || !sol.line || !sol.line.length || !sol.puzzle) {
+      out('checking for your test play\u2026');
+      return fetch('/api/draft-solution').then(function (r) { return r.json(); })
+        .then(function (d) {
+          var remote = d && d.solution;
+          if (remote && remote.line && remote.line.length && remote.puzzle &&
+              puzzleHash(remote.puzzle) === puzzleHash(p)) {
+            return submitWith(p, remote);
+          }
+          out('\u2717 Play your own solution first: hit \u25b6 Test play, play your line, ' +
+            'press End Turn, then come back and submit. (' +
+            (!remote ? 'no recording found here or on the server'
+              : (puzzleHash(remote.puzzle || {}) !== puzzleHash(p)
+                ? 'the server has a recording, but of a different board'
+                : 'the recording has no line')) + ')');
+        }).catch(function () {
+          out('\u2717 Could not reach the server to check your test play.');
+        });
+    }
     if (!sol || !sol.line || !sol.line.length) {
       // say what we actually found, so a report tells us something
       var why = !sol ? 'no recording was found'
@@ -390,15 +422,7 @@
       return out('\u2717 You have changed the puzzle since your test play. ' +
         'Play it once more with \u25b6 Test play, then submit.');
     }
-    out('submitting\u2026 (with your solution: ' + (sol.strength / 10) + ' STR in ' + sol.orders + ' orders)');
-    fetch('/api/submit', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ puzzle: p, solution: sol }),
-    }).then(function (r) { return r.json(); }).then(function (d) {
-      if (d.error) return out('\u2717 ' + d.error);
-      out('\u2713 ' + (d.message || "Thanks for submitting your puzzle \u2014 we'll review it!"));
-      loadMine();
-    }).catch(function () { out('\u2717 network error (are you logged in?)'); });
+    submitWith(p, sol);
   };
 
   // ---------- your own submissions ----------

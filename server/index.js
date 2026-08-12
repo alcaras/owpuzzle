@@ -418,6 +418,29 @@ app.get('/api/my-puzzles', (req, res) => {
   });
 });
 
+// The editor hands a draft to the player and the player hands a recorded line
+// back, historically through localStorage alone. When that write fails — private
+// browsing, storage partitioning, a wiped origin — the author is told to play a
+// turn they just played, with no way to tell why. Keep a copy server-side.
+app.post('/api/draft-solution', (req, res) => {
+  const user = userFromReq(req);
+  if (!user) return res.status(401).json({ error: 'not logged in' });
+  const body = req.body || {};
+  if (!body.puzzle || !Array.isArray(body.line)) return res.status(400).json({ error: 'bad recording' });
+  db.prepare(`INSERT INTO draft_solutions (user_id, json, created_at)
+              VALUES (?, ?, datetime('now'))
+              ON CONFLICT(user_id) DO UPDATE SET json = excluded.json, created_at = excluded.created_at`)
+    .run(user.id, JSON.stringify(body));
+  res.json({ ok: true });
+});
+
+app.get('/api/draft-solution', (req, res) => {
+  const user = userFromReq(req);
+  if (!user) return res.json({ solution: null });
+  const row = db.prepare('SELECT json FROM draft_solutions WHERE user_id = ?').get(user.id);
+  res.json({ solution: row ? JSON.parse(row.json) : null });
+});
+
 app.get('/api/submit-status/:slug', (req, res) => {
   const row = db.prepare('SELECT slug, status, notes, author_id FROM puzzles WHERE slug = ?').get(req.params.slug);
   if (!row) return res.status(404).json({ error: 'not found' });

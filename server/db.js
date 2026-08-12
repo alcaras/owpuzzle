@@ -113,6 +113,12 @@ try { db.exec('ALTER TABLE users ADD COLUMN pref_unit_art TEXT'); } catch (e) {}
 // A player line that beats the published par is evidence the ceiling is wrong
 // — or that the engine is. Either way it wants a human eye before the library
 // changes, so it lands here rather than updating anything automatically.
+db.exec(`CREATE TABLE IF NOT EXISTS draft_solutions (
+  user_id INTEGER PRIMARY KEY,
+  json TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`);
+
 db.exec(`CREATE TABLE IF NOT EXISTS records (
   id INTEGER PRIMARY KEY,
   puzzle_id INTEGER NOT NULL,

@@ -1286,6 +1286,19 @@
           met: E.checkObjective(state, puzzle.objective),
         }));
       } catch (e) {}
+      // …and lodge a copy with the server, so a browser that cannot keep
+      // localStorage does not silently lose the author's line
+      if (ME) {
+        fetch('/api/draft-solution', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            puzzle: puzzle, line: lineLog,
+            orders: E.poolOrders(puzzle) - state.orders,
+            strength: E.strKilledOf(state), kills: E.killsOf(state),
+            met: E.checkObjective(state, puzzle.objective),
+          }),
+        }).catch(function () {});
+      }
     }
     if (won) {
       try {
