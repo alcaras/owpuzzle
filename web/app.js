@@ -1211,6 +1211,43 @@
     }
     var used = E.poolOrders(puzzle) - state.orders;
     var perfect = won && used <= puzzle.orders;
+    // Record the author's line FIRST. The maxKill branch below returns early
+    // for a draft (it has no ceiling to judge against yet), and everything
+    // after that return was being skipped — including this. An author would
+    // play their line, end the turn, and find nothing had been recorded.
+    if (puzzle.id === 'draft') {
+      // the author's own play of their puzzle IS the claimed solution
+      try {
+        localStorage.setItem('owpuzzle-draft-solution', JSON.stringify({
+          // Store the board that was actually played, not only its
+          // fingerprint. Comparing two hash strings means trusting that the
+          // player page and the editor page are running the same vintage of
+          // the code — one stale cached file and the author is told they
+          // changed a puzzle they never touched.
+          puzzle: puzzle,
+          v: puzzleHash(puzzle),
+          line: lineLog,
+          orders: E.poolOrders(puzzle) - state.orders,
+          strength: E.strKilledOf(state),
+          kills: E.killsOf(state),
+          met: E.checkObjective(state, puzzle.objective),
+        }));
+      } catch (e) {}
+      // …and lodge a copy with the server, so a browser that cannot keep
+      // localStorage does not silently lose the author's line
+      if (ME) {
+        fetch('/api/draft-solution', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            puzzle: puzzle, line: lineLog,
+            orders: E.poolOrders(puzzle) - state.orders,
+            strength: E.strKilledOf(state), kills: E.killsOf(state),
+            met: E.checkObjective(state, puzzle.objective),
+          }),
+        }).catch(function () {});
+      }
+    }
+
     var blueDmg = state.units.filter(function (u) { return u.player === 0; })
       .reduce(function (s, u) { return s + (E.hpMax(u) - Math.max(0, u.hp)); }, 0);
     var body;
@@ -1267,38 +1304,6 @@
         if (d.unlocked && d.unlocked.length) celebrate(d.unlocked);
         if (won && window.__offerNext) window.__offerNext();
       }).catch(function () { if (won && window.__offerNext) window.__offerNext(); });
-    }
-    if (puzzle.id === 'draft') {
-      // the author's own play of their puzzle IS the claimed solution
-      try {
-        localStorage.setItem('owpuzzle-draft-solution', JSON.stringify({
-          // Store the board that was actually played, not only its
-          // fingerprint. Comparing two hash strings means trusting that the
-          // player page and the editor page are running the same vintage of
-          // the code — one stale cached file and the author is told they
-          // changed a puzzle they never touched.
-          puzzle: puzzle,
-          v: puzzleHash(puzzle),
-          line: lineLog,
-          orders: E.poolOrders(puzzle) - state.orders,
-          strength: E.strKilledOf(state),
-          kills: E.killsOf(state),
-          met: E.checkObjective(state, puzzle.objective),
-        }));
-      } catch (e) {}
-      // …and lodge a copy with the server, so a browser that cannot keep
-      // localStorage does not silently lose the author's line
-      if (ME) {
-        fetch('/api/draft-solution', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            puzzle: puzzle, line: lineLog,
-            orders: E.poolOrders(puzzle) - state.orders,
-            strength: E.strKilledOf(state), kills: E.killsOf(state),
-            met: E.checkObjective(state, puzzle.objective),
-          }),
-        }).catch(function () {});
-      }
     }
     if (won) {
       try {

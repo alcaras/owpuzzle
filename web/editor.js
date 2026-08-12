@@ -199,6 +199,17 @@
     if (poolView) poolView.textContent = E.poolOrders({ orders: par });
   }
   document.getElementById('p-orders').oninput = refreshPool;
+  // Every puzzle field must go through render(), which is what autosaves and
+  // snapshots for undo. Without this, changing the objective or par lived only
+  // in the DOM: the draft sent to Test play had it, the autosave did not, and
+  // returning to the editor silently reverted it — so the board you submitted
+  // was not the board you played, and the check rightly refused it.
+  ['p-name', 'p-brief', 'p-lesson', 'p-orders', 'p-training', 'p-objective'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var ev = el.tagName === 'SELECT' ? 'change' : 'input';
+    el.addEventListener(ev, function () { render(); });
+  });
   setTimeout(refreshPool, 0);
 
   // unit art toggle (shared setting with the game view)
