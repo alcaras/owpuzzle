@@ -803,12 +803,32 @@
     return out;
   }
 
+  // Old World coordinates. The game's save format maps offset -> axial as
+  // q = x + floor(y/2), r = -y, so we invert that; then shift so the
+  // bottom-left tile of THIS board reads (0,0), as the game's minimap does.
+  var COORD_ORIGIN = null;   // recomputed per board (see owCoord)
+  function owCoord(q, r) {
+    if (!COORD_ORIGIN) {
+      var minX = Infinity, minY = Infinity;
+      Object.keys(state.tiles).forEach(function (k) {
+        var t = state.tiles[k];
+        var y = -t.r, x = t.q - Math.floor(y / 2);
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+      });
+      COORD_ORIGIN = { x: minX, y: minY };
+    }
+    var y = -r, x = q - Math.floor(y / 2);
+    return (x - COORD_ORIGIN.x) + ',' + (y - COORD_ORIGIN.y);
+  }
+
   function showTileInfo(q, r) {
     var t = E.tileAt(state, q, r);
     if (!t) return;
     var p = document.getElementById('preview-panel');
     p.innerHTML =
-      '<h4>Terrain</h4>' +
+      '<h4>Terrain <span style="margin-left:auto;font-size:11px;color:#b9b4a4;letter-spacing:0">(' +
+        owCoord(q, r) + ')</span></h4>' +
       '<div class="who">' + terrainName(t) + '</div>' +
       terrainLines(t).map(function (l) { return '<div class="modline"><span>' + l + '</span></div>'; }).join('');
     p.classList.add('show');
@@ -855,7 +875,9 @@
     if (u.steps > 0) stateBits.push('moved ' + u.steps + '/' + E.fatigueLimit(u) + ' steps');
     if (u.fortifyTurns > 0) stateBits.push('fortified ' + u.fortifyTurns + ' (+' + (u.fortifyTurns * 5) + '%)');
     p.innerHTML =
-      '<h4>' + (u.player === 0 ? 'Your unit' : 'Enemy unit') + '</h4>' +
+      '<h4>' + (u.player === 0 ? 'Your unit' : 'Enemy unit') +
+        '<span style="margin-left:auto;font-size:11px;color:#b9b4a4;letter-spacing:0">(' +
+        owCoord(u.q, u.r) + ')</span></h4>' +
       '<div class="who">' + (ic ? '<img class="p' + u.player + '" src="' + ic + '" alt="">' : '') +
       shortName(u) + '</div>' +
       (promoNames.length ? '<div class="note" style="color:#ffd23e;margin:0 0 4px">' + promoNames.join(' · ') + '</div>' : '') +
