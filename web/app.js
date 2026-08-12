@@ -99,7 +99,6 @@
       var onHome = document.getElementById('home') &&
         document.getElementById('home').classList.contains('show');
       if (onHome) loadCommunityPuzzles();
-      if (ME && ME.isAdmin && onHome) loadReviewQueue();
     }).catch(function () {});
 
   function loadCommunityPuzzles() {
@@ -116,11 +115,12 @@
       // assign BEFORE re-rendering — the library total counts these
       if (community.length !== COMMUNITY.length) changed = true;
       COMMUNITY = community;
-      if (changed && window.__renderLibrary) {
+      if (window.__firstPaint && !window.__painted) {
+        window.__painted = true;
+        window.__firstPaint();
+      } else if (changed && window.__renderLibrary) {
         window.__renderLibrary();
-        // renderLibrary rewrites #home, which drops the admin review queue if
-        // it had already loaded — put it back.
-        if (ME && ME.isAdmin) loadReviewQueue();
+        if (ME && ME.isAdmin) loadReviewQueue();   // the re-render drops it
       }
       if (!community.length) return;
       var home = document.getElementById('home');
@@ -157,9 +157,12 @@
 
   function loadReviewQueue() {
     fetch('/api/review').then(function (r) { return r.json(); }).then(function (d) {
-      if (!d.pending || !d.pending.length) return;
       var home = document.getElementById('home');
+      var old = document.getElementById('review-queue');
+      if (old) old.remove();                 // never stack a second copy
+      if (!d.pending || !d.pending.length) return;
       var sec = document.createElement('div');
+      sec.id = 'review-queue';
       sec.innerHTML = '<h2 class="group">Review queue — ' + d.pending.length + ' pending</h2>';
       var grid = document.createElement('div');
       grid.className = 'grid';
@@ -210,7 +213,16 @@
     var home = document.getElementById('home');
     home.classList.add('show');
     window.__renderLibrary = renderLibrary;
-    renderLibrary();
+    var painted = false;
+    window.__firstPaint = function () {
+      if (painted) return;
+      painted = true;
+      renderLibrary();
+      if (ME && ME.isAdmin) loadReviewQueue();
+    };
+    // the server is warm (~75ms), so waiting for the data avoids painting the
+    // library twice; the timeout covers a slow or absent API
+    setTimeout(window.__firstPaint, 700);
     return; // no game to run
   }
 
