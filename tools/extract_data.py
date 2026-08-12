@@ -116,7 +116,8 @@ for z, e in entries(parse("promotion.xml")):
 # ---------- units ----------
 KEEP_UNIT = ["bRangeFlat", "iMovement", "iVision", "iFatigue", "iStrength", "iRangeMax",
              "iRangeMin", "iHPMax", "bMelee", "bZOC", "bBlocks", "bFortify",
-             "bGeneral", "bRegular", "bWater", "bUnlimber", "bAnchor"]
+             "bGeneral", "bRegular", "bWater", "bUnlimber", "bAnchor",
+             "bIgnoreZOC"]
 units = {}
 for z, e in entries(parse("unit.xml")):
     s = scalars(e)

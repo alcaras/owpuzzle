@@ -517,7 +517,11 @@
   }
 
   function inEnemyZOC(state, u, q, r) {
-    if (hasEffectFlag(u, 'bIgnoreZOC')) return false;
+    // Unit.hasIgnoreZOC (Unit.cs:7013): the unit's OWN flag counts as well as
+    // any effect granting it. Palton cavalry carry bIgnoreZOC on the unit —
+    // we were only reading effects, so they were being held up by every
+    // spearman on the board.
+    if (info(u).bIgnoreZOC || hasEffectFlag(u, 'bIgnoreZOC')) return false;
     var here = tileAt(state, q, r);
     if (here && here.city != null) return false;   // city tiles are never in ZOC (Tile.cs:10070)
     for (var d = 0; d < 6; d++) {

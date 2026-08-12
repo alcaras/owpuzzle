@@ -2257,6 +2257,7 @@ var OWDATA = {
   "UNIT_AMAZON_CAVALRY_1": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
     "EFFECTUNIT_MOUNTED",
@@ -2284,6 +2285,7 @@ var OWDATA = {
   "UNIT_AMAZON_CAVALRY_2": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
     "EFFECTUNIT_MOUNTED",
@@ -2584,6 +2586,7 @@ var OWDATA = {
   "UNIT_CAMEL_ARCHER": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bRegular": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
@@ -2625,6 +2628,7 @@ var OWDATA = {
   "UNIT_CATAPHRACT": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bMelee": 1,
    "bRegular": 1,
    "effects": [
@@ -2654,6 +2658,7 @@ var OWDATA = {
   "UNIT_CATAPHRACT_ARCHER": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bRegular": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
@@ -2682,6 +2687,7 @@ var OWDATA = {
   "UNIT_CHARIOT": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bMelee": 1,
    "bRegular": 1,
    "effects": [
@@ -3023,6 +3029,7 @@ var OWDATA = {
   "UNIT_HITTITE_CHARIOT_1": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bMelee": 1,
    "bRegular": 1,
    "effects": [
@@ -3054,6 +3061,7 @@ var OWDATA = {
   "UNIT_HITTITE_CHARIOT_2": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bMelee": 1,
    "bRegular": 1,
    "effects": [
@@ -3117,6 +3125,7 @@ var OWDATA = {
   "UNIT_HORSEMAN": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bMelee": 1,
    "bRegular": 1,
    "effects": [
@@ -3145,6 +3154,7 @@ var OWDATA = {
   "UNIT_HORSE_ARCHER": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bRegular": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
@@ -3172,6 +3182,7 @@ var OWDATA = {
   "UNIT_HUNNIC_CAVALRY_1": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
     "EFFECTUNIT_MOUNTED",
@@ -3199,6 +3210,7 @@ var OWDATA = {
   "UNIT_HUNNIC_CAVALRY_2": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
     "EFFECTUNIT_MOUNTED",
@@ -3380,6 +3392,7 @@ var OWDATA = {
   "UNIT_KUSHAN_CAVALRY": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bMelee": 1,
    "bRegular": 1,
    "effects": [
@@ -3409,6 +3422,7 @@ var OWDATA = {
   "UNIT_KUSHAN_WARLORDS": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bMelee": 1,
    "bRegular": 1,
    "effects": [
@@ -3467,6 +3481,7 @@ var OWDATA = {
   "UNIT_LIBYAN_CAVALRY_1": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
     "EFFECTUNIT_MOUNTED",
@@ -3494,6 +3509,7 @@ var OWDATA = {
   "UNIT_LIBYAN_CAVALRY_2": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
     "EFFECTUNIT_MOUNTED",
@@ -3521,6 +3537,7 @@ var OWDATA = {
   "UNIT_LIGHT_CHARIOT": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bRegular": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
@@ -3751,6 +3768,7 @@ var OWDATA = {
   "UNIT_MOUNTED_LANCER": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bRegular": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
@@ -3779,6 +3797,7 @@ var OWDATA = {
   "UNIT_NOMAD_MARAUDER_1": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bMelee": 1,
    "effects": [
     "EFFECTUNIT_MELEE",
@@ -3805,6 +3824,7 @@ var OWDATA = {
   "UNIT_NOMAD_MARAUDER_2": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bMelee": 1,
    "effects": [
     "EFFECTUNIT_MELEE",
@@ -3831,6 +3851,7 @@ var OWDATA = {
   "UNIT_NOMAD_SKIRMISHER_1": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
     "EFFECTUNIT_MOUNTED",
@@ -3857,6 +3878,7 @@ var OWDATA = {
   "UNIT_NOMAD_SKIRMISHER_2": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
     "EFFECTUNIT_MOUNTED",
@@ -3883,6 +3905,7 @@ var OWDATA = {
   "UNIT_NOMAD_WARLORD_1": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bMelee": 1,
    "effects": [
     "EFFECTUNIT_MELEE",
@@ -3909,6 +3932,7 @@ var OWDATA = {
   "UNIT_NOMAD_WARLORD_2": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bMelee": 1,
    "effects": [
     "EFFECTUNIT_MELEE",
@@ -3963,6 +3987,7 @@ var OWDATA = {
   "UNIT_PALTON_CAVALRY": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bRegular": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
@@ -4133,6 +4158,7 @@ var OWDATA = {
    ]
   },
   "UNIT_SCOUT": {
+   "bIgnoreZOC": 1,
    "effects": [
     "EFFECTUNIT_INFANTRY",
     "EFFECTUNIT_STEALTH",
@@ -4154,6 +4180,7 @@ var OWDATA = {
    ]
   },
   "UNIT_SCOUT_HANNO_NAVIGATOR": {
+   "bIgnoreZOC": 1,
    "effects": [
     "EFFECTUNIT_INFANTRY",
     "EFFECTUNIT_STEALTH",
@@ -4356,6 +4383,7 @@ var OWDATA = {
   "UNIT_STEPPE_RIDER": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bIgnoreZOC": 1,
    "bRegular": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
