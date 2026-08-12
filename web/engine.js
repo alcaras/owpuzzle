@@ -794,8 +794,15 @@
     return (h && h.iRangeChange) || 0;
   }
   // Unit.canTargetTile (Unit.cs:8487): a shot reaches
-  //   range + max(from.rangeChange - to.rangeChange, 0)
-  // so height helps only insofar as you out-top the target.
+  //   range(from) + max(from.rangeChange - to.rangeChange, 0)
+  // where range(from) is Unit.range (Unit.cs:6345) — base + iRangeExtra, with
+  // NO terrain height in it. Height enters only through the max() term, so it
+  // helps you only insofar as you out-top the target. Contrast rangeMax(tile),
+  // which does fold the tile's own height in and is what the rout-advance test
+  // uses below.
+  // NOT MODELLED: range(from) also adds the city's rangeChange when the
+  // shooter stands inside a city (Unit.cs:6367) — we have city tiles but no
+  // city range property, so a bowman on a city tile is short-ranged here.
   function effectiveRange(state, u, from, to) {
     var r = rangeMax(u);
     if (info(u).bRangeFlat) return r;

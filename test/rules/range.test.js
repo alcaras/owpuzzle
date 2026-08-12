@@ -117,3 +117,27 @@ test('hills give no defensive bonus [height.xml carries no defence field]', () =
   assert.equal(damage(hill, hill.blue(), hill.red()), damage(flat, flat.blue(), flat.red()),
     'standing on a hill must not reduce the damage taken');
 });
+
+test('base range never includes terrain height [Unit.range, Unit.cs:6345]', () => {
+  // range(from) is base + iRangeExtra only. If height leaked into it, a
+  // slinger on a hill would reach 3 flat tiles instead of 3 = 2 + 1 uphill
+  // difference, and hill-to-hill would stretch too.
+  const { E } = require('../helpers');
+  const base = E.DATA.units.UNIT_SLINGER.iRangeMax;
+  const hillToHill = setup(`
+    tile 0,0 HEIGHT_HILL
+    tile ${base + 1},0 HEIGHT_HILL
+    blue SLINGER 0,0
+    red ARCHER ${base + 1},0
+  `, { radius: 4 });
+  assert.equal(canHit(hillToHill, hillToHill.blue(), hillToHill.red()), false,
+    'equal height means equal footing: reach stays at ' + base);
+
+  const hillToFlat = setup(`
+    tile 0,0 HEIGHT_HILL
+    blue SLINGER 0,0
+    red ARCHER ${base + 1},0
+  `, { radius: 4 });
+  assert.equal(canHit(hillToFlat, hillToFlat.blue(), hillToFlat.red()), true,
+    'shooting down adds exactly one');
+});
