@@ -375,7 +375,9 @@
       return out('\u2717 Play your own solution first: hit \u25b6 Test play, finish the turn, ' +
         'then come back and submit. We store your line as the reference solution.');
     }
-    if (sol.v !== puzzleHash(p)) {
+    // compare content with content, both hashed by THIS page's engine
+    var changed = sol.puzzle ? (puzzleHash(sol.puzzle) !== puzzleHash(p)) : (sol.v !== puzzleHash(p));
+    if (changed) {
       return out('\u2717 You have changed the puzzle since your test play. ' +
         'Play it once more with \u25b6 Test play, then submit.');
     }

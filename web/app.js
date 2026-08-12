@@ -1270,6 +1270,12 @@
       // the author's own play of their puzzle IS the claimed solution
       try {
         localStorage.setItem('owpuzzle-draft-solution', JSON.stringify({
+          // Store the board that was actually played, not only its
+          // fingerprint. Comparing two hash strings means trusting that the
+          // player page and the editor page are running the same vintage of
+          // the code — one stale cached file and the author is told they
+          // changed a puzzle they never touched.
+          puzzle: puzzle,
           v: puzzleHash(puzzle),
           line: lineLog,
           orders: E.poolOrders(puzzle) - state.orders,

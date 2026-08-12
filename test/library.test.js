@@ -84,3 +84,30 @@ test('ids are unique', () => {
     seen.add(p.id);
   }
 });
+
+test('a draft survives the round trip to test play and back unchanged', () => {
+  // The editor writes a draft, the player records the board it played, and the
+  // editor compares the two at submit. The fingerprint has to be stable across
+  // that trip or authors are told they changed a puzzle they did not touch.
+  const draft = {
+    orders: 4, radius: 3, training: 0,
+    objective: { kind: 'killAll' },
+    tiles: [{ q: 1, r: 0, height: 'HEIGHT_HILL' }, { q: 0, r: 1, vegetation: 'VEGETATION_TREES' }],
+    units: [{ player: 0, type: 'UNIT_SWORDSMAN', q: 0, r: 0 },
+            { player: 1, type: 'UNIT_ARCHER', q: 2, r: 0, hp: 4 }],
+  };
+  const before = E.puzzleHash(draft);
+  // the player loads it (loadPuzzle may normalise the object in place)…
+  E.loadPuzzle(JSON.parse(JSON.stringify(draft)), { play: true });
+  E.loadPuzzle(draft, { play: true });
+  assert.equal(E.puzzleHash(draft), before, 'playing a draft must not change its fingerprint');
+
+  // …and the editor rebuilds it from autosave in a different order
+  const restored = {
+    training: 0, radius: 3, orders: 4,
+    objective: { kind: 'killAll' },
+    units: [draft.units[1], draft.units[0]],
+    tiles: [draft.tiles[1], draft.tiles[0]],
+  };
+  assert.equal(E.puzzleHash(restored), before, 'order must not matter');
+});

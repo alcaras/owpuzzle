@@ -129,7 +129,18 @@
     if (r > 0) r += sumEffect(u, 'iRangeExtra');
     return r;
   }
-  function baseStrength(u) { return info(u).iStrength; }
+  // Unit.baseStrength + Unit.baseStrengthModifier (Unit.cs:6278-6291): the
+  // wounded modifier is part of the unit OWN strength, so it counts when it
+  // attacks, when it defends, and when it counterattacks. Adding it on the
+  // defence side only left TOUGH doing half its job.
+  function baseStrength(u) {
+    var v = info(u).iStrength;
+    if (isDamaged(u)) {
+      var pct = sumEffect(u, 'iDamagedUsModifier');
+      if (pct) v = Math.round(v * (100 + pct) / 100);
+    }
+    return v;
+  }
   function hpMax(u) { return info(u).iHPMax + 0; }
   function isDamaged(u) { return u.hp < hpMax(u); }
   function fatigueLimit(u) { return (info(u).iFatigue || G.UNIT_FATIGUE_LIMIT) + sumEffect(u, 'iFatigueExtra'); }
@@ -359,7 +370,6 @@
       }
     }
 
-    if (isDamaged(def)) add('wounded', sumEffect(def, 'iDamagedUsModifier'));
     if (attUnit) {
       if (isDamaged(attUnit)) add('vs damaged', sumEffect(def, 'iDamagedThemModifier'));
       if (attUnit.general) add('vs general', sumEffect(def, 'iVsGeneralModifier'));

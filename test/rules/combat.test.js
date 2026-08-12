@@ -179,17 +179,26 @@ test('the anti-infantry bonus is keyed to the trait, not to melee alone [aiUnitT
     'a horseman is melee but not infantry');
 });
 
-test('TOUGH gives a wounded defender extra strength [iDamagedUsModifier]', () => {
-  const hurt = setup(`
-    blue AXEMAN 1,0
-    red SPEARMAN 0,0 hp=10 promo=EFFECTUNIT_TOUGH
-  `);
-  assert.equal(mods(hurt, hurt.blue(), hurt.red())['def:wounded'],
-    E.DATA.effects.EFFECTUNIT_TOUGH.iDamagedUsModifier);
-  const whole = setup(`
-    blue AXEMAN 1,0
-    red SPEARMAN 0,0 promo=EFFECTUNIT_TOUGH
-  `);
-  assert.equal(mods(whole, whole.blue(), whole.red())['def:wounded'], undefined,
-    'unwounded, there is nothing to be tough about');
+test('TOUGH raises a wounded unit\'s own strength, attacking AND defending [Unit.baseStrengthModifier, Unit.cs:6288]', () => {
+  // miDamagedUsModifier is folded into baseStrength, so it is the unit's own
+  // strength that changes — not a defensive bonus. Applying it on defence
+  // only left a wounded veteran hitting like a fresh recruit.
+  function pair(hp, promo) {
+    const g = setup(`
+      blue SPEARMAN 0,0 hp=${hp}${promo ? ' promo=' + promo : ''}
+      red AXEMAN 1,0
+    `);
+    return {
+      attacking: damage(g, g.blue(), g.red()),
+      taking: damage(g, g.red(), g.blue()),
+    };
+  }
+  const hurtPlain = pair(10, null), hurtTough = pair(10, 'EFFECTUNIT_TOUGH');
+  assert.ok(hurtTough.attacking > hurtPlain.attacking,
+    `a wounded TOUGH unit must hit harder (${hurtPlain.attacking} -> ${hurtTough.attacking})`);
+  assert.ok(hurtTough.taking < hurtPlain.taking,
+    `and take less (${hurtPlain.taking} -> ${hurtTough.taking})`);
+
+  const wholePlain = pair(20, null), wholeTough = pair(20, 'EFFECTUNIT_TOUGH');
+  assert.deepEqual(wholeTough, wholePlain, 'undamaged, TOUGH does nothing at all');
 });
