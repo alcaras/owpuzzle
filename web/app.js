@@ -109,6 +109,7 @@
         if (x.solvedByMe && !SERVER_SOLVED[x.slug]) { SERVER_SOLVED[x.slug] = true; changed = true; }
         if (x.perfectByMe && !SERVER_PERFECT[x.slug]) { SERVER_PERFECT[x.slug] = true; changed = true; }
         if (x.rating && SERVER_RATING[x.slug] !== x.rating) { SERVER_RATING[x.slug] = x.rating; changed = true; }
+        if (x.band && SERVER_BAND[x.slug] !== x.band) { SERVER_BAND[x.slug] = x.band; changed = true; }
       });
       var ICONS0 = (typeof OWICONS !== 'undefined') ? OWICONS : {};
       var community = (d.puzzles || []).filter(function (x) { return x.status === 'approved'; });
@@ -196,7 +197,7 @@
 
   // SERVER_SOLVED: slugs this signed-in account has solved (from /api/puzzles)
   // — local progress is per-browser, the server knows across devices.
-  var SERVER_SOLVED = {}, SERVER_PERFECT = {}, SERVER_RATING = {};
+  var SERVER_SOLVED = {}, SERVER_PERFECT = {}, SERVER_RATING = {}, SERVER_BAND = {};
   // community puzzles shown on this page — counted in the library total so
   // the home count matches the Hall of Fame (which counts every live puzzle)
   var COMMUNITY = [];
@@ -245,7 +246,7 @@
     var GROUPS = [
       { n: 1, title: 'Basics — one unit, one rule' },
       { n: 2, title: 'Tactics — combined arms' },
-      { n: 3, title: 'Challenges' },
+      { n: 3, title: 'Challenges — several rules at once' },
     ];
     var invite = '';
     if (solvedCount === libraryTotal && solvedCount > 0) {
@@ -266,7 +267,11 @@
       '<div class="progress">Solved <b>' + solvedCount + '</b> of ' + libraryTotal +
       (solvedCount === libraryTotal && solvedCount > 0 ? ' — the whole library! ⚔️' : '') + '</div>';
     GROUPS.forEach(function (g) {
-      var list = OWPUZZLES.filter(function (p) { return (p.difficulty || 2) === g.n; });
+      // group by MEASURED difficulty (the puzzle's own Elo band) and fall back
+      // to the authored difficulty until ratings arrive
+      var list = OWPUZZLES.filter(function (p) {
+        return (SERVER_BAND[p.id] || p.difficulty || 2) === g.n;
+      });
       if (!list.length) return;
       html += '<h2 class="group">' + g.title + '</h2><div class="grid">';
       html += list.map(function (p) {

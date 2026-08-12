@@ -195,7 +195,10 @@ app.get('/api/puzzles', (req, res) => {
     puzzles: rows.map(r => ({
       id: r.id, slug: r.slug, puzzle: JSON.parse(r.json), status: r.status,
       author: r.author_name,
-      // puzzle Elo is disclosed only to players who have beaten it
+      // puzzle Elo is disclosed only to players who have beaten it, but a
+      // coarse BAND is public so the library can group by measured difficulty
+      // without leaking the number
+      band: r.rating < 1000 ? 1 : (r.rating < 1300 ? 2 : 3),
       rating: solved[r.id] ? Math.round(r.rating) : undefined,
       attempts: r.attempts, solves: r.solves, solvedByMe: !!solved[r.id],
       perfectByMe: !!perfect[r.id],
