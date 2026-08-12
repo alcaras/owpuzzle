@@ -9,6 +9,16 @@
   // (fiddly) restore logic.
   var LOAD = (location.search.match(/[?&]load=([^&]+)/) || [])[1];
   if (LOAD) {
+    // Loading is a one-off, but the URL is not: the browser's Back button
+    // lands here again after a test play. Doing the load a second time
+    // replaced the author's edits with the server's copy AND deleted the
+    // recording they had just made — so returning with Back meant being told
+    // to play a turn they had just played. Load a given puzzle once.
+    var already = null;
+    try { already = localStorage.getItem('owpuzzle-loaded-slug'); } catch (e) {}
+    var haveBoard = false;
+    try { haveBoard = !!localStorage.getItem('owpuzzle-editor-autosave'); } catch (e) {}
+    if (already === LOAD && haveBoard) { location.replace('editor.html'); return; }
     document.body.innerHTML = '<p style="text-align:center;padding:40px;' +
       'font-family:Georgia,serif">loading your puzzle…</p>';
     fetch('/api/puzzle/' + encodeURIComponent(LOAD))
@@ -16,8 +26,10 @@
       .then(function (d) {
         if (!d || !d.puzzle) throw new Error(d && d.error || 'not found');
         localStorage.setItem('owpuzzle-editor-autosave', JSON.stringify(d.puzzle));
-        // it is a fresh draft: the old test-play solution no longer applies
-        localStorage.removeItem('owpuzzle-draft-solution');
+        localStorage.setItem('owpuzzle-loaded-slug', LOAD);
+        // a different board than whatever was recorded before; the submit
+        // check compares boards anyway, so leave the recording alone rather
+        // than destroying something the author may still need
       })
       .catch(function (e) { alert('Could not load that puzzle: ' + e.message); })
       .then(function () { location.replace('editor.html'); });
