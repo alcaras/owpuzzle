@@ -50,6 +50,14 @@
   .badge.earned .ico { filter:none; }
   .badge .nm { font-weight:bold; font-size:13.5px; }
   .badge .ds { font-size:11.5px; color:var(--muted); line-height:1.35; }
+  .settings { display:flex; align-items:center; justify-content:space-between;
+    gap:12px; flex-wrap:wrap; border:1px solid var(--edge); border-radius:10px;
+    padding:10px 12px; background:var(--panel); }
+  .settings .ds { font-size:11.5px; color:var(--muted); display:block; }
+  .segmented { display:flex; border:1px solid var(--edge); border-radius:8px; overflow:hidden; }
+  .segmented button { font-family:inherit; font-size:13px; padding:5px 12px; border:0;
+    background:transparent; color:var(--ink); cursor:pointer; }
+  .segmented button.on { background:var(--accent); color:#fff; }
   .bar { height:4px; background:var(--edge); border-radius:2px; margin-top:5px; overflow:hidden; }
   .bar i { display:block; height:100%; background:var(--gold); }
   .recent { font-size:13px; }
@@ -128,6 +136,16 @@ function renderProfile() {
     });
     h += '</div>';
 
+    // Display preferences belong with the player, not on every puzzle page.
+    // They are per-device (kept in localStorage), so say so.
+    if (p.me) {
+      h += '<h2>Settings</h2><div class="settings">' +
+        '<div><b>Unit art</b> <span class="ds">how units are drawn on the board — this device only</span></div>' +
+        '<div class="segmented" id="art-toggle">' +
+        '<button data-art="portrait">Portraits</button>' +
+        '<button data-art="flag">Icons</button></div></div>';
+    }
+
     if (d.authored && d.authored.length) {
       h += '<h2>Puzzles made</h2>' +
         '<table><tr><th>Puzzle</th><th class="num">Elo</th><th class="num">Solved by</th></tr>';
@@ -156,6 +174,19 @@ function renderProfile() {
     h += '<p class="note" style="margin-top:22px"><a href="hall.html">← hall of fame</a></p>';
     el.className = '';           // shed the centered .note styling
     el.innerHTML = h;
+    var seg = document.getElementById('art-toggle');
+    if (seg) {
+      var cur = 'portrait';
+      try { cur = localStorage.getItem('owpuzzle-iconstyle') || 'portrait'; } catch (e) {}
+      Array.prototype.forEach.call(seg.querySelectorAll('button'), function (b) {
+        if (b.getAttribute('data-art') === cur) b.classList.add('on');
+        b.onclick = function () {
+          try { localStorage.setItem('owpuzzle-iconstyle', b.getAttribute('data-art')); } catch (e) {}
+          Array.prototype.forEach.call(seg.querySelectorAll('button'), function (o) { o.classList.remove('on'); });
+          b.classList.add('on');
+        };
+      });
+    }
   }).catch(function () { el.textContent = 'server not available'; });
 }
 </script>

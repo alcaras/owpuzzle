@@ -84,13 +84,16 @@
     var el = document.getElementById('auth-widget');
     if (!el) return;
     if (ME) {
-      el.innerHTML = (ME.avatar ? '<img src="' + ME.avatar + '" alt="" style="width:20px;height:20px;' +
-          'border-radius:50%;vertical-align:-5px;margin-right:5px;border:1px solid var(--edge)">' : '') +
-        '<b>' + ME.name + '</b> · rating <b>' + ME.rating + '</b>' +
-        ' · <a href="editor.html">✎ create a puzzle</a>' + (ME.isAdmin ? ' · <a href="admin.html">admin</a>' : '') +
-        (ME.completedAll ? ' 🏆' : '');
+      // the site bar identifies you and nothing else — actions live where the
+      // action is (create in the library bar, admin behind its own link)
+      el.innerHTML = '<a class="whoami" href="hall.html?me=1">' +
+        (ME.avatar ? '<img src="' + ME.avatar + '" alt="">' : '') +
+        '<b>' + ME.name + '</b></a>' +
+        '<span class="whorating" title="your rating (private)">' + ME.rating + '</span>' +
+        (ME.completedAll ? ' <span title="whole library cleared">🏆</span>' : '') +
+        (ME.isAdmin ? ' <a class="whoadmin" href="admin.html">admin</a>' : '');
     } else {
-      el.innerHTML = '<a href="/auth/discord">Sign in with Discord</a> <span class="hint">to get rated & submit puzzles</span>';
+      el.innerHTML = '<a class="whoami" href="/auth/discord">Sign in with Discord</a>';
     }
   }
   fetch('/api/me').then(function (r) { return r.json(); })
@@ -204,13 +207,17 @@
 
   // ---------- library home ----------
   if (!puzzle && !remotePending) {
-    document.getElementById('day-label').textContent = 'COMBAT PUZZLES';
+    document.getElementById('day-label').textContent = 'the library';
     document.getElementById('p-name').textContent = '';
     document.getElementById('p-brief').textContent =
       'Single-turn tactics puzzles. Find the winning line within your orders.';
     document.getElementById('main-row').style.display = 'none';
     document.querySelector('.hud').style.display = 'none';
-    document.querySelector('.controls').style.display = 'none';
+    // every control row, not just the first — Reset lives on the second one
+    // and has no business showing under the puzzle list
+    Array.prototype.forEach.call(document.querySelectorAll('.controls'), function (c) {
+      c.style.display = 'none';
+    });
     var home = document.getElementById('home');
     home.classList.add('show');
     window.__renderLibrary = renderLibrary;
@@ -248,24 +255,28 @@
       { n: 2, title: 'Tactics — combined arms' },
       { n: 3, title: 'Challenges — several rules at once' },
     ];
-    var invite = '';
-    if (solvedCount === libraryTotal && solvedCount > 0) {
-      invite = '<div class="progress" style="margin-bottom:6px">🏆 You have conquered the whole library — ' +
-        '<a href="editor.html"><b>build one of your own?</b></a></div>';
-    }
-    // nothing left to queue up once the library is cleared — the trophy line
-    // above already says so, so don't offer a button that can only fail
+    // One library bar instead of four stacked centred sentences: where you
+    // stand on the left, what you can do about it on the right.
     var cleared = solvedCount === libraryTotal && solvedCount > 0;
-    var html = invite +
-      (cleared ? '' : '<div class="progress" id="rated-row" style="margin-bottom:8px">' +
-        (ME ? '<button class="rated-btn" id="btn-rated">▶ Play another puzzle</button>'
-            : '<a class="rated-btn" href="/auth/discord" style="display:inline-block;text-decoration:none">Sign in with Discord</a>') +
-        '</div>') +
-      '<div class="progress" style="margin-bottom:6px">' +
-      '<a href="hall.html">🏆 Hall of Fame</a> · ' +
-      '<a href="hall.html?me=1">my achievements</a></div>' +
-      '<div class="progress">Solved <b>' + solvedCount + '</b> of ' + libraryTotal +
-      (solvedCount === libraryTotal && solvedCount > 0 ? ' — the whole library! ⚔️' : '') + '</div>';
+    var pct = libraryTotal ? Math.round(100 * solvedCount / libraryTotal) : 0;
+    var actions = [];
+    if (!cleared) {
+      actions.push(ME
+        ? '<button class="rated-btn" id="btn-rated">\u25b6 Play another</button>'
+        : '<a class="rated-btn" href="/auth/discord">Sign in with Discord</a>');
+    }
+    actions.push('<a class="libact" href="editor.html">\u270e Create</a>');
+    actions.push('<a class="libact" href="hall.html">\ud83c\udfc6 Hall of Fame</a>');
+    if (ME) actions.push('<a class="libact" href="hall.html?me=1">My achievements</a>');
+    var html =
+      '<div class="libbar">' +
+        '<div class="libstat">' +
+          '<div class="libcount">Solved <b>' + solvedCount + '</b> of ' + libraryTotal +
+            (cleared ? ' \u2014 the whole library \u2694\ufe0f' : '') + '</div>' +
+          '<div class="libmeter"><i style="width:' + pct + '%"></i></div>' +
+        '</div>' +
+        '<div class="libactions">' + actions.join('') + '</div>' +
+      '</div>';
     GROUPS.forEach(function (g) {
       // group by MEASURED difficulty (the puzzle's own Elo band) and fall back
       // to the authored difficulty until ratings arrive
@@ -988,15 +999,17 @@
 
   function renderHud() {
     var used = E.poolOrders(puzzle) - state.orders;
-    var hudLine = '<b>' + state.orders + '</b> left · <b>' + used + '</b> used — spend as few as you can';
+    var hudLine = '<span class="pill">\ud83d\udcdc Orders <b>' + used + '</b>/' +
+      E.poolOrders(puzzle) + '</span>';
     if (puzzle.objective.kind === 'maxKill') {
-      hudLine += ' &nbsp;·&nbsp; <span class="str-killed">☠ <b>' +
-        fmt10(E.strKilledOf(state)) + '</b> strength destroyed</span>';
+      hudLine += '<span class="pill str-killed">\u2620 <b>' +
+        fmt10(E.strKilledOf(state)) + '</b> STR destroyed</span>';
     }
+    hudLine += '<span class="hud-hint">spend as few as you can</span>';
     document.getElementById('orders-pips').innerHTML = hudLine;
     var tr = document.getElementById('training-span');
     tr.style.display = '';
-    tr.innerHTML = 'Training: <b>' + state.training + '</b>';
+    tr.innerHTML = '<span class="pill">\ud83d\udee1 Training <b>' + state.training + '</b></span>';
     var selU = selected != null ? E.unitById(state, selected) : null;
     var bu2 = document.getElementById('btn-undo');
     if (bu2) bu2.disabled = !history.length;
@@ -1358,17 +1371,14 @@
   var pnum = OWPUZZLES.indexOf(puzzle) + 1;
   var isCore = pnum > 0;
   var dayEl = document.getElementById('day-label');
-  dayEl.textContent = isCore
-    ? 'Combat Puzzles · ' + pnum + ' of ' + OWPUZZLES.length
-    : 'Combat Puzzles · community';
+  dayEl.textContent = isCore ? 'puzzle ' + pnum + ' of ' + OWPUZZLES.length : 'community puzzle';
   // the offline count knows only the core set; the library is core + community,
   // so number this puzzle within the whole thing once the server answers
   fetch('/api/puzzles').then(function (r) { return r.json(); }).then(function (d) {
     var list = (d && d.puzzles) || [];
     if (!list.length) return;
     var i = list.findIndex(function (x) { return x.slug === puzzle.id; });
-    dayEl.textContent = 'Combat Puzzles · ' +
-      (i >= 0 ? (i + 1) + ' of ' + list.length : 'community');
+    dayEl.textContent = i >= 0 ? 'puzzle ' + (i + 1) + ' of ' + list.length : 'community puzzle';
   }).catch(function () {});
   var byEl = document.getElementById('p-author');
   if (!isCore && puzzle.author) {

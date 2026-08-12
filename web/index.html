@@ -33,9 +33,38 @@
     display: flex; flex-direction: column; align-items: center;
     min-height: 100vh;
   }
-  header { text-align: center; padding: 10px 12px 0; }
-  header h1 { font-size: 19px; margin: 0; letter-spacing: 5px; font-weight: 600; }
+  /* Header has three jobs and they are kept apart: a site bar (who you are,
+     where you can go), the puzzle's own identity, and — down on the board —
+     the state of play. */
+  header { width: 100%; max-width: 1100px; padding: 0 12px; }
+  .topbar { display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; flex-wrap: wrap; padding: 8px 0 7px;
+    border-bottom: 1px solid var(--edge); }
+  .brand { display: flex; align-items: baseline; gap: 8px; text-decoration: none;
+    color: inherit; min-width: 0; }
+  header h1 { font-size: 17px; margin: 0; letter-spacing: 4px; font-weight: 600; white-space: nowrap; }
+  .brand-sub { font-size: 10.5px; color: var(--muted); letter-spacing: 2px;
+    text-transform: uppercase; white-space: nowrap; }
+  .brand:hover h1 { color: var(--accent); }
+  .topbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-size: 12.5px; color: var(--muted); justify-content: flex-end; }
+  #auth-widget { display: inline-flex; align-items: center; gap: 7px; }
+  .whoami { display: inline-flex; align-items: center; gap: 6px; color: var(--ink);
+    text-decoration: none; }
+  .whoami img { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--edge); }
+  .whoami:hover { color: var(--accent); }
+  .whorating { font-size: 11.5px; color: var(--muted); border: 1px solid var(--edge);
+    border-radius: 999px; padding: 1px 7px; }
+  .whoadmin { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--edge); }
+  .whoadmin:hover { color: var(--accent); }
+  .titleblock { text-align: center; padding: 12px 0 0; }
   header .day { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  @media (max-width: 520px) {
+    .topbar { padding: 6px 0 5px; }
+    .brand-sub { display: none; }
+    .topbar-right { gap: 8px; font-size: 12px; }
+    .titleblock { padding-top: 9px; }
+  }
   .puzzle-title { font-size: 17px; font-weight: bold; margin-top: 6px; color: var(--accent); }
   .brief { font-size: 14px; max-width: 480px; margin: 2px auto 0; padding: 0 8px; }
   /* a community puzzle is somebody's work — say whose, and link to them */
@@ -45,10 +74,21 @@
   .byline a:hover { border-bottom-color: var(--accent); }
   .byline img { width: 18px; height: 18px; border-radius: 50%; vertical-align: -4px;
     margin-right: 4px; }
+  /* state of play: discrete facts, read at a glance, not a sentence */
   .hud {
-    display: flex; gap: 16px; align-items: center; justify-content: center;
-    margin: 8px 0 0; font-size: 14px;
+    display: flex; gap: 8px; align-items: center; justify-content: center;
+    margin: 10px 0 0; font-size: 13.5px; flex-wrap: wrap; padding: 0 10px;
   }
+  /* wrappers must not become flex items themselves, or the pills inside them
+     lose the row's gap */
+  .hud-group { display: contents; }
+  .hud .pill { display: inline-flex; align-items: baseline; gap: 5px;
+    border: 1px solid var(--edge); border-radius: 999px; padding: 3px 11px;
+    white-space: nowrap; }
+  .hud .pill b { font-size: 15px; }
+  .hud .str-killed { border-color: rgba(194,90,58,.5); }
+  .hud-hint { color: var(--muted); font-size: 12px; font-style: italic; }
+  @media (max-width: 520px) { .hud-hint { display: none; } }
   .orders b { font-size: 16px; }
   .order-pip { display: inline-block; width: 12px; height: 12px; border-radius: 50%;
     background: var(--accent); margin-left: 3px; vertical-align: middle; }
@@ -58,9 +98,12 @@
   .iconstyle-btn { background: none; border: 1px solid rgba(140,130,110,0.45); color: var(--muted);
     font-size: 11px; padding: 2px 8px; border-radius: 10px; cursor: pointer; }
   .iconstyle-btn:hover { color: var(--accent); border-color: var(--accent); }
-  .steam-link { font-size: 12px; margin-top: 4px; }
-  .steam-link a { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--edge); }
-  .steam-link a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  /* the off-site links are the last thing you need, so they live last */
+  .site-footer { margin: 26px 0 18px; font-size: 12px; color: var(--muted);
+    text-align: center; padding: 0 14px; }
+  .site-footer a { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--edge); }
+  .site-footer a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .site-footer .dot { margin: 0 8px; opacity: .6; }
   #main-row {
     display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;
     gap: 10px; width: 100%; max-width: 900px;
@@ -141,6 +184,24 @@
   /* puzzle library (home) */
   #home { width: 100%; max-width: 780px; padding: 10px 14px 30px; display: none; }
   #home.show { display: block; }
+  /* library bar: where you stand, and what you can do about it */
+  .libbar { display: flex; align-items: center; justify-content: space-between;
+    gap: 12px 16px; flex-wrap: wrap; margin: 4px 0 16px; padding: 10px 14px;
+    border: 1px solid var(--edge); border-radius: 12px; background: var(--panel); }
+  .libstat { flex: 1 1 200px; min-width: 180px; }
+  .libcount { font-size: 13.5px; color: var(--muted); }
+  .libcount b { color: var(--accent); font-size: 17px; }
+  .libmeter { height: 5px; border-radius: 3px; background: rgba(140,130,110,.28); margin-top: 6px; }
+  .libmeter i { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+  .libactions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .libactions .libact { font-size: 12.5px; color: var(--muted); text-decoration: none;
+    border: 1px solid var(--edge); border-radius: 999px; padding: 4px 11px; white-space: nowrap; }
+  .libactions .libact:hover { color: var(--accent); border-color: var(--accent); }
+  .libactions .rated-btn { text-decoration: none; }
+  @media (max-width: 520px) {
+    .libbar { margin-bottom: 12px; padding: 9px 11px; }
+    .libactions { width: 100%; }
+  }
   #home .progress { text-align: center; font-size: 13.5px; color: var(--muted); margin-bottom: 4px; }
   #home .progress b { color: var(--accent); font-size: 16px; }
   #home h2.group {
@@ -235,20 +296,24 @@
 </head>
 <body>
   <header>
-    <h1>OLD WORLD</h1>
-    <div class="day"><span id="day-label"></span></div>
-    <div class="puzzle-title" id="p-name"></div>
-    <div class="brief" id="p-brief"></div>
-    <div class="byline" id="p-author"></div>
-    <div class="back-link" id="back-link"></div>
-    <div id="auth-widget" style="font-size:12.5px;margin-top:5px;color:var(--muted)"></div>
-    <div class="steam-link"><a href="https://store.steampowered.com/app/597180/Old_World/" target="_blank" rel="noopener">Buy Old World on Steam</a></div>
-    <div style="margin-top:3px"><button id="btn-iconstyle" class="iconstyle-btn"></button></div>
+    <div class="topbar">
+      <a class="brand" href="./"><h1>OLD WORLD</h1><span class="brand-sub">Combat Puzzles</span></a>
+      <div class="topbar-right">
+        <span id="auth-widget"></span>
+      </div>
+    </div>
+    <div class="titleblock">
+      <div class="day"><span id="day-label"></span></div>
+      <div class="puzzle-title" id="p-name"></div>
+      <div class="brief" id="p-brief"></div>
+      <div class="byline" id="p-author"></div>
+      <div class="back-link" id="back-link"></div>
+    </div>
   </header>
   <div id="home"></div>
   <div class="hud">
-    <div class="orders">Orders: <span id="orders-pips"></span></div>
-    <div class="orders" id="training-span" style="display:none"></div>
+    <span class="hud-group" id="orders-pips"></span>
+    <span class="hud-group" id="training-span" style="display:none"></span>
   </div>
   <div id="main-row">
     <div id="board-wrap"></div>
@@ -278,6 +343,12 @@
     </div>
   </div>
   <div class="library" id="library"></div>
+
+  <footer class="site-footer">
+    <a href="https://store.steampowered.com/app/597180/Old_World/" target="_blank" rel="noopener">Buy Old World on Steam</a>
+    <span class="dot">·</span>
+    <a href="https://discord.com/invite/eg4gBUV" target="_blank" rel="noopener">Join the Old World Discord</a>
+  </footer>
 
   <script src="data.js"></script>
   <script src="icons.js"></script>
