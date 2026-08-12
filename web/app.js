@@ -898,11 +898,13 @@
     var lines = [];
     E.effectsOf(u).forEach(function (e) {
       var pic = ICONS['EFFECT_' + e.replace('EFFECTUNIT_', '')];
-      describeEffect(e).forEach(function (t) {
+      // the game's own tooltip wording, so an ability reads the way it does
+      // in Old World rather than in our paraphrase
+      E.describeEffect(e).forEach(function (t) {
         lines.push((pic ? '<img src="' + pic + '" style="width:14px;height:14px;vertical-align:-2.5px;margin-right:3px">' : '') + t);
       });
     });
-    if (inf.bZOC) lines.push('exerts zone of control');
+    if (inf.bZOC) lines.push('Exerts zone of control');
     var stateBits = [];
     (u.applied || []).forEach(function (st) {
       stateBits.push(prettyEffectName(st) + ' (' +

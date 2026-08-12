@@ -6,7 +6,7 @@ Source of truth: the game's own XML at
   ~/Library/Application Support/Steam/steamapps/common/Old World/Reference/XML/Infos
 """
 import xml.etree.ElementTree as ET
-import json, os, sys
+import json, os, sys, re
 
 XML = os.path.expanduser(
     "~/Library/Application Support/Steam/steamapps/common/Old World/Reference/XML/Infos")
@@ -161,6 +161,38 @@ for z, e in entries(parse("vegetation.xml")):
 # water flags for terrain (isWater is terrain WATER)
 terrain["TERRAIN_WATER"]["bWater"] = 1
 
+
+# ---------- the game's own tooltip vocabulary ----------
+# Effect display names and the help templates the game builds unit tooltips
+# from, so our panels say what Old World says rather than paraphrasing it.
+def clean(txt):
+    if not txt:
+        return ""
+    t = txt
+    # <true_1>A: {0_value}<false>{0_value} A<end>  ->  keep the labelled branch
+    m = re.search(r"<true_\d+>(.*?)<false>(.*?)<end>", t)
+    if m:
+        t = m.group(1)
+    t = re.sub(r"link\((?:CONCEPT_|UNITTRAIT_|YIELD_)?([A-Z_]+?)(?:,\d+)?\)",
+               lambda m: m.group(1).replace("_", " ").lower(), t)
+    t = re.sub(r"icon\([A-Z_]+\)\s*", "", t)
+    t = t.replace("{gt}", ">")
+    t = re.sub(r"\{\d_(value|turn|link|percent|effectList|unitTrait|yield|riverLink|tileLink|vegetation)\}", "{v}", t)
+    t = re.sub(r"\{true_\d+:([^}]*)\}", r"\1", t)
+    return re.sub(r"\s+", " ", t).strip()
+
+effect_names, help_text = {}, {}
+try:
+    for z, e in entries(parse("text-effectUnit.xml")):
+        en = e.findtext("en-US")
+        if en and not z.endswith("_F"):
+            effect_names[z.replace("TEXT_", "")] = en.split("~")[0].strip()
+    for z, e in entries(parse("text-helptext.xml")):
+        if z.startswith("TEXT_HELPTEXT_EFFECT_UNIT_HELP_"):
+            help_text[z.replace("TEXT_HELPTEXT_EFFECT_UNIT_HELP_", "")] = clean(e.findtext("en-US"))
+except Exception as ex:
+    print("note: tooltip text unavailable:", ex)
+
 data = {
     "globals": g,
     "traitEffects": trait_effect,
@@ -171,6 +203,8 @@ data = {
     "height": height,
     "vegetation": vegetation,
     "improvements": improvements,
+    "effectNames": effect_names,
+    "help": help_text,
 }
 
 os.makedirs(os.path.dirname(OUT), exist_ok=True)

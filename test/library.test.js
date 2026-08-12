@@ -111,3 +111,21 @@ test('a draft survives the round trip to test play and back unchanged', () => {
   };
   assert.equal(E.puzzleHash(restored), before, 'order must not matter');
 });
+
+test('a long reference line survives the server replay [40+ order puzzles]', () => {
+  // A big board's solution runs to dozens of actions; the replay guard must
+  // not quietly report it unsolved just for being long.
+  const src = require('fs').readFileSync(
+    require('path').join(__dirname, '..', 'server', 'index.js'), 'utf8');
+  const m = /line\.length > (\d+)/.exec(src);
+  assert.ok(m, 'replayLine should still guard the line length');
+  assert.ok(Number(m[1]) >= 400,
+    `the replay cap is ${m[1]} actions — a 40-order puzzle needs far more headroom`);
+});
+
+test('the editor lets an author declare a par as long as the puzzle needs', () => {
+  const html = require('fs').readFileSync(
+    require('path').join(__dirname, '..', 'web', 'editor.html'), 'utf8');
+  const m = /id="p-orders"[^>]*max="(\d+)"/.exec(html);
+  assert.ok(m && Number(m[1]) >= 40, 'par input caps at ' + (m && m[1]));
+});

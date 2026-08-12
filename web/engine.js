@@ -1170,6 +1170,110 @@
     return h.toString(36);
   }
 
+  // ---------- ability text, in the game's own words ----------
+  // Old World builds unit tooltips from per-field templates (text-helptext.xml,
+  // TEXT_HELPTEXT_EFFECT_UNIT_HELP_*). We use the same templates so a panel
+  // reads the way the game reads, instead of paraphrasing the rules.
+  var HELP_FLAG = {
+    bRout: 'CAN_ROUT', bEndRout: 'END_ROUT', bPush: 'PUSH', bPushWater: 'PUSH_WATER',
+    bStun: 'STUN', bImmobilize: 'IMMOBILIZE', bLastStand: 'LAST_STAND',
+    bIgnoresDistance: 'IGNORES_DISTANCE', bCriticalImmune: 'CRITICAL_IMMUNE',
+    bPromote: 'PROMOTE', bBuildRoad: 'BUILD_ROAD', bHarvest: 'HARVEST',
+    bPillage: 'PILLAGE', bHealKill: 'HEAL_KILL', bHealNeutral: 'HEAL_NEUTRAL',
+    bHealPillage: 'HEAL_PILLAGE', bSpreadReligion: 'SPREAD_RELIGION',
+    bRemoveVegetation: 'REMOVE_VEGETATION', bNoRoadCooldown: 'NO_ROAD_COOLDOWN',
+    bGeneralHopping: 'GENERAL_HOPPING', bEnlistNext: 'ENLIST_NEXT',
+    bLaunchOffensive: 'LAUNCH_OFFENSIVE', bIgnoreZOC: null,
+  };
+  // Value-bearing lines are written here rather than from the game's
+  // templates: those carry two placeholders and conditional branches meant for
+  // the game's own formatter, and half-substituting them leaks "{v}" into the
+  // panel. Flags keep the game's wording, which is the part players recognise.
+  var VALUE_LABEL = {
+    iDamagedUsModifier: 'while wounded', iDamagedThemModifier: 'vs wounded',
+    iVsGeneralModifier: 'vs generals', iHasGeneralModifier: 'with a general',
+    iFlankingAttackModifier: 'when flanking', iAdjacentSameAttackModifier: 'beside the same unit',
+    iRiverAttackModifier: 'attacking across a river', iWaterLandAttackModifier: 'land/water combat',
+    iHomeModifier: 'in friendly territory', iPerLevelAttackModifier: 'per unit level',
+  };
+  // Real mechanics that say nothing about the turn in front of you. Listing
+  // them buries the line that matters.
+  var OUT_OF_SCOPE = {
+    iVisionExtra: 1, iRevealExtra: 1, bHarvest: 1, bPillage: 1, bHealPillage: 1,
+    bSpreadReligion: 1, bTheology: 1, bBuildRoad: 1, bRemoveVegetation: 1,
+    bNoRoadCooldown: 1, bPromote: 1, bMultiTeams: 1, iHealExtra: 1, iHealAlways: 1,
+    bHealNeutral: 1, iPillageYieldModifier: 1, bGeneralHopping: 1, bEnlistNext: 1,
+  };
+  function effectName(e) {
+    var n = (DATA.effectNames || {})[e];
+    if (n) return n;
+    return String(e).replace(/^EFFECTUNIT_/, '').toLowerCase().replace(/_/g, ' ');
+  }
+  function fillHelp(key, value) {
+    var t = (DATA.help || {})[key];
+    if (!t) return null;
+    if (value == null) return t;
+    var pct = (value > 0 ? '+' : '') + value + '%';
+    return t.replace('{v%}', value + '%').replace('{v}', pct);
+  }
+  function describeEffect(e) {
+    var d = DATA.effects[e];
+    if (!d) return [];
+    var out = [];
+    Object.keys(HELP_FLAG).forEach(function (f) {
+      if (!d[f] || !HELP_FLAG[f] || OUT_OF_SCOPE[f]) return;
+      var line = fillHelp(HELP_FLAG[f]);
+      if (line) out.push(line);
+    });
+    if (d.iMeleeCounter) out.push('Counterattacks in melee');
+    if (d.bIgnoreZOC) out.push('Ignores zone of control');
+    // An attack that leaves a mark: the game names the applied effect, so we do
+    if (d.attackApply) {
+      out.push('Attacks apply ' + effectName(d.attackApply.effect) +
+        ' for ' + d.attackApply.turns + ' turns' +
+        ((DATA.effects[d.attackApply.effect] || {}).iStrengthModifier
+          ? ' (' + DATA.effects[d.attackApply.effect].iStrengthModifier + '% strength)' : ''));
+    }
+    // A shove with nowhere to go becomes a disarm — the rule that makes
+    // penning a target in worth doing, and invisible if we never say it
+    if (d.bPush && G.PANIC_NO_ESCAPE_EFFECTUNIT) {
+      out.push('A target with nowhere to retreat to is ' +
+        effectName(G.PANIC_NO_ESCAPE_EFFECTUNIT) + ' instead');
+    }
+    Object.keys(VALUE_LABEL).forEach(function (f) {
+      if (!d[f] || OUT_OF_SCOPE[f]) return;
+      out.push((d[f] > 0 ? '+' : '') + d[f] + '% ' + VALUE_LABEL[f]);
+    });
+    if (d.iStrengthModifier) out.push(((d.iStrengthModifier > 0 ? '+' : '') + d.iStrengthModifier) + '% strength');
+    if (d.iAttackModifier) out.push(((d.iAttackModifier > 0 ? '+' : '') + d.iAttackModifier) + '% attack');
+    if (d.iDefenseModifier) out.push(((d.iDefenseModifier > 0 ? '+' : '') + d.iDefenseModifier) + '% defense');
+    (d.aeEffectUnitImmune || []).forEach(function (im) {
+      out.push(im === 'EFFECTUNIT_ROUT' ? 'Cannot be routed' : 'Immune to ' + effectName(im));
+    });
+    ['aiUnitTraitModifier', 'aiUnitTraitModifierAttack', 'aiUnitTraitModifierDefense',
+     'aiUnitTraitModifierMelee'].forEach(function (f, i) {
+      Object.keys(d[f] || {}).forEach(function (tr) {
+        var trait = tr.replace('UNITTRAIT_', '').toLowerCase();
+        var v = d[f][tr], pct = (v > 0 ? '+' : '') + v + '%';
+        out.push(i === 3 ? pct + ' in melee vs ' + trait + ' units'
+          : pct + ' vs ' + trait + ' units' + ['', ' attacking', ' defending'][i]);
+      });
+    });
+    return out;
+  }
+  // everything a unit can do, effects and innate flags together
+  function describeUnitAbilities(type) {
+    var info = DATA.units[type];
+    if (!info) return [];
+    var seen = {}, out = [];
+    (info.effects || []).forEach(function (e) {
+      describeEffect(e).forEach(function (l) { if (!seen[l]) { seen[l] = 1; out.push(l); } });
+    });
+    if (info.bZOC) out.push('Exerts zone of control');
+    if (info.bIgnoreZOC && !seen['Ignores zone of control']) out.push('Ignores zone of control');
+    return out;
+  }
+
   function poolOrders(p) {
     if (p.pool) return p.pool;
     // par+5 slack, rounded up to the next multiple of 5 so par can't be
@@ -1239,7 +1343,8 @@
     canSwap: canSwap, doSwap: doSwap,
     canAnchor: canAnchor, doAnchor: doAnchor, waterControlled: waterControlled,
     poolOrders: poolOrders,
-    puzzleHash: puzzleHash, killsOf: killsOf, strKilledOf: strKilledOf,
+    puzzleHash: puzzleHash, effectName: effectName,
+    describeEffect: describeEffect, describeUnitAbilities: describeUnitAbilities, killsOf: killsOf, strKilledOf: strKilledOf,
     nextStepOrderCost: nextStepOrderCost,
     canDamage: canDamage, fatigueLimit: fatigueLimit,
     movementPoints: movementPoints, reachableTiles: reachableTiles,

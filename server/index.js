@@ -160,7 +160,10 @@ function publicUser(u) {
 // referee: "solved" is whatever the replay says, nothing else.
 function replayLine(puzzle, line) {
   let s = E.loadPuzzle(puzzle, { play: true }); // same forgiving pool the client plays with
-  if (!Array.isArray(line) || line.length > 100) return { solved: false, ordersUsed: 0 };
+  // A big puzzle's reference line is long: 40 orders of moves, attacks and
+  // rout chains runs well past a hundred actions. The cap exists to stop a
+  // hostile payload, not to judge a puzzle's size.
+  if (!Array.isArray(line) || line.length > 500) return { solved: false, ordersUsed: 0 };
   try {
     for (const a of line) s = E.applyAction(s, a);
   } catch (e) {
@@ -344,8 +347,8 @@ app.post('/api/submit', (req, res) => {
   if (!p || !String(p.name || '').trim() || !Array.isArray(p.units) || !p.objective || !p.orders) {
     return res.status(400).json({ error: 'incomplete puzzle' });
   }
-  if (p.units.length > 12 || (p.radius || 3) > 5) {
-    return res.status(400).json({ error: 'too large (max 12 units, radius 5)' });
+  if (p.units.length > 20 || (p.radius || 3) > 6) {
+    return res.status(400).json({ error: 'too large (max 20 units, radius 6)' });
   }
   const blues = p.units.filter(u => u.player === 0);
   const reds = p.units.filter(u => u.player === 1);

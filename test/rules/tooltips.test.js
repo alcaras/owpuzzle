@@ -42,3 +42,27 @@ test('every unit in the editor roster can describe itself without throwing', () 
     assert.doesNotThrow(() => E.describeUnitAbilities(type), type);
   }
 });
+
+test('no ability line leaks a template placeholder or a nonsense percent', () => {
+  for (const type of Object.keys(E.DATA.units)) {
+    for (const line of E.describeUnitAbilities(type)) {
+      assert.ok(!/[{}]/.test(line), `${type}: unfilled template — "${line}"`);
+      assert.ok(!/\bat 1%/.test(line), `${type}: counter count rendered as a percent — "${line}"`);
+    }
+  }
+});
+
+test('the panel sticks to what matters in a fight', () => {
+  // vision, harvesting and religion are real mechanics but say nothing about
+  // the turn in front of you; listing them buries the line that does.
+  const noise = /vision|harvest|religion|pillage|road|xp and promotion/i;
+  for (const type of ['UNIT_AFRICAN_ELEPHANT', 'UNIT_PALTON_CAVALRY', 'UNIT_SPEARMAN']) {
+    for (const line of E.describeUnitAbilities(type)) {
+      assert.ok(!noise.test(line), `${type}: not a combat fact — "${line}"`);
+    }
+  }
+});
+
+test('a spearman reads as un-routable, in plain English', () => {
+  assert.match(E.describeUnitAbilities('UNIT_SPEARMAN').join(' | '), /cannot be routed/i);
+});
