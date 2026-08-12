@@ -169,8 +169,9 @@ BLUE.forEach(function (b) {
   });
 });
 
-function ceilingFrom(s) {
-  var cap = E.strKilledOf(s), minAttacks = 0;
+function ceilingFrom(s, orders) {
+  if (orders == null) orders = s.orders;
+  var cap = E.strKilledOf(s), minAttacks = 0, killable = [];
   var blues = s.units.filter(function (x) { return x.player === 0 && x.hp > 0; });
   s.units.forEach(function (R) {
     if (R.player !== 1 || R.hp <= 0) return;
@@ -184,9 +185,22 @@ function ceilingFrom(s) {
     blows.sort(function (x, y) { return y - x; });
     var acc = 0, n = 0;
     while (acc < R.hp && n < blows.length) { acc += blows[n]; n++; }
-    if (acc >= R.hp) { cap += STR(R); minAttacks += n; }
+    if (acc >= R.hp) killable.push({ str: STR(R), attacks: Math.max(1, n) });
   });
-  return { cap: cap, minAttacks: minAttacks };
+  // How much of that is actually affordable? Requiring EVERY killable red to
+  // fit the remaining orders was wrong — a board with five reds and ten orders
+  // would prune its entire tree, which is exactly how Shore Riders' real 19
+  // STR line went missing. Take the cheapest kills to count how many fit, then
+  // credit the largest strengths: an over-estimate, so still admissible.
+  killable.sort(function (a, b) { return a.attacks - b.attacks; });
+  var budget = orders, fits = 0;
+  for (var i = 0; i < killable.length; i++) {
+    if (killable[i].attacks > budget) break;
+    budget -= killable[i].attacks; fits++;
+  }
+  var byStr = killable.map(function (k) { return k.str; }).sort(function (a, b) { return b - a; });
+  for (var j = 0; j < fits; j++) cap += byStr[j];
+  return { cap: cap, minAttacks: 0 };
 }
 
 // ---------- search ---------------------------------------------------------
