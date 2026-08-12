@@ -2710,5 +2710,99 @@ var OWPUZZLES = [
     }
    ]
   },
+  {
+   "id": "the-ground-he-wins",
+   "name": "The Ground He Wins",
+   "author": "owpuzzle",
+   "brief": "Destroy as much enemy strength as you can this turn.",
+   "lesson": "A kill is also a move. A rout advance puts you where you could never walk, and a bow on a hill reaches one tile further \u2014 far enough to shoot over the line that screens it.",
+   "orders": 8,
+   "radius": 3,
+   "objective": {
+    "kind": "maxKill",
+    "count": 130
+   },
+   "tiles": [
+    {
+     "q": 1,
+     "r": 0,
+     "height": "HEIGHT_HILL"
+    },
+    {
+     "q": 3,
+     "r": -1,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": 2,
+     "r": 1,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": 0,
+     "r": 2,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": -1,
+     "r": -1,
+     "vegetation": "VEGETATION_TREES"
+    }
+   ],
+   "units": [
+    {
+     "player": 0,
+     "type": "UNIT_PALTON_CAVALRY",
+     "q": -1,
+     "r": 1
+    },
+    {
+     "player": 0,
+     "type": "UNIT_AXEMAN",
+     "q": -1,
+     "r": 0
+    },
+    {
+     "player": 0,
+     "type": "UNIT_MILITIA",
+     "q": 0,
+     "r": 1
+    },
+    {
+     "player": 0,
+     "type": "UNIT_SLINGER",
+     "q": -2,
+     "r": 1
+    },
+    {
+     "player": 1,
+     "type": "UNIT_ARCHER",
+     "q": 1,
+     "r": 0,
+     "hp": 20
+    },
+    {
+     "player": 1,
+     "type": "UNIT_PIKEMAN",
+     "q": 2,
+     "r": 0
+    },
+    {
+     "player": 1,
+     "type": "UNIT_LONGBOWMAN",
+     "q": 3,
+     "r": 0,
+     "hp": 3
+    },
+    {
+     "player": 1,
+     "type": "UNIT_SLINGER",
+     "q": 0,
+     "r": -2,
+     "hp": 8
+    }
+   ],
+   "difficulty": 3
+  },
 ];
 if (typeof module !== 'undefined') module.exports = OWPUZZLES;
