@@ -27,13 +27,59 @@
 <div class="wrap">
   <h1>OWPUZZLE — ADMIN</h1>
   <p class="note"><a href="./">← library</a> · ratings converge as attempts accumulate (rd = uncertainty)</p>
+  <div id="records"></div>
   <div id="content" class="note">loading…</div>
 </div>
 <script>
+function esc0(x) { return String(x == null ? '' : x).replace(/</g, '&lt;'); }
+
+// Lines that beat the published answer. Nothing here changes the library on
+// its own: a record is either a better solution to fold in, or a bug in the
+// engine that let it through, and only a human can tell which.
+function renderRecords() {
+  fetch('/api/admin/records').then(function (r) { return r.json(); }).then(function (d) {
+    var host = document.getElementById('records');
+    if (!host || !d.records || !d.records.length) return;
+    var h = '<h2>⚑ Better than par — ' + d.records.length + ' to review</h2>' +
+      '<table><tr><th>Puzzle</th><th>Player</th><th>Result</th><th>Published</th>' +
+      '<th>When</th><th></th></tr>';
+    d.records.forEach(function (r) {
+      var result = r.kind === 'strength'
+        ? '<b>' + (r.strKilled / 10) + ' STR</b> in ' + r.ordersUsed + ' orders'
+        : (r.strKilled != null ? (r.strKilled / 10) + ' STR in ' : 'solved in ') + '<b>' + r.ordersUsed + '</b> orders';
+      var par = (r.parCount ? (r.parCount / 10) + ' STR ceiling, ' : '') + 'par ' + r.parOrders;
+      h += '<tr><td><a href="/?p=' + esc0(r.slug) + '">' + esc0(r.name) + '</a></td>' +
+        '<td>' + esc0(r.player) + '</td><td>' + result + '</td><td>' + par + '</td>' +
+        '<td>' + esc0((r.at || '').slice(0, 16)) + '</td>' +
+        '<td><button data-rec="' + r.id + '" data-v="1">Fold in</button> ' +
+        '<button data-rec="' + r.id + '" data-v="0">Dismiss</button> ' +
+        '<button data-line="' + r.id + '">Line</button></td></tr>';
+      h += '<tr id="line-' + r.id + '" style="display:none"><td colspan="6">' +
+        '<code style="font-size:11.5px">' + esc0(JSON.stringify(r.line)) + '</code></td></tr>';
+    });
+    host.innerHTML = h + '</table>';
+    Array.prototype.forEach.call(host.querySelectorAll('[data-line]'), function (b) {
+      b.onclick = function () {
+        var row = document.getElementById('line-' + b.getAttribute('data-line'));
+        row.style.display = row.style.display === 'none' ? '' : 'none';
+      };
+    });
+    Array.prototype.forEach.call(host.querySelectorAll('[data-rec]'), function (b) {
+      b.onclick = function () {
+        fetch('/api/admin/records/' + b.getAttribute('data-rec'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accept: b.getAttribute('data-v') === '1' }),
+        }).then(function () { renderRecords(); });
+      };
+    });
+  }).catch(function () {});
+}
+
 var showAll = new URLSearchParams(location.search).get('all') === '1';
 fetch('/api/admin/stats' + (showAll ? '?all=1' : '')).then(r => r.json()).then(d => {
   if (d.error) { document.getElementById('content').textContent = d.error + ' — sign in as admin first'; return; }
   function esc(x) { return String(x == null ? '' : x).replace(/</g, '&lt;'); }
+  renderRecords();
   var h = '<h2>Puzzle ratings (' + d.puzzles.length + ')</h2>' +
     '<p class="note" style="text-align:left;margin:0 0 8px">' + (showAll
       ? 'showing every row including retired/rejected \u00b7 <a href="?">hide them</a>'

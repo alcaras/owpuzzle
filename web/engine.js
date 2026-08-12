@@ -516,12 +516,24 @@
     return false;
   }
 
+  // does `holder` project zone of control specifically at `mover`'s traits?
+  function unitTraitZOC(holder, mover) {
+    var traits = info(mover).traits || [];
+    var effs = effectsOf(holder);
+    for (var i = 0; i < effs.length; i++) {
+      var e = DATA.effects[effs[i]];
+      if (!e || !e.aeUnitTraitZOC) continue;
+      for (var j = 0; j < e.aeUnitTraitZOC.length; j++) {
+        if (traits.indexOf(e.aeUnitTraitZOC[j]) >= 0) return true;
+      }
+    }
+    return false;
+  }
+
   function inEnemyZOC(state, u, q, r) {
     // Unit.hasIgnoreZOC (Unit.cs:7013): the unit's OWN flag counts as well as
-    // any effect granting it. Palton cavalry carry bIgnoreZOC on the unit —
-    // we were only reading effects, so they were being held up by every
-    // spearman on the board.
-    if (info(u).bIgnoreZOC || hasEffectFlag(u, 'bIgnoreZOC')) return false;
+    // any effect granting it. Palton cavalry carry bIgnoreZOC on the unit.
+    var ignores = info(u).bIgnoreZOC || hasEffectFlag(u, 'bIgnoreZOC');
     var here = tileAt(state, q, r);
     if (here && here.city != null) return false;   // city tiles are never in ZOC (Tile.cs:10070)
     for (var d = 0; d < 6; d++) {
@@ -531,7 +543,15 @@
       if (here && isWaterTile(here) !== isWaterTile(nt)) continue; // no ZOC across the shoreline (Tile.cs:10044)
       if (nt.city != null && nt.city !== u.player) return true; // hostile cities project ZOC (Tile.cs:10049)
       var o = unitAt(state, q + DIRS[d].q, r + DIRS[d].r);
-      if (o && o.player !== u.player && info(o).bZOC) return true;
+      if (o && o.player !== u.player) {
+        // Tile.isDirectionHostileZOC (Tile.cs:10091): ignoring ZOC is not
+        // absolute. After the ignore test the game asks isUnitZoc(movingType)
+        // — EFFECTUNIT_POLEARM lists UNITTRAIT_MOUNTED, so spears, pikes,
+        // conscripts, hoplites and phalangites still pin cavalry that walks
+        // past every other kind of enemy.
+        if (unitTraitZOC(o, u)) return true;
+        if (!ignores && info(o).bZOC) return true;
+      }
     }
     return false;
   }

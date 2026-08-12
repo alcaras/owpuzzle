@@ -253,6 +253,34 @@ app.get('/api/next', (req, res) => {
   });
 });
 
+// Did this line do better than the published answer? For a maxKill puzzle
+// that means more strength than the ceiling, or the ceiling in fewer orders;
+// for the rest it means solving inside par. Flag it, never apply it.
+function recordIfBeatsPar(row, puzzle, user, line, r) {
+  let kind = null;
+  if (puzzle.objective.kind === 'maxKill') {
+    const ceiling = puzzle.objective.count || 0;
+    if (r.strKilled > ceiling) kind = 'strength';
+    else if (r.strKilled === ceiling && ceiling > 0 && r.ordersUsed < puzzle.orders) kind = 'orders';
+  } else if (r.solved && r.ordersUsed < puzzle.orders) {
+    kind = 'orders';
+  }
+  if (!kind) return;
+  db.prepare(`INSERT INTO records
+      (puzzle_id, user_id, kind, str_killed, orders_used, par_orders, par_count, line)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(row.id, user.id, kind, r.strKilled, r.ordersUsed, puzzle.orders,
+         puzzle.objective.count || null, JSON.stringify(line || []));
+  if (DISCORD_WEBHOOK_URL) {
+    fetch(DISCORD_WEBHOOK_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: `🏅 **${user.name}** beat par on **${puzzle.name}** ` +
+        `(${kind === 'strength' ? (r.strKilled / 10) + ' STR vs a ' + ((puzzle.objective.count || 0) / 10) + ' ceiling'
+                                : r.ordersUsed + ' orders vs par ' + puzzle.orders}) — needs review` }),
+    }).catch(() => {});
+  }
+}
+
 app.post('/api/attempt', (req, res) => {
   const user = userFromReq(req);
   if (!user) return res.status(401).json({ error: 'not logged in' });
@@ -260,7 +288,8 @@ app.post('/api/attempt', (req, res) => {
   const row = db.prepare(`SELECT * FROM puzzles WHERE slug = ? AND status IN ('core','approved')`).get(slug);
   if (!row) return res.status(404).json({ error: 'unknown puzzle' });
   const puzzle = JSON.parse(row.json);
-  const { solved, ordersUsed, perfect, damageTaken, unitsLost } = replayLine(puzzle, line);
+  const { solved, ordersUsed, perfect, damageTaken, unitsLost, strKilled } = replayLine(puzzle, line);
+  recordIfBeatsPar(row, puzzle, user, line, { solved, ordersUsed, strKilled });
 
   // achievement snapshot BEFORE this attempt lands, to diff what it unlocked
   const earnedBefore = new Set(
@@ -397,6 +426,32 @@ app.post('/api/review/:slug', (req, res) => {
   if (!user || !user.is_admin) return res.status(403).json({ error: 'admin only' });
   const verdict = req.body && req.body.approve ? 'approved' : 'rejected';
   db.prepare(`UPDATE puzzles SET status = ? WHERE slug = ? AND status = 'pending'`).run(verdict, req.params.slug);
+  res.json({ ok: true, status: verdict });
+});
+
+app.get('/api/admin/records', (req, res) => {
+  const user = userFromReq(req);
+  if (!user || !user.is_admin) return res.status(403).json({ error: 'admin only' });
+  const rows = db.prepare(`
+    SELECT r.*, u.name player, p.slug, p.json FROM records r
+    JOIN users u ON u.id = r.user_id JOIN puzzles p ON p.id = r.puzzle_id
+    WHERE r.status = 'new' ORDER BY r.created_at DESC`).all();
+  res.json({
+    records: rows.map(r => ({
+      id: r.id, player: r.player, slug: r.slug,
+      name: (() => { try { return JSON.parse(r.json).name; } catch (e) { return r.slug; } })(),
+      kind: r.kind, strKilled: r.str_killed, ordersUsed: r.orders_used,
+      parOrders: r.par_orders, parCount: r.par_count, at: r.created_at,
+      line: JSON.parse(r.line),
+    })),
+  });
+});
+
+app.post('/api/admin/records/:id', (req, res) => {
+  const user = userFromReq(req);
+  if (!user || !user.is_admin) return res.status(403).json({ error: 'admin only' });
+  const verdict = req.body && req.body.accept ? 'accepted' : 'rejected';
+  db.prepare('UPDATE records SET status = ? WHERE id = ?').run(verdict, req.params.id);
   res.json({ ok: true, status: verdict });
 });
 

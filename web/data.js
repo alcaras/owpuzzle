@@ -626,6 +626,9 @@ var OWDATA = {
   "EFFECTUNIT_POLEARM": {
    "aeEffectUnitImmune": [
     "EFFECTUNIT_ROUT"
+   ],
+   "aeUnitTraitZOC": [
+    "UNITTRAIT_MOUNTED"
    ]
   },
   "EFFECTUNIT_PROMOTABLE": {

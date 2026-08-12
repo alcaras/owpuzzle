@@ -2804,5 +2804,76 @@ var OWPUZZLES = [
    ],
    "difficulty": 3
   },
+  {
+   "id": "broken-sword",
+   "name": "Broken Sword",
+   "author": "owpuzzle",
+   "brief": "Destroy as much enemy strength as you can this turn.",
+   "lesson": "Disarm is not damage, it is a discount on every blow that follows. The shotelai strikes first, not last.",
+   "orders": 9,
+   "radius": 3,
+   "objective": {
+    "kind": "maxKill",
+    "count": 120
+   },
+   "tiles": [
+    {
+     "q": 0,
+     "r": -2,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": -2,
+     "r": 2,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": 2,
+     "r": 0,
+     "vegetation": "VEGETATION_TREES"
+    }
+   ],
+   "units": [
+    {
+     "player": 0,
+     "type": "UNIT_SHOTELAI",
+     "q": -1,
+     "r": 0
+    },
+    {
+     "player": 0,
+     "type": "UNIT_MACEMAN",
+     "q": -1,
+     "r": 1
+    },
+    {
+     "player": 0,
+     "type": "UNIT_MACEMAN",
+     "q": 0,
+     "r": -1
+    },
+    {
+     "player": 0,
+     "type": "UNIT_SLINGER",
+     "q": -2,
+     "r": 1
+    },
+    {
+     "player": 1,
+     "type": "UNIT_PIKEMAN",
+     "q": 1,
+     "r": 0,
+     "hp": 20
+    },
+    {
+     "player": 1,
+     "type": "UNIT_SLINGER",
+     "q": 2,
+     "r": -2,
+     "hp": 6
+    }
+   ],
+   "difficulty": 3
+  },
 ];
 if (typeof module !== 'undefined') module.exports = OWPUZZLES;

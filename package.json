@@ -1,0 +1,11 @@
+{
+  "name": "owpuzzle",
+  "private": true,
+  "description": "Old World combat puzzles \u2014 engine, server and rules tests",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.js\"",
+    "test:ceilings": "OWP_SLOW=1 node --test test/ceilings.test.js",
+    "start": "node server/index.js",
+    "data": "python3 tools/extract_data.py"
+  }
+}

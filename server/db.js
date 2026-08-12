@@ -110,6 +110,23 @@ try { db.exec('ALTER TABLE puzzles ADD COLUMN notes TEXT'); } catch (e) {}
 // display preferences follow the account, not the browser
 try { db.exec('ALTER TABLE users ADD COLUMN pref_unit_art TEXT'); } catch (e) {}
 
+// A player line that beats the published par is evidence the ceiling is wrong
+// — or that the engine is. Either way it wants a human eye before the library
+// changes, so it lands here rather than updating anything automatically.
+db.exec(`CREATE TABLE IF NOT EXISTS records (
+  id INTEGER PRIMARY KEY,
+  puzzle_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  str_killed INTEGER,
+  orders_used INTEGER,
+  par_orders INTEGER,
+  par_count INTEGER,
+  line TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'new',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`);
+
 // Achievements are IMMUTABLE: once earned they are written here and never
 // recomputed away. Live counters can legitimately fall (a puzzle you solved
 // gets retired, the library grows past a coverage badge), but a badge you

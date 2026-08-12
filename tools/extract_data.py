@@ -97,6 +97,9 @@ for z, e in entries(parse("effectUnit.xml")):
         first, second = ap.findtext("First"), ap.findtext("Second")
         if first:
             d["attackApply"] = {"effect": first, "turns": int(second or 1)}
+    tz = strlist(e, "aeUnitTraitZOC")
+    if tz:
+        d["aeUnitTraitZOC"] = tz
     imm = strlist(e, "aeEffectUnitImmune")
     if imm:
         d["aeEffectUnitImmune"] = imm

@@ -155,8 +155,9 @@
           (cDone ? '<span class="done">' + (cPerf ? '\u2b50' : '\u2713') + '</span>' : '') +
           (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
           '<div class="body"><div class="card-head"><h3>' + pz.name + '</h3>' +
-          '<span class="meta">by ' + (x.author || '?') +
-          (cDone && x.rating ? ' · elo ' + x.rating : '') + '</span></div>' +
+          '<span class="meta">' +
+          (cDone && x.rating ? 'puzzle elo ' + x.rating + ' · ' : '') +
+          'by ' + (x.author || '?') + '</span></div>' +
           '<p>' + (pz.brief || '') + '</p>' +
           '<div class="foes"><span class="vs">VS</span>' + foes + '</div></div></a>';
       }).join('');
