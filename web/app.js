@@ -267,7 +267,8 @@
     }
     actions.push('<a class="libact" href="editor.html">\u270e Create</a>');
     actions.push('<a class="libact" href="hall.html">\ud83c\udfc6 Hall of Fame</a>');
-    if (ME) actions.push('<a class="libact" href="hall.html?me=1">My achievements</a>');
+    // no "my achievements" link: your avatar in the site bar already goes to
+    // your profile, and your profile IS the achievement gallery
     var html =
       '<div class="libbar">' +
         '<div class="libstat">' +

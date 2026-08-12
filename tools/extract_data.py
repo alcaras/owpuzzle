@@ -139,9 +139,11 @@ def simple_table(fname, keep):
         out[z] = {k: s[k] for k in keep if k in s}
     return out
 
-terrain = simple_table("terrain.xml", ["iMovementCost", "iUnitDamage", "bNoVegetation"])
+terrain = simple_table("terrain.xml", ["iMovementCost", "iUnitDamage", "bNoVegetation",
+                                       "bRoadFree", "bUrban", "bWater"])
 height = simple_table("height.xml", ["iMovementCost", "bElevation", "bRangedAttackBlock", "iRangeChange"])
-improvements = simple_table("improvement.xml", ["iDefenseModifier", "iDefenseModifierFriendly"])
+improvements = simple_table("improvement.xml", ["iDefenseModifier", "iDefenseModifierFriendly",
+                                               "bRoadFree"])
 
 vegetation = {}
 for z, e in entries(parse("vegetation.xml")):

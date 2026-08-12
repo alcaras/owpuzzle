@@ -2169,6 +2169,8 @@ var OWDATA = {
   },
   "TERRAIN_URBAN": {
    "bNoVegetation": 1,
+   "bRoadFree": 1,
+   "bUrban": 1,
    "iMovementCost": 9
   },
   "TERRAIN_WATER": {

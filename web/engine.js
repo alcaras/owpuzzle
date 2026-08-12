@@ -221,9 +221,6 @@
     var to = toTile ? tileAt(state, toTile.q, toTile.r) : null;
 
     if (from && to) {
-      if (isMelee(att) && isWaterTile(from) !== isWaterTile(to)) {
-        add('attacking across water', G.LAND_WATER_MODIFIER + sumEffect(att, 'iWaterLandAttackModifier'));
-      }
       var flank = sumEffect(att, 'iFlankingAttackModifier');
       if (flank !== 0 && flankingAttack(state, att, from, to)) add('flanking', flank);
 
@@ -1120,6 +1117,15 @@
       var base = tiles[key(t.q, t.r)] || { q: t.q, r: t.r, terrain: 'TERRAIN_TEMPERATE', height: 'HEIGHT_FLAT', vegetation: null, improvement: null, river: [], road: false, owner: null };
       Object.keys(t).forEach(function (k2) { base[k2] = t[k2]; });
       tiles[key(t.q, t.r)] = base;
+    });
+    // Terrain (and improvements) flagged bRoadFree come with a road already
+    // laid: Tile.setTerrain calls setRoad(true) for them (Tile.cs:3432), and
+    // likewise setImprovement (Tile.cs:6364). Urban is the one that matters —
+    // a city street is a road, so moving along it costs road movement.
+    Object.keys(tiles).forEach(function (k2) {
+      var t2 = tiles[k2];
+      var ter = DATA.terrain[t2.terrain], imp = t2.improvement && DATA.improvements[t2.improvement];
+      if ((ter && ter.bRoadFree) || (imp && imp.bRoadFree) || t2.city != null) t2.road = true;
     });
     var units = p.units.map(function (u, i) {
       return {
