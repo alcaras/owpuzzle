@@ -64,6 +64,11 @@ for z, e in entries(parse("globalsInt.xml")):
     if v is not None:
         g[z] = int(v)
 
+for z, e in entries(parse("globalsType.xml")):
+    v = e.findtext("zValue")
+    if v is not None:
+        g[z] = v
+
 # ---------- unit traits -> effect units ----------
 trait_effect = {}
 for z, e in entries(parse("unitTrait.xml")):
@@ -87,6 +92,11 @@ for z, e in entries(parse("effectUnit.xml")):
         pl = pairlist(e, lt)
         if pl:
             d[lt] = pl
+    ap = e.find("AttackApplyEffectUnitTurns")
+    if ap is not None:
+        first, second = ap.findtext("First"), ap.findtext("Second")
+        if first:
+            d["attackApply"] = {"effect": first, "turns": int(second or 1)}
     imm = strlist(e, "aeEffectUnitImmune")
     if imm:
         d["aeEffectUnitImmune"] = imm

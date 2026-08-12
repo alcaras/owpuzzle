@@ -72,6 +72,7 @@
   // All effect units on a unit: innate (traits + aeEffectUnit) + promotions.
   function effectsOf(u) {
     var effs = (info(u).effects || []).slice();
+    (u.applied || []).forEach(function (e) { effs.push(e); });   // disarmed etc.
     (u.promotions || []).forEach(function (p) {
       var pr = DATA.promotions[p];
       if (pr && pr.effect) effs.push(pr.effect);
@@ -904,18 +905,49 @@
     if (killed) msg += ' — killed!';
     s.log.push(msg);
 
-    // push (elephants: PANIC bPush): surviving adjacent defender is shoved to
-    // the tile directly beyond the attack line if it is free and passable
+    // push (elephants: PANIC bPush) — Unit.getPushTile (Unit.cs:10069): try the
+    // tile directly behind, then the two tiles behind-and-to-the-side, then any
+    // other adjacent tile away from the attacker. If NOTHING is free the unit
+    // cannot escape and is DISARMED instead (PANIC_NO_ESCAPE_EFFECTUNIT).
     if (!killed && adjacent && hasEffectFlag(att, 'bPush')) {
       var pd = dirBetween(from, defTile);
       if (pd >= 0) {
-        var pt = { q: defTile.q + DIRS[pd].q, r: defTile.r + DIRS[pd].r };
-        if (tileAt(s, pt.q, pt.r) && !unitAt(s, pt.q, pt.r) &&
-            moveCostInto(s, def, defTile, pt) !== Infinity) {
-          def.q = pt.q; def.r = pt.r;
+        var order = [pd, wrapDir(pd, 1), wrapDir(pd, -1), wrapDir(pd, 2), wrapDir(pd, -2)];
+        var moved = null;
+        for (var pi = 0; pi < order.length && !moved; pi++) {
+          var pt = { q: defTile.q + DIRS[order[pi]].q, r: defTile.r + DIRS[order[pi]].r };
+          if (tileAt(s, pt.q, pt.r) && !unitAt(s, pt.q, pt.r) &&
+              moveCostInto(s, def, defTile, pt) !== Infinity) moved = pt;
+        }
+        if (moved) {
+          def.q = moved.q; def.r = moved.r;
           s.log.push(nameOf(def) + ' is pushed back!');
+        } else {
+          var noEsc = G.PANIC_NO_ESCAPE_EFFECTUNIT;
+          if (noEsc && !isImmuneToEffect(def, noEsc)) {
+            def.applied = (def.applied || []);
+            if (def.applied.indexOf(noEsc) < 0) def.applied.push(noEsc);
+            s.log.push(nameOf(def) + ' cannot escape — ' +
+              prettyEffect(noEsc).toLowerCase() + '!');
+          }
         }
       }
+    }
+
+    // an attack that applies an effect to what it hits (DISARM, plague):
+    // effectUnit.AttackApplyEffectUnitTurns
+    if (!killed) {
+      effectsOf(att).forEach(function (e) {
+        var d = DATA.effects[e];
+        if (!d || !d.attackApply) return;
+        var ap = d.attackApply.effect;
+        if (isImmuneToEffect(def, ap)) return;
+        def.applied = (def.applied || []);
+        if (def.applied.indexOf(ap) < 0) {
+          def.applied.push(ap);
+          s.log.push(nameOf(def) + ' is ' + prettyEffect(ap).toLowerCase() + '!');
+        }
+      });
     }
 
     // defender loses a fortification turn when melee-attacked (Unit.cs:9643)
