@@ -313,6 +313,7 @@
 
   // ---------- state ----------
   var history = [];       // stack of states for undo
+  var redoStack = [];     // states undone, available to redo
   var state = E.loadPuzzle(puzzle, { play: true });
   var selected = null;    // unit id
   var finished = false;
@@ -997,6 +998,10 @@
     tr.style.display = '';
     tr.innerHTML = 'Training: <b>' + state.training + '</b>';
     var selU = selected != null ? E.unitById(state, selected) : null;
+    var bu2 = document.getElementById('btn-undo');
+    if (bu2) bu2.disabled = !history.length;
+    var br = document.getElementById('btn-redo');
+    if (br) br.disabled = !redoStack.length;
     var bm = document.getElementById('btn-march');
     bm.style.display = (selU && !finished && E.canMarch(state, selU) && selU.steps >= E.fatigueLimit(selU)) ? '' : 'none';
     var bu = document.getElementById('btn-setup');
@@ -1062,6 +1067,7 @@
   function act(a) {
     try {
       history.push(state);
+      redoStack.length = 0;         // a fresh action forks off the redo branch
       var keepSel = a.unit;
       state = E.applyAction(state, a);
       lineLog.push(a);
@@ -1260,6 +1266,7 @@
   // ---------- controls ----------
   document.getElementById('btn-undo').addEventListener('click', function () {
     if (!history.length) return;
+    redoStack.push({ state: state, action: lineLog[lineLog.length - 1] });
     state = history.pop();
     lineLog.pop();
     actionsUsed--;
@@ -1269,6 +1276,20 @@
     previewFocus = null;
     hidePreviewPanel();
     document.getElementById('result').classList.remove('show');
+    render();
+  });
+  document.getElementById('btn-redo').addEventListener('click', function () {
+    if (!redoStack.length) return;
+    var step = redoStack.pop();
+    history.push(state);
+    state = step.state;
+    if (step.action) lineLog.push(step.action);
+    actionsUsed++;
+    selected = null;
+    armedTarget = null;
+    previewFocus = null;
+    hidePreviewPanel();
+    checkEnd();
     render();
   });
   document.getElementById('btn-endturn').addEventListener('click', function () {
