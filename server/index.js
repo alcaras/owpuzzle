@@ -39,7 +39,15 @@ console.log(`seeded ${seeded} core puzzles`);
 
 const app = express();
 app.use(express.json({ limit: '256kb' }));
-app.use(express.static(path.join(__dirname, '..', 'web')));
+// Always revalidate the app's own code. A browser holding yesterday's app.js
+// against today's editor.js produces bugs that look impossible and cannot be
+// reproduced locally — an author being told their unchanged puzzle changed.
+// 304s are cheap; silent version skew is not.
+app.use(express.static(path.join(__dirname, '..', 'web'), {
+  setHeaders(res, filePath) {
+    if (/\.(js|html)$/.test(filePath)) res.setHeader('Cache-Control', 'no-cache');
+  },
+}));
 
 // ---------- sessions ----------
 function newSession(userId) {

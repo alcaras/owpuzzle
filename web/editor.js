@@ -372,8 +372,12 @@
     var sol = null;
     try { sol = JSON.parse(localStorage.getItem('owpuzzle-draft-solution') || 'null'); } catch (e) {}
     if (!sol || !sol.line || !sol.line.length) {
-      return out('\u2717 Play your own solution first: hit \u25b6 Test play, finish the turn, ' +
-        'then come back and submit. We store your line as the reference solution.');
+      // say what we actually found, so a report tells us something
+      var why = !sol ? 'no recording was found'
+        : (!sol.line ? 'the recording has no line'
+          : 'the recorded line was empty — no orders were spent');
+      return out('\u2717 Play your own solution first: hit \u25b6 Test play, play your line, ' +
+        'press End Turn, then come back and submit. (' + why + ')');
     }
     // A record written by an older build has no board attached, so we cannot
     // tell whether the puzzle changed. Say that, rather than accusing the
