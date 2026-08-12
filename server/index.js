@@ -510,8 +510,14 @@ app.get('/api/puzzle/:slug', (req, res) => {
   const user = userFromReq(req);
   const row = db.prepare('SELECT * FROM puzzles WHERE slug = ?').get(req.params.slug);
   if (!row) return res.status(404).json({ error: 'not found' });
-  if (row.status === 'pending' && !(user && (user.is_admin || user.id === row.author_id))) {
-    return res.status(403).json({ error: 'pending review' });
+  // Only the live library is playable by URL. Anything else — awaiting review,
+  // rejected, or withdrawn at the author's request — is visible just to its
+  // author and to admins, so an old link cannot resurrect an unpublished puzzle.
+  if (row.status !== 'core' && row.status !== 'approved' &&
+      !(user && (user.is_admin || user.id === row.author_id))) {
+    return res.status(403).json({
+      error: row.status === 'pending' ? 'pending review' : 'this puzzle is not published',
+    });
   }
   const beaten = user && db.prepare(
     'SELECT 1 FROM attempts WHERE user_id = ? AND puzzle_id = ? AND solved = 1 LIMIT 1')
