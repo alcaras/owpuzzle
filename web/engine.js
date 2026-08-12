@@ -457,7 +457,7 @@
   // Unit.cs:8508 canTargetFrom — from tile `pos`, is any hostile unit (other
   // than `exclude`) attackable? Melee range 1; ranged uses rangeMax.
   function canTargetFrom(state, u, pos, excludeId) {
-    var r = isMelee(u) ? 1 : rangeMax(u);
+    var r = isMelee(u) ? 1 : targetingRangeFrom(state, u, pos);
     for (var i = 0; i < state.units.length; i++) {
       var o = state.units[i];
       if (o.hp <= 0 || o.player === u.player || o.id === excludeId) continue;
@@ -766,10 +766,24 @@
     var h = DATA.height[t.height];
     return (h && h.iRangeChange) || 0;
   }
+  // Unit.canTargetTile (Unit.cs:8487): a shot reaches
+  //   range + max(from.rangeChange - to.rangeChange, 0)
+  // so height helps only insofar as you out-top the target.
   function effectiveRange(state, u, from, to) {
     var r = rangeMax(u);
     if (info(u).bRangeFlat) return r;
     return r + Math.max(rangeChangeOf(state, from.q, from.r) - rangeChangeOf(state, to.q, to.r), 0);
+  }
+
+  // Unit.rangeMax(pFromTile) (Unit.cs:6375), used ONLY by canTargetFrom: the
+  // "is anything worth advancing for" test adds the tile's own rangeChange and
+  // never looks at what the target is standing on. The game really does use a
+  // looser rule here than for the shot itself, so a rout can carry a unit onto
+  // high ground for a shot that then turns out to be out of range.
+  function targetingRangeFrom(state, u, pos) {
+    var r = rangeMax(u);
+    if (info(u).bRangeFlat) return r;
+    return r + rangeChangeOf(state, pos.q, pos.r);
   }
 
   function attackTargets(state, u) {
