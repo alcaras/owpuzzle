@@ -375,9 +375,14 @@
       return out('\u2717 Play your own solution first: hit \u25b6 Test play, finish the turn, ' +
         'then come back and submit. We store your line as the reference solution.');
     }
-    // compare content with content, both hashed by THIS page's engine
-    var changed = sol.puzzle ? (puzzleHash(sol.puzzle) !== puzzleHash(p)) : (sol.v !== puzzleHash(p));
-    if (changed) {
+    // A record written by an older build has no board attached, so we cannot
+    // tell whether the puzzle changed. Say that, rather than accusing the
+    // author of editing something they never touched.
+    if (!sol.puzzle) {
+      return out('\u2717 The site updated since your test play, so that recording ' +
+        'cannot be checked. Hit \u25b6 Test play once more and submit — your board is unchanged.');
+    }
+    if (puzzleHash(sol.puzzle) !== puzzleHash(p)) {
       return out('\u2717 You have changed the puzzle since your test play. ' +
         'Play it once more with \u25b6 Test play, then submit.');
     }
