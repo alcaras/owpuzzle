@@ -149,12 +149,42 @@ function options(s, moved) {
     incumbent = str; incOrders = spent; incLine = line.slice();
     console.log('  ' + (incumbent / 10) + ' STR in ' + incOrders + ' orders   (node ' + nodes + ')');
   }
-  // admissible cap: each surviving red needs at least one more order to die
-  var live = s.units.filter(function (x) { return x.player === 1 && x.hp > 0; })
-    .map(STR).sort(function (a, b) { return b - a; });
-  var cap = str, room = Math.min(live.length, s.orders);
-  for (var i = 0; i < room; i++) cap += live[i];
+  // Counting orders alone is a toothless bound: early on there are always
+  // enough of them. What actually rules a kill out is DAMAGE. For each living
+  // red, gather every blow that could still land on it — from where each blue
+  // stands, or from the best seat it can still walk to — and if those blows
+  // cannot sum to its remaining HP, that red is unkillable and its strength
+  // leaves the ceiling. The count of blows needed is likewise a floor on the
+  // orders the kill costs. Both over-estimate, so both stay admissible.
+  var cap = str, minAttacks = 0;
+  var blues = s.units.filter(function (x) { return x.player === 0 && x.hp > 0; });
+  s.units.forEach(function (R) {
+    if (R.player !== 1 || R.hp <= 0) return;
+    var blows = [];
+    blues.forEach(function (b) {
+      // Every seat this unit could ever swing from: where it stands, anywhere
+      // it may still walk, and — because a rout advance carries it into the
+      // tile it just emptied — every tile an enemy currently occupies. Leaving
+      // that last set out is what made the bound throw away real lines.
+      var swings = hasRout(b) ? 3 : 1, per = 0;
+      per = damageFrom(b, { q: b.q, r: b.r }, R, s) * 2;
+      Object.keys(CAND[b.id]).forEach(function (k) {
+        var t = k.split(',');
+        per = Math.max(per, damageFrom(b, { q: +t[0], r: +t[1] }, R, s) * 2);
+      });
+      s.units.forEach(function (v) {
+        if (v.player !== 1 || v.hp <= 0 || v.id === R.id) return;
+        per = Math.max(per, damageFrom(b, { q: v.q, r: v.r }, R, s) * 2);
+      });
+      if (per > 0) for (var i = 0; i < swings; i++) blows.push(per);
+    });
+    blows.sort(function (x, y) { return y - x; });
+    var acc = 0, n = 0;
+    while (acc < R.hp && n < blows.length) { acc += blows[n]; n++; }
+    if (acc >= R.hp) { cap += STR(R); minAttacks += n; }
+  });
   if (cap < incumbent) return;
+  if (minAttacks > s.orders) return;
 
   var opts = options(s, moved);
   opts.forEach(function (o) {
