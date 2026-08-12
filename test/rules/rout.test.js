@@ -57,3 +57,23 @@ test('a ranged kill at distance does not teleport the attacker', () => {
   const a = g.unit(g.blue());
   assert.equal(a.q + ',' + a.r, '0,0', 'advance requires adjacency');
 });
+
+test('polearm units are immune to ROUT, so they break a chain [EFFECTUNIT_POLEARM aeEffectUnitImmune]', () => {
+  const { setup } = require('../helpers');
+  const chain = setup(`
+    blue HORSEMAN 0,0
+    red ARCHER 1,0 hp=4
+    red ARCHER 2,0 hp=4
+  `);
+  chain.attack(chain.blue(), chain.at('1,0'));
+  assert.equal(chain.unit(chain.blue()).q, 1, 'ordinary kill: the chain carries on');
+
+  const wall = setup(`
+    blue HORSEMAN 0,0
+    red SPEARMAN 1,0 hp=4
+    red ARCHER 2,0 hp=4
+  `);
+  wall.attack(wall.blue(), wall.at('1,0'));
+  const h = wall.unit(wall.blue());
+  assert.equal(h.q + ',' + h.r, '0,0', 'killing a spearman gives no rout and no advance');
+});

@@ -359,13 +359,19 @@
       }
     }
 
+    if (isDamaged(def)) add('wounded', sumEffect(def, 'iDamagedUsModifier'));
     if (attUnit) {
       if (isDamaged(attUnit)) add('vs damaged', sumEffect(def, 'iDamagedThemModifier'));
       if (attUnit.general) add('vs general', sumEffect(def, 'iVsGeneralModifier'));
       (info(attUnit).traits || []).forEach(function (tr) {
         add('vs ' + prettyTrait(tr), sumEffectPair(def, 'aiUnitTraitModifier', tr));
         add('vs ' + prettyTrait(tr), sumEffectPair(def, 'aiUnitTraitModifierDefense', tr));
-        if (isMelee(def)) add('vs ' + prettyTrait(tr), sumEffectPair(def, 'aiUnitTraitModifierMelee', tr));
+        // Unit.defendUnitStrength (Unit.cs:9111): the melee trait bonus is
+        // gated on the ATTACKER being melee, not the defender. A maceman's
+        // anti-infantry bonus protects it from an axeman, not from an archer
+        // shooting it — we were testing the wrong unit and handing it out
+        // against ranged attacks too.
+        if (isMelee(attUnit)) add('vs ' + prettyTrait(tr), sumEffectPair(def, 'aiUnitTraitModifierMelee', tr));
       });
     }
 

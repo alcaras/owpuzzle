@@ -30,13 +30,22 @@ test('damage does not depend on the target\'s current hp', () => {
     'a wounded unit defends exactly as hard as a fresh one');
 });
 
-test('spears take +50% defending against mounted [aiUnitTraitModifierDefense]', () => {
-  const g = setup(`
+test('spears take +50% against mounted ATTACKERS IN MELEE [EFFECTUNIT_ANTIMOUNTED2 aiUnitTraitModifierMelee]', () => {
+  // The anti-cavalry bonus lives in aiUnitTraitModifierMelee, and on defence
+  // that field is gated on the attacker being melee (Unit.cs:9111). A horseman
+  // riding onto the spears eats it; a palton shooting them does not.
+  const charge = setup(`
+    blue HORSEMAN 0,0
+    red SPEARMAN 1,0
+  `);
+  assert.equal(mods(charge, charge.blue(), charge.red())['def:vs mounted'], 50);
+
+  const shot = setup(`
     blue PALTON_CAVALRY 0,0
     red SPEARMAN 1,0
   `);
-  const m = mods(g, g.blue(), g.red());
-  assert.equal(m['def:vs mounted'], 50, 'the anti-cavalry bonus must be visible in the breakdown');
+  assert.equal(mods(shot, shot.blue(), shot.red())['def:vs mounted'], undefined,
+    'spears do not brace against arrows');
 });
 
 test('a flanked defender loses its counterattack [Unit.isFlankedBy]', () => {
@@ -141,4 +150,46 @@ test('melee across the shoreline takes ONE -50%, not two [Unit.cs:8748]', () => 
   const shore = Object.keys(m).filter((k) => /shore|water/i.test(k));
   assert.equal(shore.length, 1, 'exactly one shoreline modifier: ' + JSON.stringify(m));
   assert.equal(m[shore[0]], E.DATA.globals.LAND_WATER_MODIFIER);
+});
+
+test('a melee trait bonus protects on defence only against MELEE attackers [Unit.cs:9111]', () => {
+  // The maceman's anti-infantry bonus is gated on the ATTACKER being melee.
+  // Reading the defender's own melee flag instead handed it out against
+  // arrows as well, which is not what the game does.
+  const vsMelee = setup(`
+    blue AXEMAN 1,0
+    red MACEMAN 0,0
+  `);
+  const vsRanged = setup(`
+    blue ARCHER 1,0
+    red MACEMAN 0,0
+  `);
+  assert.equal(mods(vsMelee, vsMelee.blue(), vsMelee.red())['def:vs infantry'], 25);
+  assert.equal(mods(vsRanged, vsRanged.blue(), vsRanged.red())['def:vs infantry'], undefined,
+    'no anti-infantry bonus against a bowman');
+  assert.ok(damage(vsRanged, vsRanged.blue(), vsRanged.red()) > 0);
+});
+
+test('the anti-infantry bonus is keyed to the trait, not to melee alone [aiUnitTraitModifierMelee]', () => {
+  const vsMountedMelee = setup(`
+    blue HORSEMAN 1,0
+    red MACEMAN 0,0
+  `);
+  assert.equal(mods(vsMountedMelee, vsMountedMelee.blue(), vsMountedMelee.red())['def:vs infantry'], undefined,
+    'a horseman is melee but not infantry');
+});
+
+test('TOUGH gives a wounded defender extra strength [iDamagedUsModifier]', () => {
+  const hurt = setup(`
+    blue AXEMAN 1,0
+    red SPEARMAN 0,0 hp=10 promo=EFFECTUNIT_TOUGH
+  `);
+  assert.equal(mods(hurt, hurt.blue(), hurt.red())['def:wounded'],
+    E.DATA.effects.EFFECTUNIT_TOUGH.iDamagedUsModifier);
+  const whole = setup(`
+    blue AXEMAN 1,0
+    red SPEARMAN 0,0 promo=EFFECTUNIT_TOUGH
+  `);
+  assert.equal(mods(whole, whole.blue(), whole.red())['def:wounded'], undefined,
+    'unwounded, there is nothing to be tough about');
 });
