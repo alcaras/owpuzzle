@@ -370,12 +370,31 @@ if (process.env.MODE === 'deploy') {
     }
     return top;
   }
+  // Suffix-minimum cost per unit: the cheapest seat at or after each index.
+  // A vector whose cheapest possible completion already exceeds the pool can
+  // have no affordable descendant, so it should not be expanded at all —
+  // without this, a board with eleven units spends its whole budget popping
+  // combinations that were never playable (1.8M rejected, 0 evaluated).
+  var suffixMin = lists.map(function (l) {
+    var out = new Array(l.length + 1);
+    out[l.length] = Infinity;
+    for (var i = l.length - 1; i >= 0; i--) out[i] = Math.min(l[i].orders, out[i + 1]);
+    return out;
+  });
+  function floorCost(v) {
+    var c = 0;
+    for (var i = 0; i < v.length; i++) c += suffixMin[i][v[i]];
+    return c;
+  }
   push(BLUE.map(function () { return 0; }));
   var tried = 0, illegal = 0;
   while (heap.length && Date.now() < DEADLINE) {
     var node = pop(), v = node.v;
     for (var i = 0; i < v.length; i++) {
-      if (v[i] + 1 < lists[i].length) { var w = v.slice(); w[i]++; push(w); }
+      if (v[i] + 1 >= lists[i].length) continue;
+      var w = v.slice(); w[i]++;
+      if (floorCost(w) > POOL) continue;   // no descendant of this can be played
+      push(w);
     }
     // Reject on arithmetic before touching the engine: two units cannot share
     // a tile, and a deployment costing more than the pool can never be played.
