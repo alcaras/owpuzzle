@@ -452,8 +452,20 @@ app.get('/api/submit-status/:slug', (req, res) => {
 app.get('/api/review', (req, res) => {
   const user = userFromReq(req);
   if (!user || !user.is_admin) return res.status(403).json({ error: 'admin only' });
-  const rows = db.prepare(`SELECT id, slug, json, author_name, created_at FROM puzzles WHERE status = 'pending'`).all();
-  res.json({ pending: rows.map(r => ({ id: r.id, slug: r.slug, puzzle: JSON.parse(r.json), author: r.author_name, at: r.created_at })) });
+  const rows = db.prepare(`SELECT id, slug, json, author_name, created_at, notes FROM puzzles WHERE status = 'pending'`).all();
+  res.json({
+    pending: rows.map(r => {
+      // the author's own recorded line, so a reviewer can watch what they did
+      // rather than trying to infer it from the board
+      let sol = null;
+      try { sol = JSON.parse(r.notes); } catch (e) {}
+      return {
+        id: r.id, slug: r.slug, puzzle: JSON.parse(r.json),
+        author: r.author_name, at: r.created_at,
+        solution: sol && sol.line ? sol : null,
+      };
+    }),
+  });
 });
 app.post('/api/review/:slug', (req, res) => {
   const user = userFromReq(req);

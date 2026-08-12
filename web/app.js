@@ -177,8 +177,14 @@
         card.innerHTML = '<div class="body"><div class="card-head"><h3>' + item.puzzle.name + '</h3>' +
           '<span class="meta">' + item.puzzle.orders + ' orders</span></div>' +
           '<p>by <b>' + (item.author || '?') + '</b> — ' + (item.puzzle.brief || '') + '</p>' +
+          (item.solution ? '<p style="font-size:12.5px;color:var(--muted)">their line: <b>' +
+            fmt10(item.solution.claimed ? item.solution.claimed.strength : 0) + ' STR</b> in ' +
+            (item.solution.claimed ? item.solution.claimed.orders : '?') + ' orders · ' +
+            (item.solution.line || []).length + ' actions</p>' : '') +
           '<div class="row" style="margin-top:8px;display:flex;gap:8px">' +
           '<a href="?p=' + item.slug + '"><button class="rated-btn" style="font-size:13px;padding:5px 12px">Play</button></a>' +
+          (item.solution ? '<a href="?p=' + item.slug + '&review=1"><button class="rated-btn" ' +
+            'style="font-size:13px;padding:5px 12px">Step their line</button></a>' : '') +
           '<button data-v="1" style="font-size:13px;padding:5px 12px">Approve</button>' +
           '<button data-v="0" style="font-size:13px;padding:5px 12px">Reject</button></div>';
         Array.prototype.forEach.call(card.querySelectorAll('[data-v]'), function (b) {
@@ -1395,6 +1401,56 @@
       if (!(ce && ce.solved)) return cand.id;
     }
     return null;
+  }
+
+  // ---------- reviewing an author's line ----------
+  // ?review=1 on a pending puzzle walks their recorded solution one action at
+  // a time, so a reviewer can watch the idea rather than reconstruct it.
+  if (params.get('review')) {
+    fetch('/api/review').then(function (r) { return r.json(); }).then(function (d) {
+      var item = ((d && d.pending) || []).filter(function (x) { return x.slug === puzzle.id; })[0];
+      if (!item || !item.solution || !item.solution.line) return;
+      var line = item.solution.line, at = 0;
+      var bar = document.createElement('div');
+      bar.className = 'controls';
+      bar.style.cssText = 'gap:8px;align-items:center;flex-wrap:wrap';
+      bar.innerHTML =
+        '<button id="rv-back">◀ back</button>' +
+        '<button id="rv-step" class="primary">step ▶</button>' +
+        '<button id="rv-all">play all ⏭</button>' +
+        '<button id="rv-reset">restart</button>' +
+        '<span id="rv-at" style="font-size:13px;color:var(--muted)"></span>';
+      var host = document.querySelector('.controls-final');
+      host.parentNode.insertBefore(bar, host);
+      function label() {
+        var a = line[at];
+        var what = at >= line.length ? 'line complete'
+          : (at + 1) + ' of ' + line.length + ': ' +
+            (a.type === 'move' ? 'move to (' + a.q + ',' + a.r + ')'
+              : a.type + (a.target != null ? ' →' : ''));
+        document.getElementById('rv-at').textContent = what +
+          '  ·  ' + fmt10(E.strKilledOf(state)) + ' STR destroyed, ' +
+          (E.poolOrders(puzzle) - state.orders) + ' orders';
+      }
+      function step() {
+        if (at >= line.length) return false;
+        try { act(line[at]); } catch (e) { document.getElementById('rv-at').textContent =
+          'step ' + (at + 1) + ' would not replay: ' + e.message; return false; }
+        at++; label(); return true;
+      }
+      document.getElementById('rv-step').onclick = step;
+      document.getElementById('rv-back').onclick = function () {
+        if (at === 0) return;
+        document.getElementById('btn-undo').click();
+        at--; label();
+      };
+      document.getElementById('rv-all').onclick = function () {
+        var guard = 0;
+        while (step() && guard++ < 500) { /* to the end */ }
+      };
+      document.getElementById('rv-reset').onclick = function () { location.reload(); };
+      label();
+    }).catch(function () {});
   }
 
   document.getElementById('btn-next').addEventListener('click', function () {
