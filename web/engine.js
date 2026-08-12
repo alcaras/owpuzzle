@@ -755,16 +755,32 @@
     return false;
   }
 
+  // Unit.canTargetTile (Unit.cs:8440): height extends a shot. Shooting DOWN
+  // from a hill reaches one hex further — max(from.rangeChange -
+  // to.rangeChange, 0) — unless the unit has bRangeFlat (siege), whose range
+  // never changes with terrain.
+  function rangeChangeOf(state, q, r) {
+    var t = tileAt(state, q, r);
+    if (!t) return 0;
+    var h = DATA.height[t.height];
+    return (h && h.iRangeChange) || 0;
+  }
+  function effectiveRange(state, u, from, to) {
+    var r = rangeMax(u);
+    if (info(u).bRangeFlat) return r;
+    return r + Math.max(rangeChangeOf(state, from.q, from.r) - rangeChangeOf(state, to.q, to.r), 0);
+  }
+
   function attackTargets(state, u) {
     if (!canAttack(state, u) || !canDamage(u)) return [];
     var out = [];
-    var r = rangeMax(u);
     state.units.forEach(function (t) {
       if (t.hp <= 0 || t.player === u.player) return;
       var dist = hexDistance(u, t);
       if (isMelee(u)) {
         if (dist === 1) out.push(t);
-      } else if (dist >= 1 && dist <= r && !isShotObstructed(state, u, t)) {
+      } else if (dist >= 1 && dist <= effectiveRange(state, u, u, t) &&
+                 !isShotObstructed(state, u, t)) {
         out.push(t);
       }
     });
@@ -1098,7 +1114,8 @@
     nextStepOrderCost: nextStepOrderCost,
     canDamage: canDamage, fatigueLimit: fatigueLimit,
     movementPoints: movementPoints, reachableTiles: reachableTiles,
-    attackTargets: attackTargets, isShotObstructed: isShotObstructed, attackStrength: attackStrength,
+    attackTargets: attackTargets, isShotObstructed: isShotObstructed,
+    effectiveRange: effectiveRange, attackStrength: attackStrength,
     defendStrength: defendStrength, attackUnitDamage: attackUnitDamage,
     counterAttackDamage: counterAttackDamage, previewAttack: previewAttack,
     explainAttack: explainAttack,

@@ -1233,17 +1233,20 @@ var OWDATA = {
   "HEIGHT_FLAT": {},
   "HEIGHT_HILL": {
    "bElevation": 1,
-   "iMovementCost": 9
+   "iMovementCost": 9,
+   "iRangeChange": 1
   },
   "HEIGHT_LAKE": {},
   "HEIGHT_MOUNTAIN": {
    "bElevation": 1,
-   "bRangedAttackBlock": 1
+   "bRangedAttackBlock": 1,
+   "iRangeChange": 2
   },
   "HEIGHT_OCEAN": {},
   "HEIGHT_VOLCANO": {
    "bElevation": 1,
-   "bRangedAttackBlock": 1
+   "bRangedAttackBlock": 1,
+   "iRangeChange": 2
   }
  },
  "improvements": {
@@ -1784,6 +1787,7 @@ var OWDATA = {
   "UNIT_ARCHER_ELEPHANT": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bRangeFlat": 1,
    "bRegular": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
@@ -1901,6 +1905,7 @@ var OWDATA = {
   "UNIT_BALLISTA": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bRangeFlat": 1,
    "bRegular": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
@@ -2280,6 +2285,7 @@ var OWDATA = {
   "UNIT_CROSSBOWMAN": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bRangeFlat": 1,
    "bRegular": 1,
    "bZOC": 1,
    "effects": [
@@ -2773,6 +2779,7 @@ var OWDATA = {
   "UNIT_JAVELIN_ELEPHANT": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bRangeFlat": 1,
    "bRegular": 1,
    "effects": [
     "EFFECTUNIT_RANGED",
@@ -3548,6 +3555,7 @@ var OWDATA = {
   "UNIT_POLYBOLOS": {
    "bBlocks": 1,
    "bGeneral": 1,
+   "bRangeFlat": 1,
    "bRegular": 1,
    "effects": [
     "EFFECTUNIT_RANGED",

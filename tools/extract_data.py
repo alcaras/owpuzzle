@@ -104,7 +104,7 @@ for z, e in entries(parse("promotion.xml")):
         promotions[z] = {"effect": eff, "prereq": e.findtext("PromotionPrereq") or None}
 
 # ---------- units ----------
-KEEP_UNIT = ["iMovement", "iVision", "iFatigue", "iStrength", "iRangeMax",
+KEEP_UNIT = ["bRangeFlat", "iMovement", "iVision", "iFatigue", "iStrength", "iRangeMax",
              "iRangeMin", "iHPMax", "bMelee", "bZOC", "bBlocks", "bFortify",
              "bGeneral", "bRegular", "bWater", "bUnlimber", "bAnchor"]
 units = {}
@@ -130,7 +130,7 @@ def simple_table(fname, keep):
     return out
 
 terrain = simple_table("terrain.xml", ["iMovementCost", "iUnitDamage", "bNoVegetation"])
-height = simple_table("height.xml", ["iMovementCost", "bElevation", "bRangedAttackBlock"])
+height = simple_table("height.xml", ["iMovementCost", "bElevation", "bRangedAttackBlock", "iRangeChange"])
 improvements = simple_table("improvement.xml", ["iDefenseModifier", "iDefenseModifierFriendly"])
 
 vegetation = {}
