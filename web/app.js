@@ -308,7 +308,7 @@
           (done ? '<span class="done">' + (perf ? '\u2b50' : '\u2713') + '</span>' : '') +
           (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
           '<div class="body"><div class="card-head"><h3>' + p.name + '</h3>' +
-          '<span class="meta">' + (done && SERVER_RATING[p.id] ? 'elo ' + SERVER_RATING[p.id] : '') + '</span></div>' +
+          '<span class="meta">' + (done && SERVER_RATING[p.id] ? 'puzzle elo ' + SERVER_RATING[p.id] : '') + '</span></div>' +
           '<p>' + p.brief + '</p>' +
           '<div class="foes"><span class="vs">VS</span>' + foes + '</div></div></a>';
       }).join('');
