@@ -312,12 +312,33 @@
     localStorage.setItem('owpuzzle-draft', JSON.stringify(buildPuzzle()));
     location.href = './?draft=1';
   };
+  function puzzleHash(p) {
+    var str = JSON.stringify([p.orders, p.radius, p.training || 0, p.tiles || null,
+      p.objective, p.units]);
+    var h = 5381;
+    for (var i = 0; i < str.length; i++) h = ((h * 33) ^ str.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+  }
+
   document.getElementById('btn-submit').onclick = function () {
     var p = buildPuzzle();
-    out('submitting\u2026');
+    // A submission must come with the author's own solution: play it through
+    // Test play first. That gives the reviewer a known-good line, the kill
+    // total and the order count — the things the editor cannot compute.
+    var sol = null;
+    try { sol = JSON.parse(localStorage.getItem('owpuzzle-draft-solution') || 'null'); } catch (e) {}
+    if (!sol || !sol.line || !sol.line.length) {
+      return out('\u2717 Play your own solution first: hit \u25b6 Test play, finish the turn, ' +
+        'then come back and submit. We store your line as the reference solution.');
+    }
+    if (sol.v !== puzzleHash(p)) {
+      return out('\u2717 You have changed the puzzle since your test play. ' +
+        'Play it once more with \u25b6 Test play, then submit.');
+    }
+    out('submitting\u2026 (with your solution: ' + (sol.strength / 10) + ' STR in ' + sol.orders + ' orders)');
     fetch('/api/submit', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ puzzle: p }),
+      body: JSON.stringify({ puzzle: p, solution: sol }),
     }).then(function (r) { return r.json(); }).then(function (d) {
       if (d.error) return out('\u2717 ' + d.error);
       out('\u2713 ' + (d.message || "Thanks for submitting your puzzle \u2014 we'll review it!"));

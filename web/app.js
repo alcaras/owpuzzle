@@ -1188,6 +1188,19 @@
         if (d.unlocked && d.unlocked.length) celebrate(d.unlocked);
       }).catch(function () {});
     }
+    if (puzzle.id === 'draft') {
+      // the author's own play of their puzzle IS the claimed solution
+      try {
+        localStorage.setItem('owpuzzle-draft-solution', JSON.stringify({
+          v: puzzleHash(puzzle),
+          line: lineLog,
+          orders: E.poolOrders(puzzle) - state.orders,
+          strength: E.strKilledOf(state),
+          kills: E.killsOf(state),
+          met: E.checkObjective(state, puzzle.objective),
+        }));
+      } catch (e) {}
+    }
     if (won) {
       try {
         var prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}');

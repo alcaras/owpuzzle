@@ -170,6 +170,7 @@ function replayLine(puzzle, line) {
     ordersUsed: pool - s.orders,
     perfect: solved && (pool - s.orders) <= puzzle.orders,
     damageTaken, unitsLost,
+    strKilled: E.strKilledOf(s),
   };
 }
 
@@ -317,9 +318,21 @@ app.post('/api/submit', (req, res) => {
   p.author = user.name;
   // No server-side solving: submissions land in the review queue as-is and
   // are verified locally by the admins (the async worker gave silent fails).
+  // the author's own play of the puzzle, recorded by Test play — the
+  // reference solution a reviewer verifies against
+  const sol = req.body && req.body.solution;
+  let note = 'awaiting review';
+  if (sol && Array.isArray(sol.line) && sol.line.length) {
+    const check = replayLine(p, sol.line);
+    note = JSON.stringify({
+      claimed: { strength: sol.strength, orders: sol.orders, kills: sol.kills },
+      replayed: { strength: check.strKilled, orders: check.ordersUsed, solved: check.solved },
+      line: sol.line,
+    });
+  }
   db.prepare(`INSERT INTO puzzles (slug, json, status, author_id, author_name, rating, notes)
-              VALUES (?, ?, 'pending', ?, ?, 1200, 'awaiting review')`)
-    .run(slug, JSON.stringify(p), user.id, user.name);
+              VALUES (?, ?, 'pending', ?, ?, 1200, ?)`)
+    .run(slug, JSON.stringify(p), user.id, user.name, note);
   if (DISCORD_WEBHOOK_URL) {
     fetch(DISCORD_WEBHOOK_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },

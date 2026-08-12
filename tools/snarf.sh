@@ -40,6 +40,7 @@ for r in rows:
     path.write_text(json.dumps({
         "slug": r["slug"], "author": r["author_name"],
         "submitted": r["created_at"], "notes": r["notes"], "puzzle": p,
+        "authorSolution": json.loads(r["notes"]) if (r["notes"] or "").startswith("{") else None,
     }, indent=2))
     print(r["slug"] + "  by " + str(r["author_name"]) + "  (" + r["created_at"] + ")  -> " + str(path))
 '
