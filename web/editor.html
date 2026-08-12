@@ -46,6 +46,14 @@
   .promo-list label.off { display: none; }
   .promo-list img { width: 18px; height: 18px; }
   .hint { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  #mine .mine-row { display: flex; align-items: baseline; gap: 8px; padding: 3px 0;
+    border-bottom: 1px solid var(--edge); font-size: 12.5px; }
+  #mine .mine-row a { color: var(--accent); }
+  #mine .mine-name { flex: 1 1 auto; }
+  #mine .mine-status { font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted); }
+  #mine .mine-status.approved, #mine .mine-status.core { color: #2f7d43; }
+  #mine .mine-status.rejected, #mine .mine-status.retired { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -102,6 +110,11 @@
         <div class="hint">Click an empty tile to place. Click an existing unit to remove it. In "mark target" objective mode, click enemies to toggle 🎯.</div>
       </div>
       <div id="target-tools" style="display:none"><div class="hint">Click enemy units to mark/unmark them as objective targets (🎯).</div></div>
+      <div id="mine-wrap" style="display:none">
+        <h3>Your submissions</h3>
+        <div id="mine"></div>
+        <div class="hint">Open one to copy it into the editor — your current board is replaced.</div>
+      </div>
     </div>
   </div>
   <script src="data.js"></script>

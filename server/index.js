@@ -346,6 +346,22 @@ app.post('/api/submit', (req, res) => {
     message: "Thanks for submitting your puzzle — we'll review it!" });
 });
 
+// your own submissions, whatever their status — so an author can revisit a
+// puzzle they sent in, copy it into the editor and tweak it
+app.get('/api/my-puzzles', (req, res) => {
+  const user = userFromReq(req);
+  if (!user) return res.json({ mine: [] });
+  const rows = db.prepare(`
+    SELECT slug, json, status, created_at, solves FROM puzzles
+    WHERE author_id = ? ORDER BY created_at DESC`).all(user.id);
+  res.json({
+    mine: rows.map(r => ({
+      slug: r.slug, name: JSON.parse(r.json).name, status: r.status,
+      at: r.created_at, solves: r.solves,
+    })),
+  });
+});
+
 app.get('/api/submit-status/:slug', (req, res) => {
   const row = db.prepare('SELECT slug, status, notes, author_id FROM puzzles WHERE slug = ?').get(req.params.slug);
   if (!row) return res.status(404).json({ error: 'not found' });

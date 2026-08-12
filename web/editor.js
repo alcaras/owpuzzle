@@ -2,6 +2,28 @@
 // generals, mark objectives, test-play, solver-check, submit.
 (function () {
   'use strict';
+
+  // ?load=<slug> — pull one of your own submissions back into the editor to
+  // copy or tweak it. The editor already restores itself from the autosave
+  // slot on load, so we fill that slot and reload rather than duplicating the
+  // (fiddly) restore logic.
+  var LOAD = (location.search.match(/[?&]load=([^&]+)/) || [])[1];
+  if (LOAD) {
+    document.body.innerHTML = '<p style="text-align:center;padding:40px;' +
+      'font-family:Georgia,serif">loading your puzzle…</p>';
+    fetch('/api/puzzle/' + encodeURIComponent(LOAD))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.puzzle) throw new Error(d && d.error || 'not found');
+        localStorage.setItem('owpuzzle-editor-autosave', JSON.stringify(d.puzzle));
+        // it is a fresh draft: the old test-play solution no longer applies
+        localStorage.removeItem('owpuzzle-draft-solution');
+      })
+      .catch(function (e) { alert('Could not load that puzzle: ' + e.message); })
+      .then(function () { location.replace('editor.html'); });
+    return;
+  }
+
   var E = OWENGINE;
   var ICONS = (typeof OWICONS !== 'undefined') ? OWICONS : {};
   var ICON_STYLE = 'portrait';
@@ -342,8 +364,34 @@
     }).then(function (r) { return r.json(); }).then(function (d) {
       if (d.error) return out('\u2717 ' + d.error);
       out('\u2713 ' + (d.message || "Thanks for submitting your puzzle \u2014 we'll review it!"));
+      loadMine();
     }).catch(function () { out('\u2717 network error (are you logged in?)'); });
   };
+
+  // ---------- your own submissions ----------
+  function loadMine() {
+    fetch('/api/my-puzzles').then(function (r) { return r.json(); }).then(function (d) {
+      var mine = (d && d.mine) || [];
+      if (!mine.length) return;
+      document.getElementById('mine-wrap').style.display = '';
+      document.getElementById('mine').innerHTML = mine.map(function (m) {
+        var live = m.status === 'approved' || m.status === 'core';
+        return '<div class="mine-row">' +
+          '<span class="mine-name">' + esc(m.name) + '</span>' +
+          '<span class="mine-status ' + m.status + '">' +
+            (m.status === 'pending' ? 'in review' : m.status) + '</span>' +
+          (live ? '<a href="./?p=' + encodeURIComponent(m.slug) + '">play</a>' : '') +
+          '<a href="editor.html?load=' + encodeURIComponent(m.slug) + '">open</a>' +
+          '</div>';
+      }).join('');
+    }).catch(function () {});
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  loadMine();
 
   // ---------- render ----------
   function render() {
