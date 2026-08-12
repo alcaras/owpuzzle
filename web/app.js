@@ -116,7 +116,12 @@
       // assign BEFORE re-rendering — the library total counts these
       if (community.length !== COMMUNITY.length) changed = true;
       COMMUNITY = community;
-      if (changed && window.__renderLibrary) window.__renderLibrary();
+      if (changed && window.__renderLibrary) {
+        window.__renderLibrary();
+        // renderLibrary rewrites #home, which drops the admin review queue if
+        // it had already loaded — put it back.
+        if (ME && ME.isAdmin) loadReviewQueue();
+      }
       if (!community.length) return;
       var home = document.getElementById('home');
       var sec = document.createElement('div');
