@@ -253,6 +253,21 @@ sound static relaxation we found (chain adjacency and per-level push
 budgets were considered and would not close the gap — the real
 obstructions are sequencing and geometry that only play captures). So on
 that board U=52 is honest but useless, and the deliverable is the
-coverage side: the search evaluates tens of thousands of real deployments
-per 40 minutes against deploy_fight's 2.3k, with kill-set-conditioned
-pruning accounting for the space it did not have to walk.
+coverage side. Measured (M-series laptop, 8 workers, seed 37, 40 min):
+**52,850 deployments walked in and fought engine-exact** — deploy_fight's
+MODE=deploy managed 2,300 in the same time — plus **30,211 assignment
+subtrees refuted** by the conditioned kill-set bound. No line above the
+author's 37 was found; the ceiling stands at best-known 37, bounded above
+by 52. Proving 37 on this board would need play-space exhaustion that
+neither tool can reach; what verify2 adds is that the 37 now sits inside
+a searched region ~20× wider, still unbeaten.
+
+Validation summary (2026-08-12):
+
+| board | pool | result | how |
+|---|---|---|---|
+| the-shore-riders | 10 | **PROVEN 19 STR / 5 orders** | line meets U0, <1s |
+| horsing-around | 20 | **PROVEN 26 STR / 11 orders** | stage2 complete, ~2k nodes |
+| bottleneck | 20 | **PROVEN 30 STR / 11 orders** | stage2 complete + stage3 exhausted |
+| left-flank-right-flank | 30 | found 19 STR / 22 orders | deployment ~1,750, ~3 min, no TOPK truncation |
+| with-a-little-help (11 blues) | 45 | best known 37, U=52 | 52,850 deployments + 30,211 refuted subtrees / 40 min |
