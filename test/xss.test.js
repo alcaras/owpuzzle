@@ -6,20 +6,11 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const APP = fs.readFileSync(path.join(__dirname, '..', 'web', 'app.js'), 'utf8');
-
-test('community card and review card sinks escape user content', () => {
-  for (const needle of [
-    "esc(pz.name)", "esc(pz.brief || '')", "esc(x.author || '?')",
-    "esc(item.puzzle.name)", "esc(item.author || '?')", "esc(item.puzzle.brief || '')",
-  ]) {
-    assert.ok(APP.includes(needle), 'missing escaped sink: ' + needle);
-  }
-  // and the raw forms must be gone
-  for (const raw of ["'<h3>' + pz.name", "'<h3>' + item.puzzle.name"]) {
-    assert.ok(!APP.includes(raw), 'unescaped sink resurfaced: ' + raw);
-  }
-});
+// The grep-shaped sink check that used to live here is deleted: the sinks
+// moved into web/js/library.js and are now covered BEHAVIOURALLY by
+// test/library-page.test.js, which renders hostile names through libraryHtml
+// and inspects the output. That is the deletion path testing-strategy.md
+// prescribes for every grep test.
 
 test('the puzzle fingerprint covers everything the editor can paint', () => {
   const E = require(path.join(__dirname, '..', 'web', 'engine.js'));

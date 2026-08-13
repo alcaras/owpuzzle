@@ -3,40 +3,13 @@
   'use strict';
   var E = OWENGINE;
 
-  // ---------- unit art style: colorful portraits vs white flag icons ----------
-  var ICON_STYLE = 'portrait';
-  try { ICON_STYLE = localStorage.getItem('owpuzzle-iconstyle') || 'portrait'; } catch (e) {}
-  var _artParam = new URLSearchParams(location.search).get('art');
-  if (_artParam === 'flag' || _artParam === 'portrait') ICON_STYLE = _artParam;
-  function unitIcon(type) {
-    var IC = (typeof OWICONS !== 'undefined') ? OWICONS : {};
-    return ICON_STYLE === 'flag'
-      ? (IC['FLAG_' + type] || IC[type])
-      : (IC[type] || IC['FLAG_' + type]);
-  }
+  // shared chrome helpers live in js/dom.js (Phase 1); these are aliases
+  var unitIcon = OWDOM.unitIcon;
   function isFlagIcon(type) {
     var IC = (typeof OWICONS !== 'undefined') ? OWICONS : {};
     var ic = unitIcon(type);
     return !!ic && ic === IC['FLAG_' + type];
   }
-  function wireIconStyleToggle() {
-    var btn = document.getElementById('btn-iconstyle');
-    if (!btn) return;
-    function label() {
-      btn.textContent = 'Unit art: ' + (ICON_STYLE === 'flag' ? 'Icons' : 'Portraits') + ' \u21c4';
-    }
-    label();
-    btn.addEventListener('click', function () {
-      ICON_STYLE = ICON_STYLE === 'flag' ? 'portrait' : 'flag';
-      try { localStorage.setItem('owpuzzle-iconstyle', ICON_STYLE); } catch (e) {}
-      label();
-      var onHome = document.getElementById('home') &&
-        document.getElementById('home').classList.contains('show');
-      if (onHome) location.reload();
-      else if (window.__rerender) window.__rerender();
-    });
-  }
-  wireIconStyleToggle();
 
   // ---------- puzzle selection: library home, ?p=<id> to play ----------
   var params = new URLSearchParams(location.search);
@@ -66,11 +39,7 @@
   // no longer matches reads as unsolved. Entries without a hash predate this
   // and are trusted as-is.
   var puzzleHash = E.puzzleHash;   // one canonical implementation, in the engine
-  function progEntry(prog, p) {
-    var e = prog[p.id];
-    if (e && e.v && e.v !== puzzleHash(p)) return null; // content changed
-    return e || null;
-  }
+  function progEntry(prog, p) { return OWDOM.progEntry(prog, p, puzzleHash); }
 
   // ---------- auth widget (works on every page) ----------
   var ME = null;
@@ -93,265 +62,18 @@
   fetch('/api/me').then(function (r) { return r.json(); })
     .then(function (d) {
       ME = d.user; renderAuth();
-      // The library may already have painted (700ms timer) before this
-      // response arrived, and the paint only loads the review queue when it
-      // already knows you are an admin — lose that race and the queue never
-      // appears. Loading it here as well covers both orders; it is idempotent.
-      if (ME && ME.isAdmin && document.getElementById('home') &&
-          document.getElementById('home').classList.contains('show')) {
-        loadReviewQueue();
-      }
       // your account's unit-art choice wins over whatever this browser had
-      if (ME && ME.unitArt && ME.unitArt !== ICON_STYLE) {
-        ICON_STYLE = ME.unitArt;
-        try { localStorage.setItem('owpuzzle-iconstyle', ICON_STYLE); } catch (e) {}
+      if (ME && ME.unitArt && ME.unitArt !== OWDOM.getIconStyle()) {
+        OWDOM.setIconStyle(ME.unitArt);
         if (window.__rerender) window.__rerender();
       }
-      var onHome = document.getElementById('home') &&
-        document.getElementById('home').classList.contains('show');
-      if (onHome) loadCommunityPuzzles();
     }).catch(function () {});
-
-  function loadCommunityPuzzles() {
-    fetch('/api/puzzles').then(function (r) { return r.json(); }).then(function (d) {
-      // fold the server's cross-device solved list into the library display
-      var changed = false;
-      (d.puzzles || []).forEach(function (x) {
-        if (x.solvedByMe && !SERVER_SOLVED[x.slug]) { SERVER_SOLVED[x.slug] = true; changed = true; }
-        if (x.perfectByMe && !SERVER_PERFECT[x.slug]) { SERVER_PERFECT[x.slug] = true; changed = true; }
-        if (x.rating && SERVER_RATING[x.slug] !== x.rating) { SERVER_RATING[x.slug] = x.rating; changed = true; }
-        if (x.band && SERVER_BAND[x.slug] !== x.band) { SERVER_BAND[x.slug] = x.band; changed = true; }
-      });
-      var ICONS0 = (typeof OWICONS !== 'undefined') ? OWICONS : {};
-      var community = (d.puzzles || []).filter(function (x) { return x.status === 'approved'; });
-      // assign BEFORE re-rendering — the library total counts these
-      if (community.length !== COMMUNITY.length) changed = true;
-      COMMUNITY = community;
-      if (window.__firstPaint && !window.__painted) {
-        window.__painted = true;
-        window.__firstPaint();
-      } else if (changed && window.__renderLibrary) {
-        window.__renderLibrary();
-        if (ME && ME.isAdmin) loadReviewQueue();   // the re-render drops it
-      }
-      if (!community.length) return;
-      var home = document.getElementById('home');
-      var sec = document.createElement('div');
-      sec.innerHTML = '<h2 class="group">Community puzzles — by players like you</h2>';
-      var grid = document.createElement('div');
-      grid.className = 'grid';
-      grid.innerHTML = community.map(function (x) {
-        var pz = x.puzzle;
-        var heroU = (pz.hero != null && pz.units[pz.hero]) ||
-          pz.units.filter(function (u) { return u.player === 0; })[0];
-        var hero = heroU && unitIcon(heroU.type);
-        var foes = pz.units.filter(function (u) { return u.player === 1; }).map(function (u) {
-          var ic = unitIcon(u.type);
-          return ic ? '<img src="' + ic + '" alt="">' : '';
-        }).join('');
-        var cPe = null;
-        try { cPe = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}')[x.slug]; } catch (e) {}
-        var cDone = x.solvedByMe || !!(cPe && cPe.solved);
-        var cPerf = x.perfectByMe || !!(cPe && cPe.perfect);
-        return '<a class="card' + (cDone ? ' solved' : '') + '" href="?p=' + x.slug + '">' +
-          (cDone ? '<span class="done">' + (cPerf ? '\u2b50' : '\u2713') + '</span>' : '') +
-          (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
-          '<div class="body"><div class="card-head"><h3>' + esc(pz.name) + '</h3>' +
-          '<span class="meta">' +
-          (cDone && x.rating ? 'puzzle elo ' + x.rating + ' · ' : '') +
-          'by ' + esc(x.author || '?') + '</span></div>' +
-          '<p>' + esc(pz.brief || '') + '</p>' +
-          '<div class="foes"><span class="vs">VS</span>' + foes + '</div></div></a>';
-      }).join('');
-      sec.appendChild(grid);
-      home.appendChild(sec);
-    }).catch(function () {});
-  }
-
-  // Every string that reaches innerHTML and did not originate in this file
-  // goes through esc(). Community submissions are user content; a puzzle
-  // named <img onerror=...> must render as text, not execute in the admin's
-  // browser.
-  function esc(x) {
-    return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
-
-  // the game displays strength / 10 (a 50-strength unit shows "5").
-  // Shared scope: the review cards on the library page use it too, and a
-  // swallowed ReferenceError here silently deleted the whole review queue.
-  function fmt10(v) { return (v / 10).toFixed(1).replace(/\.0$/, ''); }
-
-  function loadReviewQueue() {
-    fetch('/api/review').then(function (r) { return r.json(); }).then(function (d) {
-      var home = document.getElementById('home');
-      var old = document.getElementById('review-queue');
-      if (old) old.remove();                 // never stack a second copy
-      if (!d.pending || !d.pending.length) return;
-      var sec = document.createElement('div');
-      sec.id = 'review-queue';
-      sec.innerHTML = '<h2 class="group">Review queue — ' + d.pending.length + ' pending</h2>';
-      var grid = document.createElement('div');
-      grid.className = 'grid';
-      d.pending.forEach(function (item) {
-        var card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = '<div class="body"><div class="card-head"><h3>' + esc(item.puzzle.name) + '</h3>' +
-          '<span class="meta">' + esc(item.puzzle.orders) + ' orders</span></div>' +
-          '<p>by <b>' + esc(item.author || '?') + '</b> — ' + esc(item.puzzle.brief || '') + '</p>' +
-          (item.solution ? '<p style="font-size:12.5px;color:var(--muted)">their line: <b>' +
-            fmt10(item.solution.claimed ? item.solution.claimed.strength : 0) + ' STR</b> in ' +
-            (item.solution.claimed ? item.solution.claimed.orders : '?') + ' orders · ' +
-            (item.solution.line || []).length + ' actions</p>' : '') +
-          '<div class="row" style="margin-top:8px;display:flex;gap:8px">' +
-          '<a href="?p=' + item.slug + '"><button class="rated-btn" style="font-size:13px;padding:5px 12px">Play</button></a>' +
-          (item.solution ? '<a href="?p=' + item.slug + '&review=1"><button class="rated-btn" ' +
-            'style="font-size:13px;padding:5px 12px">Step their line</button></a>' : '') +
-          '<button data-v="1" style="font-size:13px;padding:5px 12px">Approve</button>' +
-          '<button data-v="0" style="font-size:13px;padding:5px 12px">Reject</button></div>';
-        Array.prototype.forEach.call(card.querySelectorAll('[data-v]'), function (b) {
-          b.addEventListener('click', function () {
-            fetch('/api/review/' + item.slug, {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ approve: b.dataset.v === '1' }),
-            }).then(function (r) { return r.json(); }).then(function (res) {
-              card.style.opacity = 0.4;
-              card.querySelector('h3').textContent += ' — ' + res.status;
-            });
-          });
-        });
-        grid.appendChild(card);
-      });
-      sec.appendChild(grid);
-      home.insertBefore(sec, home.firstChild);
-    }).catch(function (e) {
-      // a silent catch here cost a day once — an undefined helper deleted the
-      // whole queue with no trace. Log it; admins read consoles.
-      console.error('review queue failed to render:', e);
-    });
-  }
-
-  // SERVER_SOLVED: slugs this signed-in account has solved (from /api/puzzles)
-  // — local progress is per-browser, the server knows across devices.
-  var SERVER_SOLVED = {}, SERVER_PERFECT = {}, SERVER_RATING = {}, SERVER_BAND = {};
-  // community puzzles shown on this page — counted in the library total so
-  // the home count matches the Hall of Fame (which counts every live puzzle)
-  var COMMUNITY = [];
 
   // ---------- library home ----------
-  if (!puzzle && !remotePending) {
-    document.getElementById('day-label').textContent = 'the library';
-    document.getElementById('p-name').textContent = '';
-    document.getElementById('p-brief').textContent =
-      'Single-turn tactics puzzles. Find the winning line within your orders.';
-    document.getElementById('main-row').style.display = 'none';
-    document.querySelector('.hud').style.display = 'none';
-    // every control row, not just the first — Reset lives on the second one
-    // and has no business showing under the puzzle list
-    Array.prototype.forEach.call(document.querySelectorAll('.controls'), function (c) {
-      c.style.display = 'none';
-    });
-    var home = document.getElementById('home');
-    home.classList.add('show');
-    window.__renderLibrary = renderLibrary;
-    var painted = false;
-    window.__firstPaint = function () {
-      if (painted) return;
-      painted = true;
-      window.__painted = true;   // the data-arrival path checks THIS flag
-      renderLibrary();
-      if (ME && ME.isAdmin) loadReviewQueue();
-    };
-    // the server is warm (~75ms), so waiting for the data avoids painting the
-    // library twice; the timeout covers a slow or absent API
-    setTimeout(window.__firstPaint, 700);
-    return; // no game to run
-  }
+  // js/library.js owns the library page entirely (store + idempotent render).
+  // This file is the PLAYER: with no puzzle to play there is nothing to do.
+  if (!puzzle && !remotePending) return;
 
-  function renderLibrary() {
-    var home = document.getElementById('home');
-    var ICONS0 = (typeof OWICONS !== 'undefined') ? OWICONS : {};
-    var prog = {};
-    try { prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}'); } catch (e) {}
-    function isSolved(p) {
-      var e = progEntry(prog, p);
-      return (e && e.solved) || !!SERVER_SOLVED[p.id];
-    }
-    var communitySolved = COMMUNITY.filter(function (x) {
-      var e = null;
-      try { e = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}')[x.slug]; } catch (err) {}
-      return x.solvedByMe || !!(e && e.solved);
-    }).length;
-    var solvedCount = OWPUZZLES.filter(isSolved).length + communitySolved;
-    var libraryTotal = OWPUZZLES.length + COMMUNITY.length;
-    var GROUPS = [
-      { n: 1, title: 'Basics — one unit, one rule' },
-      { n: 2, title: 'Tactics — combined arms' },
-      { n: 3, title: 'Challenges — several rules at once' },
-    ];
-    // One library bar instead of four stacked centred sentences: where you
-    // stand on the left, what you can do about it on the right.
-    var cleared = solvedCount === libraryTotal && solvedCount > 0;
-    var pct = libraryTotal ? Math.round(100 * solvedCount / libraryTotal) : 0;
-    var actions = [];
-    if (!cleared) {
-      actions.push(ME
-        ? '<button class="rated-btn" id="btn-rated">\u25b6 Play another</button>'
-        : '<a class="rated-btn" href="/auth/discord">Sign in with Discord</a>');
-    }
-    actions.push('<a class="libact" href="editor.html">\u270e Create</a>');
-    actions.push('<a class="libact" href="hall.html">\ud83c\udfc6 Hall of Fame</a>');
-    // no "my achievements" link: your avatar in the site bar already goes to
-    // your profile, and your profile IS the achievement gallery
-    var html =
-      '<div class="libbar">' +
-        '<div class="libstat">' +
-          '<div class="libcount">Solved <b>' + solvedCount + '</b> of ' + libraryTotal +
-            (cleared ? ' \u2014 the whole library \u2694\ufe0f' : '') + '</div>' +
-          '<div class="libmeter"><i style="width:' + pct + '%"></i></div>' +
-        '</div>' +
-        '<div class="libactions">' + actions.join('') + '</div>' +
-      '</div>';
-    GROUPS.forEach(function (g) {
-      // group by MEASURED difficulty (the puzzle's own Elo band) and fall back
-      // to the authored difficulty until ratings arrive
-      var list = OWPUZZLES.filter(function (p) {
-        return (SERVER_BAND[p.id] || p.difficulty || 2) === g.n;
-      });
-      if (!list.length) return;
-      html += '<h2 class="group">' + g.title + '</h2><div class="grid">';
-      html += list.map(function (p) {
-        var pe = progEntry(prog, p);
-        var done = isSolved(p);
-        var perf = (pe && pe.perfect) || !!SERVER_PERFECT[p.id];
-        var heroU = (p.hero != null && p.units[p.hero]) ||
-          p.units.filter(function (u) { return u.player === 0; })[0];
-        var hero = heroU && unitIcon(heroU.type);
-        var foes = p.units.filter(function (u) { return u.player === 1; }).map(function (u) {
-          var ic = unitIcon(u.type);
-          return ic ? '<img src="' + ic + '" alt="">' : '';
-        }).join('');
-        return '<a class="card' + (done ? ' solved' : '') + '" href="?p=' + p.id + '">' +
-          (done ? '<span class="done">' + (perf ? '\u2b50' : '\u2713') + '</span>' : '') +
-          (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
-          '<div class="body"><div class="card-head"><h3>' + p.name + '</h3>' +
-          '<span class="meta">' + (done && SERVER_RATING[p.id] ? 'puzzle elo ' + SERVER_RATING[p.id] : '') + '</span></div>' +
-          '<p>' + p.brief + '</p>' +
-          '<div class="foes"><span class="vs">VS</span>' + foes + '</div></div></a>';
-      }).join('');
-      html += '</div>';
-    });
-    home.innerHTML = html;
-    var ratedBtn = document.getElementById('btn-rated');
-    if (ratedBtn) ratedBtn.addEventListener('click', function () {
-      var btn = this;
-      fetch('/api/next').then(function (r) { return r.json(); }).then(function (d) {
-        if (d.slug) location.href = '?p=' + d.slug;
-        else btn.textContent = d.error || d.message || 'sign in with Discord first';
-      }).catch(function () { btn.textContent = 'server not available'; });
-    });
-  }
   if (puzzle) boot(puzzle);
 
   function boot(bootPuzzle) {

@@ -106,6 +106,44 @@ attacked contributes nothing, one that can no longer move only its
 current-tile row); march is a real move option; the transposition key
 includes steps, march and applied effects, which deploy_fight's key
 omits. Mid-fight moves are rationed and deepened LATE = 0..3, as before.
+Completing this proves only the model that was searched — see the verdict
+discipline below.
+
+## Stage 2u — TRUE full-play search, and the verdict discipline
+
+Bottleneck (`submissions/bottleneck-f5de22.json`, pool 20) is the case
+that forced this. Stage 2 with every ration widened — 3 move actions per
+unit, 8 mid-fight moves, swaps on, seat destinations — **completes** at
+30 STR. The real ceiling is **35**, reached by a line whose opening is
+pure choreography: the elephant shuffles through a tile that attacks
+nothing and returns to where it started, the push vacates the red
+horseman's tile, the blue horseman walks into it, routs away, and a
+slinger reuses the same tile two actions later. No ration-and-seat model
+expresses that, and "search complete" inside one is not a fact about the
+game. (This repo has been burnt by exactly this before; now it has a
+regression test.)
+
+Two consequences, both implemented:
+
+- **PROVEN comes from three sources only**: a line matching U0
+  (unconditional), a line matching U (no-swap-travel caveat printed), or
+  completion of **stage 2u** — a search over the engine's own
+  `legalActions` with no synthetic budgets, no seat filter, swaps and
+  lazy march included, transpositions merged on board state alone.
+  Fortify is the one skipped action, with a printed argument: it costs an
+  order, ends the unit's turn, and only changes how hard blues are to
+  kill — reds never act during a puzzle turn. Anything narrower that
+  completes is reported as "complete within a RESTRICTED move model (…)
+  — not a full-play proof".
+- **The rationed model is kept for what it is good at** (fast par
+  refinement and finding), and stage 2u runs after it with the remaining
+  time, improvement-only. Notably the un-rationed search is often
+  *cheaper* than a widened ration: budget counters in the transposition
+  key fragment the state space, so "3 moves per unit" searches more
+  distinct states than "any number of moves".
+
+On Bottleneck, verify2 now finds the 35/16 line itself (stage 2u, ~90s to
+the find) and reports it as best known with U=46 — no false PROVEN.
 
 ## Stage 3 — assignment search over deployments (big boards)
 
@@ -262,12 +300,19 @@ by 52. Proving 37 on this board would need play-space exhaustion that
 neither tool can reach; what verify2 adds is that the 37 now sits inside
 a searched region ~20× wider, still unbeaten.
 
-Validation summary (2026-08-12):
+Validation summary (2026-08-12, revised after the Bottleneck incident):
 
 | board | pool | result | how |
 |---|---|---|---|
 | the-shore-riders | 10 | **PROVEN 19 STR / 5 orders** | line meets U0, <1s |
-| horsing-around | 20 | **PROVEN 26 STR / 11 orders** | stage2 complete, ~2k nodes |
-| bottleneck | 20 | **PROVEN 30 STR / 11 orders** | stage2 complete + stage3 exhausted |
+| horsing-around | 20 | best known 26 STR / 11 orders, U=31 | rationed model complete; full-play search pending |
+| bottleneck | 20 | best known **35** STR / 16 orders, U=46 | stage2u finds the real line (~90s); an earlier rationed-model "PROVEN 30" was wrong and drove the verdict redesign |
 | left-flank-right-flank | 30 | found 19 STR / 22 orders | deployment ~1,750, ~3 min, no TOPK truncation |
 | with-a-little-help (11 blues) | 45 | best known 37, U=52 | 52,850 deployments + 30,211 refuted subtrees / 40 min |
+
+The Bottleneck row is the cautionary one: every ration-widened stage-2
+variant (more moves, swaps, any-tile destinations, LATE 8) either
+"completed" at 30 or timed out, while the true-play search both finds 35
+and — the deeper point — visits FEWER states, because it carries no
+budget counters in its transposition key. Verdicts now grant PROVEN only
+to bound matches and full-play completion.

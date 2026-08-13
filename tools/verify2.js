@@ -746,15 +746,21 @@ function checkBlow(ctx, s, ns, attId, defId) {
 }
 
 // ------------------------------------------------ stage 2: in-state DFS ----
-// MOVES=n widens the move model: each unit may take up to n move ACTIONS
-// (each action is already a full multi-step walk). n=1 is the deploy_fight
-// model; lines that reposition a unit twice — walk, let the board change,
-// walk again — need n≥2. Bottleneck's real 35-STR line is one of those.
-function stage2(ctx, inc, deadline, lateLevels) {
+// The move model is explicit and reported: up to `moves` move ACTIONS per
+// unit (each action is already a full multi-step walk), destinations to seat
+// tiles or any tile, swaps on or off. Bottleneck's real 35-STR line needs
+// 3 move actions per unit, ~7 mid-fight moves, AND pure waiting tiles that
+// hit nothing — a model narrower than that "completes" at 30 and proves
+// nothing about the game. `improveOnly` prunes equal-value branches: right
+// for hunting a higher ceiling, wrong for minimising par.
+function stage2(ctx, inc, deadline, lateLevels, m) {
+  m = m || {};
   var POOL = ctx.POOL;
-  var MOVES = process.env.MOVES ? parseInt(process.env.MOVES, 10) : 1;
-  var SWAPS = process.env.SWAPS === '1';
-  var ALLTILES = process.env.ALLTILES === '1';
+  var MOVES = m.moves !== undefined ? m.moves : (process.env.MOVES ? parseInt(process.env.MOVES, 10) : 1);
+  var SWAPS = m.swaps !== undefined ? m.swaps : process.env.SWAPS === '1';
+  var ALLTILES = m.alltiles !== undefined ? m.alltiles : process.env.ALLTILES === '1';
+  var IMPROVE = !!m.improveOnly;
+  var ATTFIRST = !!m.attackFirst;
   var nodes = 0, allComplete = true;
   var marchable = {};
   ctx.BLUE.forEach(function (b) {
@@ -770,7 +776,8 @@ function stage2(ctx, inc, deadline, lateLevels) {
       nodes++;
       noteBest(inc, E.strKilledOf(s), POOL - s.orders, line.length ? line.slice() : null, 'node ' + nodes);
       function mayMove(u) { return (moved[u.id] || 0) < MOVES && !(fought && lateUsed >= L); }
-      if (stateBound(ctx, s, mayMove) < inc.str) return;
+      var b2 = stateBound(ctx, s, mayMove);
+      if (IMPROVE ? b2 <= curBest(inc) : b2 < curBest(inc)) return;
 
       var attacks = [], moves = [];
       s.units.forEach(function (u) {
@@ -825,7 +832,10 @@ function stage2(ctx, inc, deadline, lateLevels) {
       });
       attacks.sort(function (a, b) { return b.rank - a.rank; });
       moves.sort(function (a, b) { return b.rank - a.rank; });
-      var opts = fought ? attacks.concat(moves) : moves.concat(attacks);
+      // wide passes engage first and reposition second: their move lists are
+      // dominated by zero-punch waiting tiles, and walking those first buries
+      // the fight thousands of plies deep
+      var opts = (fought || ATTFIRST) ? attacks.concat(moves) : moves.concat(attacks);
 
       opts.forEach(function (o) {
         if (Date.now() > deadline) { complete = false; return; }
@@ -868,6 +878,52 @@ function stage2(ctx, inc, deadline, lateLevels) {
   return { complete: allComplete, nodes: nodes, model: model };
 }
 
+// ----------------------------- stage 2u: TRUE full-play in-state search ----
+// The engine's own legalActions, no synthetic move rations, no seat filter,
+// swaps and lazy march included — transpositions merge on the board state
+// alone, which is why this searches FEWER states than a "widened" rationed
+// model whose budget counters fragment the space. Completing this IS a
+// full-play proof of the ceiling (fortify is skipped: it costs an order,
+// ends the unit's turn, and only changes how hard BLUES are to kill — reds
+// never attack during the puzzle turn, so it cannot affect red deaths).
+// Improvement-only: it hunts a higher ceiling, not a cheaper line.
+function stage2u(ctx, inc, deadline) {
+  var POOL = ctx.POOL;
+  var nodes = 0, complete = true;
+  var seen = new Map();
+  function mayMoveAlways() { return true; }
+  (function rec(s, line) {
+    if (Date.now() > deadline) { complete = false; return; }
+    nodes++;
+    noteBest(inc, E.strKilledOf(s), POOL - s.orders, line.length ? line.slice() : null,
+      'full-play node ' + nodes);
+    if (stateBound(ctx, s, mayMoveAlways) <= curBest(inc)) return;
+    var acts = E.legalActions(s);
+    for (var i = 0; i < acts.length; i++) {
+      if (Date.now() > deadline) { complete = false; return; }
+      var a = acts[i];
+      if (a.type === 'fortify') continue;
+      var ns;
+      try { ns = E.applyAction(s, a); } catch (e) { continue; }
+      if (a.type === 'attack') checkBlow(ctx, s, ns, a.unit, a.target);
+      var h = ns.units.map(function (x) {
+        return x.q + ',' + x.r + ',' + Math.max(0, x.hp) + ',' + (x.cooldown || 0) + ',' +
+          x.steps + ',' + (x.march ? 1 : 0) + ',' + ((x.applied || []).join('+')) + ',' +
+          (x.anchored ? 1 : 0) + ',' + (x.unlimbered ? 1 : 0) + ',' + (x.fortifyTurns || 0);
+      }).join(';') + '|' + ns.training;
+      var used = POOL - ns.orders;
+      var prev = seen.get(h);
+      if (prev !== undefined && prev <= used) continue;
+      if (seen.size < 30000000) seen.set(h, used);
+      rec(ns, line.concat([a]));
+    }
+  })(E.loadPuzzle(ctx.base), []);
+  console.log('  stage2u (full play) ' + (complete ? 'COMPLETE' : 'TIMED OUT') +
+    ' · nodes ' + nodes + ' · best ' + (inc.str / 10));
+  return { complete: complete, nodes: nodes, fullPlay: true,
+    model: 'full legal play — engine legalActions, fortify excluded (provably irrelevant to maxKill)' };
+}
+
 // --------------------------------- stage 3: assignment search (deploy) ----
 function stage3(ctx, inc, deadline, opts) {
   opts = opts || {};
@@ -901,13 +957,38 @@ function stage3(ctx, inc, deadline, opts) {
   //    kill-set's witness allocation, and truncate hard. A finder, not a
   //    coverage pass — the incumbent it finds makes the coverage pass cheap.
   var plan = opts.plan || null;
+  // expressive mode admits the speculative seats (deferred walk-ins, rout-
+  // shared tiles). Plain mode is the exact old tree — the arrival order that
+  // finds real lines on live-seat boards. Plans are always expressive: the
+  // seats a witness allocation needs are often exactly the deferred ones.
+  var EXPR = !!(opts.expressive || plan);
   var PLANK = process.env.PLANK ? parseInt(process.env.PLANK, 10) : 8;
+  var DEFPEN = process.env.DEFPEN ? parseFloat(process.env.DEFPEN) : (plan ? 0 : 10);
+  // A unit's seats are its live-reach tiles (walk in before the fight) PLUS
+  // the cleared-reach-only tiles — ground that opens when reds die: their own
+  // tiles, tiles behind their ZOC. Those are DEFERRED: claimed in the tree,
+  // walked into DURING the fight when the engine says the walk is legal.
+  // Their cost is the cleared-board cost — a lower bound; the real cost is
+  // whatever the engine charges at execution.
+  function seatEntry(uid, k) {
+    var s3 = ctx.SEAT3[uid][k];
+    if (s3) return { orders: s3.orders, march: s3.march, deferred: false };
+    var s = ctx.SEAT[uid][k];
+    if (s) return { orders: s.orders, march: s.march, deferred: true };
+    return null;
+  }
   var lists = ctx.BLUE.map(function (b) {
     var o = ctx.OPT[b.id];
     var assigned = plan && plan.assign[b.id] ? plan.assign[b.id].primOn : 0;
     var inMask = plan ? plan.mask : (1 << ctx.NR) - 1;
-    var list = Object.keys(ctx.SEAT3[b.id]).map(function (k) {
-      var seat = ctx.SEAT3[b.id][k];
+    var keys = Object.keys(EXPR ? ctx.SEAT[b.id] : ctx.SEAT3[b.id]);
+    if (EXPR) {
+      Object.keys(ctx.SEAT3[b.id]).forEach(function (k) {
+        if (keys.indexOf(k) < 0) keys.push(k);
+      });
+    }
+    var list = keys.map(function (k) {
+      var seat = seatEntry(b.id, k);
       var t = k.split(','), tile = { q: +t[0], r: +t[1] };
       var own = 0;
       ctx.REDS.forEach(function (R, i) {
@@ -932,12 +1013,23 @@ function stage3(ctx, inc, deadline, opts) {
       // may not be the cheap one, so descent charges the cheapest of the class
       var minCost = seat.orders;
       classes[classOf[b.id]].forEach(function (uid) {
-        var s2 = ctx.SEAT3[uid][k];
+        var s2 = seatEntry(uid, k);
         if (s2 && s2.orders < minCost) minCost = s2.orders;
       });
+      // a deferred seat is speculative — it only exists after the right kill —
+      // so it must not outrank the immediate seats that make those kills
+      var defPen = seat.deferred ? DEFPEN : 0;
       return { key: k, q: tile.q, r: tile.r, orders: seat.orders, march: seat.march,
-        classMin: minCost, score: own + ally - LAMBDA * seat.orders };
-    }).sort(function (a, b) { return b.score - a.score || a.orders - b.orders; });
+        deferred: seat.deferred, rout: ctx.OPT[b.id].rout,
+        classMin: minCost, score: own + ally - LAMBDA * seat.orders - defPen };
+    }).sort(plan
+      // plans rank purely by contribution — the witness's seats may all be deferred
+      ? function (a, b) { return b.score - a.score || a.orders - b.orders; }
+      // otherwise immediates first as a block, speculative seats behind them
+      : function (a, b) {
+        return (a.deferred ? 1 : 0) - (b.deferred ? 1 : 0) ||
+          b.score - a.score || a.orders - b.orders;
+      });
     if (plan) {
       // keep the start seat reachable so a unit can sit out of a plan
       var startKey = key(b.q, b.r);
@@ -1029,17 +1121,26 @@ function stage3(ctx, inc, deadline, opts) {
     }
     return h;
   }
-  function fightOut(st, startLine, maxNodes) {
+  // `pending`: units whose assigned seat was not walkable before the fight —
+  // deferred seats (ground that opens when reds die) and second claimants of
+  // a rout-shared tile. The fight offers each its ONE deployment walk as an
+  // action whenever the engine says the walk is now legal.
+  function fightOut(st, startLine, maxNodes, pending) {
+    pending = pending || [];
     var seen = {}, fnodes = 0;
     var localBest = { str: E.strKilledOf(st), orders: POOL - st.orders, line: null };
-    (function rec(s, line) {
+    (function rec(s, line, pend) {
       if (Date.now() > deadline) return;
       if (fnodes++ > maxNodes) { stats.fightCapped++; return; }
       var str = E.strKilledOf(s), used = POOL - s.orders;
       if (str > localBest.str || (str === localBest.str && used < localBest.orders)) {
         localBest.str = str; localBest.orders = used; localBest.line = line.slice();
       }
-      if (stateBound(ctx, s, function () { return false; }) < Math.max(localBest.str, curBest(inc))) return;
+      var pendSet = {};
+      for (var pi = 0; pi < pend.length; pi++) pendSet[pend[pi].id] = 1;
+      // a still-pending unit may yet reposition: give the bound its full row
+      if (stateBound(ctx, s, function (u) { return !!pendSet[u.id]; }) <
+          Math.max(localBest.str, curBest(inc))) return;
       var opts2 = [];
       s.units.forEach(function (u) {
         if (u.player !== 0 || u.hp <= 0 || !E.canAttack(s, u)) return;
@@ -1051,22 +1152,42 @@ function stage3(ctx, inc, deadline, opts) {
           var ri = ctx.ridx[t.id];
           var v = ri === undefined ? 0 : row[ri];
           if (o.rout && ri !== undefined && o.routFire0[ri] > v) v = o.routFire0[ri];
-          opts2.push({ unit: u.id, target: t.id, rank: (v >= t.hp ? 1000 : 0) + v });
+          opts2.push({ attack: true, unit: u.id, target: t.id, rank: (v >= t.hp ? 1000 : 0) + v });
         });
+      });
+      pend.forEach(function (p) {
+        var u = E.unitById(s, p.id);
+        if (!u || u.hp <= 0 || u.cooldown) return;
+        if (p.march && !u.march && s.training < GLOB.UNIT_MARCH_COST) return;
+        var o = ctx.OPT[p.id];
+        var row = o.tiles0[p.key];
+        var v = row ? Math.max.apply(null, row) : 0;
+        opts2.push({ attack: false, unit: p.id, p: p, rank: v });
       });
       opts2.sort(function (a, b) { return b.rank - a.rank; });
       opts2.forEach(function (o) {
-        var ns;
-        try { ns = E.applyAction(s, { type: 'attack', unit: o.unit, target: o.target }); }
-        catch (e) { return; }
-        checkBlow(ctx, s, ns, o.unit, o.target);
-        var h = fightHash(ns);
+        var ns, acts, npend = pend;
+        if (o.attack) {
+          acts = [{ type: 'attack', unit: o.unit, target: o.target }];
+        } else {
+          acts = [];
+          var u2 = E.unitById(s, o.unit);
+          if (o.p.march && !u2.march) acts.push({ type: 'march', unit: o.unit });
+          acts.push({ type: 'move', unit: o.unit, q: o.p.q, r: o.p.r });
+          npend = pend.filter(function (x) { return x.id !== o.unit; });
+        }
+        ns = s;
+        try {
+          for (var ai = 0; ai < acts.length; ai++) ns = E.applyAction(ns, acts[ai]);
+        } catch (e) { return; }
+        if (o.attack) checkBlow(ctx, s, ns, o.unit, o.target);
+        var h = fightHash(ns) + (npend.length ? '|' + npend.map(function (x) { return x.id; }).join(',') : '');
         var uu = POOL - ns.orders;
         if (seen[h] !== undefined && seen[h] <= uu) return;
         seen[h] = uu;
-        rec(ns, line.concat([{ type: 'attack', unit: o.unit, target: o.target }]));
+        rec(ns, line.concat(acts), npend);
       });
-    })(st, []);
+    })(st, [], pending);
     if (localBest.line) {
       noteBest(inc, localBest.str, localBest.orders, startLine.concat(localBest.line),
         'deployment ' + stats.leaves);
@@ -1095,7 +1216,7 @@ function stage3(ctx, inc, deadline, opts) {
         if (!rem.length) {
           var c = 0, t2 = 0, legal = true;
           chosen.forEach(function (p) {
-            var s = ctx.SEAT3[p.id][p.tile];
+            var s = seatEntry(p.id, p.tile);
             if (!s) { legal = false; return; }
             c += s.orders;
             if (s.march) t2 += GLOB.UNIT_MARCH_COST;
@@ -1120,16 +1241,40 @@ function stage3(ctx, inc, deadline, opts) {
     if (mem.fightMemo[sig2]) { stats.dedup++; return; }
     mem.fightMemo[sig2] = 1;
 
-    // walk in: cheapest first, 3 passes for ally-blocked destinations
+    // Split the placement: pre-fight walkers vs deferred/pending. A deferred
+    // seat pends by definition; on a rout-shared tile the router walks and
+    // the other claimant pends. Blocked walkers fall back to pending too —
+    // the fight may open their path.
     var tW0 = Date.now();
     var st = E.cloneState(ctx.INIT);
-    var startLine = [];
-    var todo = Object.keys(placement).map(function (id) {
-      var s = ctx.SEAT3[id][placement[id]];
-      var t = placement[id].split(',');
-      return { id: +id, q: +t[0], r: +t[1], orders: s.orders, march: s.march };
-    }).filter(function (x) { return x.orders > 0; })
-      .sort(function (a, b) { return a.orders - b.orders; });
+    var startLine = [], pending = [];
+    var byTile = {};
+    Object.keys(placement).forEach(function (id) {
+      (byTile[placement[id]] = byTile[placement[id]] || []).push(+id);
+    });
+    // on a shared tile, only a ROUTER may take it pre-fight (it can vacate);
+    // if no immediately-walkable router claims it, everyone pends and the
+    // fight orders the walks out
+    var walkerOf = {};
+    Object.keys(byTile).forEach(function (k) {
+      var sh = byTile[k];
+      if (sh.length === 1) { walkerOf[k] = sh[0]; return; }
+      var routersNow = sh.filter(function (id) {
+        return ctx.OPT[id].rout && !seatEntry(id, k).deferred;
+      });
+      walkerOf[k] = routersNow.length ? routersNow[0] : -1;
+    });
+    var todo = [];
+    Object.keys(placement).forEach(function (id) {
+      id = +id;
+      var k = placement[id];
+      var s = seatEntry(id, k);
+      var t = k.split(',');
+      var entry = { id: id, q: +t[0], r: +t[1], key: k, orders: s.orders, march: s.march };
+      if (s.deferred || walkerOf[k] !== id) pending.push(entry);
+      else if (s.orders > 0) todo.push(entry);
+    });
+    todo.sort(function (a, b) { return a.orders - b.orders; });
     for (var pass = 0; pass < 3 && todo.length; pass++) {
       var again = [];
       todo.forEach(function (x) {
@@ -1144,11 +1289,11 @@ function stage3(ctx, inc, deadline, opts) {
       });
       todo = again;
     }
-    if (todo.length) { stats.illegal++; return; }
+    todo.forEach(function (x) { pending.push(x); });   // fight may open the path
     stats.leaves++;
     stats.tWalk += Date.now() - tW0;
     var tF0 = Date.now();
-    fightOut(st, startLine, FCAP);
+    fightOut(st, startLine, FCAP, pending);
     stats.tFight += Date.now() - tF0;
     if (stats.leaves % 20000 === 0) {
       console.log('  … ' + stats.leaves + ' deployments fought, best ' + (inc.str / 10) + ' STR');
@@ -1205,24 +1350,44 @@ function stage3(ctx, inc, deadline, opts) {
   // rank, g: score sum through this seat, cost, f}
   var W = process.env.W ? parseFloat(process.env.W) : 1;
   function nodeSeat(n) { return lists[order[n.d]][n.si]; }
-  function clashes(chainTop, seatKey) {
-    for (var w = chainTop; w; w = w.p) if (nodeSeat(w).key === seatKey) return true;
-    return false;
-  }
   // root partition for worker parallelism: worker w of K owns the root seats
   // with rank ≡ w (mod K); the union over workers is the whole tree
   var partW = opts.partW || 0, partK = opts.partK || 1;
+  // Seat sharing: one tile may serve TWO units in a turn when a router takes
+  // it first and routs away (tile reuse — the pattern that decides real
+  // puzzles). The tree allows a second claim iff a router is involved; the
+  // fight executor orders the walks with the real engine and simply never
+  // realises combinations the game forbids.
+  function claimState(chainTop, seat) {
+    // 0 = blocked, 1 = free, 2 = shareable (a router is involved)
+    var count = 0, anyRout = seat.rout;
+    for (var w = chainTop; w; w = w.p) {
+      var s = nodeSeat(w);
+      if (s.key === seat.key) {
+        count++;
+        if (s.rout) anyRout = true;
+      }
+    }
+    if (count === 0) return 1;
+    return EXPR && count === 1 && anyRout ? 2 : 0;
+  }
+  // sharing a seat is speculative (it only works if the router's fight
+  // actually vacates it) — deprioritised the same way deferred seats are,
+  // so the plain assignments the old searches found first still come first
+  var SHAREPEN = process.env.SHAREPEN ? parseFloat(process.env.SHAREPEN) : 15;
   // first valid seat rank >= si for depth d under ancestor chain `p`
   function firstValid(p, d, si, gBase, costBase) {
     var list = lists[order[d]];
     for (; si < list.length; si++) {
       if (d === 0 && partK > 1 && si % partK !== partW) continue;
       var seat = list[si];
-      if (clashes(p, seat.key)) continue;
+      var claim = claimState(p, seat);
+      if (!claim) continue;
+      var pen = claim === 2 ? SHAREPEN : 0;
       var c2 = costBase + seat.classMin;
       if (c2 + suffixMin[d + 1] > POOL) { stats.costCut++; continue; }
-      return { p: p, d: d, si: si, g: gBase + seat.score, cost: c2,
-        f: gBase + W * (seat.score + suffixBest[d + 1]) };
+      return { p: p, d: d, si: si, g: gBase + seat.score - pen, cost: c2,
+        f: gBase + W * (seat.score - pen + suffixBest[d + 1]) };
     }
     return null;
   }
@@ -1256,6 +1421,7 @@ function stage3(ctx, inc, deadline, opts) {
     if (child) hpush(child);
   }
   stats.exhausted = exhausted && !heap.length && !plan;   // plan lists are truncated
+  stats.expressive = EXPR;
   console.log('  stage3' + (plan ? '[plan ' + (plan.str / 10) + ']' : '') +
     ' ' + (stats.exhausted ? 'EXHAUSTED the deployment tree' :
       !heap.length ? 'plan tree done' :
@@ -1274,15 +1440,21 @@ function stage3(ctx, inc, deadline, opts) {
 function scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, partW, partK) {
   var POOL = ctx.POOL;
   var walkRows = fullRows(ctx, 'walk');
+  // Sweep DEEP down the kill-set list, not just the summit: the strongest
+  // masks are usually over-stretched fantasies whose deployments spread the
+  // army thin; the masks just above what's actually playable are where a
+  // plan's fight cashes in — and every realized plan raises the incumbent,
+  // which silently skips everything weaker.
+  var PLANS = process.env.PLANS ? parseInt(process.env.PLANS, 10) : 48;
   var plans = [];
-  for (var mi = 0; mi < masks.length && plans.length < 10; mi++) {
+  for (var mi = 0; mi < masks.length && plans.length < PLANS; mi++) {
     var outw = {};
     if (feasibleMask(ctx, masks[mi].mask, POOL, walkRows, 300000, outw) && outw.assign) {
       plans.push({ mask: masks[mi].mask, str: masks[mi].str, assign: outw.assign });
     }
   }
-  var planBudget = Math.max(20, SECONDS * 0.35) * 1000;
-  var perPlan = Math.max(15000, planBudget / Math.max(1, plans.length));
+  var planBudget = Math.max(20, SECONDS * 0.45) * 1000;
+  var perPlan = Math.max(12000, planBudget / Math.max(1, plans.length));
   console.log('--- stage3 (plan slices: ' + plans.length + ' kill-sets)' +
     (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
   var s3 = null;
@@ -1294,9 +1466,9 @@ function scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, partW, partK) 
       partW: partW, partK: partK });
   }
   if (Date.now() < DEADLINE) {
-    console.log('--- stage3 (full)' + (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
+    console.log('--- stage3 (full, expressive)' + (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
     s3 = stage3(ctx, inc, DEADLINE, { masks: masks, state: s3state,
-      partW: partW, partK: partK });
+      partW: partW, partK: partK, expressive: true });
   }
   return s3;
 }
@@ -1451,17 +1623,30 @@ function main() {
     var s2end = Math.min(DEADLINE, Date.now() + Math.max(30, (DEADLINE - Date.now()) * 0.4 / 1000) * 1000);
     console.log('--- stage2 (exact in-state search)');
     s2 = stage2(ctx, inc, s2end, lateLevels);
+    // then TRUE full play with the remaining time: Bottleneck's 35 lives in
+    // waiting-tile choreography the rationed model cannot express, and its
+    // budget counters fragment transpositions so badly that widening the
+    // ration searches MORE states than searching the real game. If this
+    // completes, the ceiling is proven outright.
+    if (s2.complete && Date.now() < DEADLINE && !(U !== null && inc.str >= U)) {
+      console.log('--- stage2u (full legal play)');
+      var before = inc.str;
+      var s2u = stage2u(ctx, inc, DEADLINE);
+      if (s2u.complete) s2 = s2u;
+      else if (inc.str > before) s2 = null;   // narrow completion is now moot
+    }
   }
 
-  // ---- stage 3 full run with the remaining time
+  // ---- stage 3 full runs with the remaining time: plain first (the arrival
+  // order that finds real lines on live-seat boards), expressive after
   if (!(s2 && s2.complete) && !(U !== null && inc.str >= U) && Date.now() < DEADLINE) {
     console.log('--- stage3 (full)');
-    s3 = stage3(ctx, inc, DEADLINE, { masks: masks, state: s3state });
-    // a completed stage2 slice may still be pending; give it the tail end
-    if (s3.exhausted && s2 && !s2.complete && Date.now() < DEADLINE && ctx.BLUE.length <= S2MAX) {
-      console.log('--- stage2 (resumed)');
-      s2 = stage2(ctx, inc, DEADLINE,
-        process.env.LATE !== undefined ? [parseInt(process.env.LATE, 10)] : [0, 1, 2, 3]);
+    var s3end = Math.min(DEADLINE, Date.now() + (DEADLINE - Date.now()) * 0.6);
+    s3 = stage3(ctx, inc, s3end, { masks: masks, state: s3state });
+    if (Date.now() < DEADLINE && !(U !== null && inc.str >= U)) {
+      console.log('--- stage3 (full, expressive)');
+      var s3x = stage3(ctx, inc, DEADLINE, { masks: masks, state: s3state, expressive: true });
+      if (s3x.exhausted) s3 = s3x;
     }
   }
 
@@ -1492,12 +1677,18 @@ function verdict(ctx, inc, U, U0, s2, s3) {
       proven = true;
       why.push('matches U (kill-set bound; assumes no swap travel shortcuts)');
     }
-    if (s2 && s2.complete) {
+    if (s2 && s2.complete && s2.fullPlay) {
+      proven = true;
+      why.push('full-play search complete (' + s2.model + ')');
+    } else if (s2 && s2.complete) {
       why.push('search complete within a RESTRICTED move model (' + (s2.model || 'stage2') +
         ') — not a full-play proof; cross-check with compute_ceilings before publishing');
     }
     if (s3 && s3.exhausted) {
-      why.push('stage3 exhausted the deployment space (model: walk-then-fight, no mid-fight moves' +
+      why.push('stage3 exhausted the deployment space (model: ' +
+        (s3.expressive
+          ? 'walk-then-fight + deferred walk-ins onto kill-opened tiles and rout-shared seats; no free mid-fight repositioning'
+          : 'walk-then-fight over live-reach seats only') +
         (s3.fightCapped ? '; ' + s3.fightCapped + ' fights hit the node cap' : '') + ')');
     }
   }
@@ -1515,7 +1706,7 @@ function verdict(ctx, inc, U, U0, s2, s3) {
 
 module.exports = { build: build, feasibleMask: feasibleMask, fullRows: fullRows,
   sortedMasks: sortedMasks, upperBound: upperBound, stateBound: stateBound, gAD: gAD,
-  verdict: verdict };
+  verdict: verdict, stage2: stage2, mkIncumbent: mkIncumbent };
 
 if (!WT.isMainThread && WT.workerData && WT.workerData.v2worker) workerMain(WT.workerData);
 else if (require.main === module) main();
