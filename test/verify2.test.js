@@ -100,6 +100,34 @@ test('upper bound is admissible: engine play never beats U', () => {
   assert.ok(best <= U, `exhaustive play reached ${best}, above the "upper bound" ${U}`);
 });
 
+test('search completeness in a restricted move model must NOT print PROVEN', () => {
+  // Regression: Bottleneck (submissions/bottleneck-f5de22.json). verify2's
+  // stage-2 model (bounded move actions, seat destinations, no swaps in the
+  // default configuration) completed at 30 STR and printed "PROVEN" — while
+  // the puzzle's converged ceiling when it was live was 35 STR, reached by a
+  // line with swap-assisted repositioning the model cannot express.
+  // "Complete" within a model that excludes legal play is not a proof.
+  const fs = require('fs');
+  const path = require('path');
+  const sub = JSON.parse(fs.readFileSync(
+    path.join(__dirname, '..', 'submissions', 'bottleneck-f5de22.json'), 'utf8'));
+  const ctx = V.build(sub.puzzle, 20);
+
+  // incumbent 30 STR (below U), evidence = stage2 "complete"
+  const inc = { str: 300, orders: 11, line: null, fromSeed: false, sab: null };
+  const s2 = { complete: true, nodes: 1, model: 'test-restricted-model' };
+  const said = V.verdict(ctx, inc, 460, 460, s2, null);
+  assert.ok(!/PROVEN/.test(said),
+    `restricted-model completeness printed a PROVEN verdict: ${said}`);
+  assert.ok(/within/.test(said),
+    `verdict should state the completeness is model-relative: ${said}`);
+
+  // a bound match, by contrast, IS a proof
+  const inc2 = { str: 460, orders: 15, line: null, fromSeed: false, sab: null };
+  const said2 = V.verdict(ctx, inc2, 460, 460, null, null);
+  assert.ok(/PROVEN/.test(said2), `bound match should be PROVEN: ${said2}`);
+});
+
 test('getAttackDamage replica matches the engine on a real attack', () => {
   const s = E.loadPuzzle({ ...MINI, orders: 8 });
   const att = E.unitById(s, 0);

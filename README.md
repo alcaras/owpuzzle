@@ -4,8 +4,9 @@ Chess-puzzle-style single-turn tactics puzzles for Old World, playable in the
 browser (mobile-friendly). One puzzle a day, Wordle-style; find the BEST move
 sequence within your order budget.
 
-**Live:** https://alcaras.github.io/owpuzzle/ (GitHub Pages from `docs/`;
-after changing `web/`, run `cp web/*.js web/index.html docs/` and push).
+**Live:** https://owpuzzle.fly.dev — the fly.io deployment is the only site.
+(The old GitHub Pages mirror is gone: it drifted from `web/` and served an
+engine with known-wrong rules. `docs/` now holds documentation only.)
 
 **Local:** `python3 -m http.server -d web 8471` → http://localhost:8471
 (or open `dist/owpuzzle.html`, a self-contained single file).
@@ -24,7 +25,10 @@ web/puzzles.js           puzzle library (positions, order budget, objective)
 web/app.js + index.html  SVG hex board UI in the owdeepanalysis visual language
                          (dark ground, its terrain palette, banded hills,
                          procedural trees, unit discs + in-game icons)
-tools/verify_puzzles.js  node runner: every puzzle must be SOLVABLE, reports
+tools/compute_ceilings.js + tools/deploy_fight.js + tools/verify2.js
+                         three independent puzzle verifiers (see
+                         docs/making-puzzles.md); each has caught another
+                         being confidently wrong — reports
                          winning-line count (1 = unique solution)
 tools/build_single.py    bundle everything into dist/owpuzzle.html
 ```
@@ -116,8 +120,9 @@ Discord app: create at discord.com/developers, add redirect
   tiles: [{q, r, terrain?, height?, vegetation?, improvement?, river:[dirs]}] }
 ```
 
-Objectives so far: `killAll`, `killTarget`, `surviveAll`. Every puzzle must
-pass `node tools/verify_puzzles.js` (solvable; aim for winningLines=1).
+Objectives: `killAll`, `killList`, `killTarget`, `capture`, `maxKill`.
+Before publishing, follow docs/making-puzzles.md — prove the ceiling with the
+verifiers in tools/, and run `npm test` + `npm run test:ceilings`.
 
 ## Related projects (surveyed 2026-08-05)
 

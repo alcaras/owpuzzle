@@ -746,8 +746,15 @@ function checkBlow(ctx, s, ns, attId, defId) {
 }
 
 // ------------------------------------------------ stage 2: in-state DFS ----
+// MOVES=n widens the move model: each unit may take up to n move ACTIONS
+// (each action is already a full multi-step walk). n=1 is the deploy_fight
+// model; lines that reposition a unit twice — walk, let the board change,
+// walk again — need n≥2. Bottleneck's real 35-STR line is one of those.
 function stage2(ctx, inc, deadline, lateLevels) {
   var POOL = ctx.POOL;
+  var MOVES = process.env.MOVES ? parseInt(process.env.MOVES, 10) : 1;
+  var SWAPS = process.env.SWAPS === '1';
+  var ALLTILES = process.env.ALLTILES === '1';
   var nodes = 0, allComplete = true;
   var marchable = {};
   ctx.BLUE.forEach(function (b) {
@@ -762,7 +769,7 @@ function stage2(ctx, inc, deadline, lateLevels) {
       if (Date.now() > deadline) { complete = false; return; }
       nodes++;
       noteBest(inc, E.strKilledOf(s), POOL - s.orders, line.length ? line.slice() : null, 'node ' + nodes);
-      function mayMove(u) { return !moved[u.id] && !(fought && lateUsed >= L); }
+      function mayMove(u) { return (moved[u.id] || 0) < MOVES && !(fought && lateUsed >= L); }
       if (stateBound(ctx, s, mayMove) < inc.str) return;
 
       var attacks = [], moves = [];
@@ -780,11 +787,26 @@ function stage2(ctx, inc, deadline, lateLevels) {
         var row = ctx.OPT[u.id].tiles;
         E.reachableTiles(s, u).forEach(function (rt) {
           var k = key(rt.q, rt.r);
-          if (!ctx.SEAT[u.id].hasOwnProperty(k) || ctx.SEAT[u.id][k].march || rt.orders > s.orders) return;
+          if (rt.orders > s.orders) return;
+          // ALLTILES=1 lifts the seat filter: any reachable tile is a legal
+          // destination, including pure waiting tiles. Slower, but the only
+          // way a stage-2 completion approaches a full-play claim.
+          if (!ALLTILES && (!ctx.SEAT[u.id].hasOwnProperty(k) || ctx.SEAT[u.id][k].march)) return;
           var punch = row[k] ? Math.max.apply(null, row[k]) : 0;
           moves.push({ act: [{ type: 'move', unit: u.id, q: rt.q, r: rt.r }],
             unit: u.id, rank: punch * 4 - rt.orders });
         });
+        // swaps: two adjacent allies exchange tiles for ONE order — the only
+        // way to pass in a one-wide corridor, and how Bottleneck's real
+        // 35-STR line gets its slinger forward. Counts as a move for both.
+        if (SWAPS) {
+          s.units.forEach(function (v) {
+            if (v.player !== 0 || v.id <= u.id) return;
+            if (!mayMove(v) || !E.canSwap(s, u, v)) return;
+            moves.push({ act: [{ type: 'swap', unit: u.id, target: v.id }],
+              unit: u.id, unit2: v.id, rank: -1 });
+          });
+        }
         // march-extended seats: march (training, no orders) then one move.
         // Only offered from the unit's start (a marched split-walk costs the
         // same orders as march-then-walk, so this loses nothing).
@@ -816,16 +838,20 @@ function stage2(ctx, inc, deadline, lateLevels) {
           } catch (e) { ok = false; }
         }
         if (!ok) return;
-        var isMove = o.act[o.act.length - 1].type === 'move';
+        var last = o.act[o.act.length - 1].type;
+        var isMove = last === 'move' || last === 'swap';
         var nm = moved, nl = lateUsed;
         if (isMove) {
-          nm = Object.assign({}, moved); nm[o.unit] = 1;
+          nm = Object.assign({}, moved); nm[o.unit] = (nm[o.unit] || 0) + 1;
+          if (o.unit2 !== undefined) nm[o.unit2] = (nm[o.unit2] || 0) + 1;
           if (fought) nl = lateUsed + 1;
         }
         var h = ns.units.map(function (x) {
           return x.id + ':' + x.q + ',' + x.r + ':' + Math.max(0, x.hp) + ':' + (x.cooldown || 0) +
             ':' + (x.steps || 0) + ':' + (x.march ? 1 : 0) + ':' + ((x.applied || []).join('+'));
-        }).join(';') + '|' + Object.keys(nm).sort().join(',') + '|' + nl;
+        }).join(';') + '|' + Object.keys(nm).sort().map(function (k2) {
+          return k2 + ':' + nm[k2];
+        }).join(',') + '|' + nl;
         var used = POOL - ns.orders;
         if (seen[h] !== undefined && seen[h] <= used) return;
         seen[h] = used;
@@ -836,7 +862,10 @@ function stage2(ctx, inc, deadline, lateLevels) {
     console.log('  stage2 LATE=' + L + ' ' + (complete ? 'complete' : 'TIMED OUT') +
       ' · nodes ' + nodes + ' · best ' + (inc.str / 10));
   });
-  return { complete: allComplete, nodes: nodes };
+  var model = '≤' + MOVES + ' move action' + (MOVES === 1 ? '' : 's') + '/unit to ' +
+    (ALLTILES ? 'any tile' : 'seat tiles') + ', ≤' + lateLevels[lateLevels.length - 1] +
+    ' mid-fight moves, swaps ' + (SWAPS ? 'on' : 'OFF') + ', march, no anchor';
+  return { complete: allComplete, nodes: nodes, model: model };
 }
 
 // --------------------------------- stage 3: assignment search (deploy) ----
@@ -1340,6 +1369,7 @@ function replay(ctx, line) {
     var u = E.unitById(s, o.unit);
     var msg = o.type === 'move' ? E.nameOf(u) + ' -> (' + o.q + ',' + o.r + ')'
             : o.type === 'march' ? E.nameOf(u) + ' force marches'
+            : o.type === 'swap' ? E.nameOf(u) + ' swaps with ' + E.nameOf(E.unitById(s, o.target))
             : E.nameOf(u) + ' attacks ' + E.nameOf(E.unitById(s, o.target));
     s = E.applyAction(s, o);
     console.log('  ' + (i + 1) + '. ' + msg + '   [' + s.log[s.log.length - 1] + ']');
@@ -1438,6 +1468,12 @@ function main() {
   verdict(ctx, inc, U, U0, s2, s3);
 }
 
+// The verdict discipline (learned the hard way — Bottleneck's stage-2 model
+// completed at 30 STR while real play reaches 35 via swaps the model lacked):
+// search completeness only ever proves the model that was searched, and no
+// search model here provably contains all legal play. So PROVEN comes from
+// BOUND MATCHES ONLY; completeness is reported as what it is — a
+// model-relative result that needs a cross-check to become a ceiling.
 function verdict(ctx, inc, U, U0, s2, s3) {
   console.log('\nbest: ' + (inc.str / 10) + ' STR in ' + inc.orders + ' orders');
   if (inc.line) {
@@ -1457,25 +1493,29 @@ function verdict(ctx, inc, U, U0, s2, s3) {
       why.push('matches U (kill-set bound; assumes no swap travel shortcuts)');
     }
     if (s2 && s2.complete) {
-      proven = true;
-      why.push('stage2 search complete (model: single move per unit + ≤3 mid-fight moves, march, no swap/anchor)');
+      why.push('search complete within a RESTRICTED move model (' + (s2.model || 'stage2') +
+        ') — not a full-play proof; cross-check with compute_ceilings before publishing');
     }
     if (s3 && s3.exhausted) {
       why.push('stage3 exhausted the deployment space (model: walk-then-fight, no mid-fight moves' +
         (s3.fightCapped ? '; ' + s3.fightCapped + ' fights hit the node cap' : '') + ')');
     }
   }
+  var line;
   if (proven) {
-    console.log('verdict: PROVEN ceiling ' + (inc.str / 10) + ' STR — ' + why.join('; '));
+    line = 'verdict: PROVEN ceiling ' + (inc.str / 10) + ' STR — ' + why.join('; ');
   } else {
-    console.log('verdict: best known ' + (inc.str / 10) + ' STR' +
+    line = 'verdict: best known ' + (inc.str / 10) + ' STR' +
       (U !== null ? '; upper bound ' + (U / 10) + ' STR (U0=' + (U0 / 10) + ')' : '') +
-      (why.length ? ' — ' + why.join('; ') : ''));
+      (why.length ? ' — ' + why.join('; ') : '');
   }
+  console.log(line);
+  return line;
 }
 
 module.exports = { build: build, feasibleMask: feasibleMask, fullRows: fullRows,
-  sortedMasks: sortedMasks, upperBound: upperBound, stateBound: stateBound, gAD: gAD };
+  sortedMasks: sortedMasks, upperBound: upperBound, stateBound: stateBound, gAD: gAD,
+  verdict: verdict };
 
 if (!WT.isMainThread && WT.workerData && WT.workerData.v2worker) workerMain(WT.workerData);
 else if (require.main === module) main();

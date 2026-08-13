@@ -156,16 +156,26 @@
         return '<a class="card' + (cDone ? ' solved' : '') + '" href="?p=' + x.slug + '">' +
           (cDone ? '<span class="done">' + (cPerf ? '\u2b50' : '\u2713') + '</span>' : '') +
           (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
-          '<div class="body"><div class="card-head"><h3>' + pz.name + '</h3>' +
+          '<div class="body"><div class="card-head"><h3>' + esc(pz.name) + '</h3>' +
           '<span class="meta">' +
           (cDone && x.rating ? 'puzzle elo ' + x.rating + ' · ' : '') +
-          'by ' + (x.author || '?') + '</span></div>' +
-          '<p>' + (pz.brief || '') + '</p>' +
+          'by ' + esc(x.author || '?') + '</span></div>' +
+          '<p>' + esc(pz.brief || '') + '</p>' +
           '<div class="foes"><span class="vs">VS</span>' + foes + '</div></div></a>';
       }).join('');
       sec.appendChild(grid);
       home.appendChild(sec);
     }).catch(function () {});
+  }
+
+  // Every string that reaches innerHTML and did not originate in this file
+  // goes through esc(). Community submissions are user content; a puzzle
+  // named <img onerror=...> must render as text, not execute in the admin's
+  // browser.
+  function esc(x) {
+    return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
   }
 
   // the game displays strength / 10 (a 50-strength unit shows "5").
@@ -187,9 +197,9 @@
       d.pending.forEach(function (item) {
         var card = document.createElement('div');
         card.className = 'card';
-        card.innerHTML = '<div class="body"><div class="card-head"><h3>' + item.puzzle.name + '</h3>' +
-          '<span class="meta">' + item.puzzle.orders + ' orders</span></div>' +
-          '<p>by <b>' + (item.author || '?') + '</b> — ' + (item.puzzle.brief || '') + '</p>' +
+        card.innerHTML = '<div class="body"><div class="card-head"><h3>' + esc(item.puzzle.name) + '</h3>' +
+          '<span class="meta">' + esc(item.puzzle.orders) + ' orders</span></div>' +
+          '<p>by <b>' + esc(item.author || '?') + '</b> — ' + esc(item.puzzle.brief || '') + '</p>' +
           (item.solution ? '<p style="font-size:12.5px;color:var(--muted)">their line: <b>' +
             fmt10(item.solution.claimed ? item.solution.claimed.strength : 0) + ' STR</b> in ' +
             (item.solution.claimed ? item.solution.claimed.orders : '?') + ' orders · ' +
@@ -1131,6 +1141,7 @@
   }
 
   function checkEnd() {
+    if (finished) return;   // redoing the final action must not re-run finish()
     if (puzzle.objective.kind === 'maxKill') {
       // the player declares the turn over (End Turn) — or runs out of actions
       if (state.orders <= 0 || E.legalActions(state).length === 0) endTurnMaxKill();
@@ -1282,8 +1293,10 @@
         document.getElementById('result-title').textContent = '⚔️ Turn complete';
         document.getElementById('result-body').textContent =
           'You destroyed ' + kills + ' unit' + (kills === 1 ? '' : 's') + ' (' + fmt10(killStr) +
-          ' strength) in ' + used + ' orders. The target ceiling is set during review — ' +
-          'this draft cannot score itself.';
+          ' strength) in ' + used + ' orders. ' +
+          (puzzle.id === 'draft'
+            ? 'The target ceiling is set during review — this draft cannot score itself.'
+            : 'This submission has no ceiling yet — it is set when the puzzle is approved.');
         window.__perfect = false; window.__won = false;
         return;
       }
@@ -1495,7 +1508,7 @@
     location.href = './';
   });
   document.getElementById('btn-share').addEventListener('click', function () {
-    var used = puzzle.orders - state.orders;
+    var used = E.poolOrders(puzzle) - state.orders;
     var txt = 'Old World Combat Puzzle — ' + puzzle.name + '\n' +
       (window.__won ? '⚔️ Solved in ' + used + '/' + puzzle.orders + ' orders' : '💀 Unsolved') +
       '\n' + location.origin + location.pathname + '?p=' + puzzle.id;
@@ -1524,9 +1537,7 @@
   var byEl = document.getElementById('p-author');
   if (!isCore && puzzle.author) {
     var prof = 'hall.html?u=' + encodeURIComponent(puzzle.author);
-    var safe = String(puzzle.author).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
-    });
+    var safe = esc(puzzle.author);
     byEl.innerHTML = 'a puzzle by <a href="' + prof + '">' + safe + '</a>';
     // their Discord portrait, if the server knows it — credit with a face on it
     fetch('/api/profile?name=' + encodeURIComponent(puzzle.author))

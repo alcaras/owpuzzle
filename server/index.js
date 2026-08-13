@@ -160,6 +160,7 @@ function publicUser(u) {
 // referee: "solved" is whatever the replay says, nothing else.
 function replayLine(puzzle, line) {
   let s = E.loadPuzzle(puzzle, { play: true }); // same forgiving pool the client plays with
+  const pool = E.poolOrders(puzzle);            // s.orders starts from the POOL, not par
   // A big puzzle's reference line is long: 40 orders of moves, attacks and
   // rout chains runs well past a hundred actions. The cap exists to stop a
   // hostile payload, not to judge a puzzle's size.
@@ -167,9 +168,8 @@ function replayLine(puzzle, line) {
   try {
     for (const a of line) s = E.applyAction(s, a);
   } catch (e) {
-    return { solved: false, ordersUsed: puzzle.orders - s.orders };
+    return { solved: false, ordersUsed: pool - s.orders };
   }
-  const pool = E.poolOrders(puzzle);
   const solved = E.checkObjective(s, puzzle.objective);
   let damageTaken = 0, unitsLost = 0;
   for (const u of s.units) {

@@ -382,7 +382,15 @@
   };
   document.getElementById('btn-test').onclick = function () {
     if (!units.some(function (u) { return u.player === 0; })) return out('Place at least one blue unit first.');
-    localStorage.setItem('owpuzzle-draft', JSON.stringify(buildPuzzle()));
+    try {
+      localStorage.setItem('owpuzzle-draft', JSON.stringify(buildPuzzle()));
+    } catch (e) {
+      // private windows / blocked storage: the one case the server fallback
+      // exists for — but the handoff itself needs this slot, so say so
+      // instead of a click that silently does nothing
+      return out('\u2717 Your browser is blocking site storage, which test play needs. ' +
+        'Allow storage for this site (or leave private browsing) and try again.');
+    }
     location.href = './?draft=1';
   };
   var puzzleHash = E.puzzleHash;   // shared with the player, so a round trip matches

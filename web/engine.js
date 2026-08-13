@@ -1153,9 +1153,13 @@
         u.anchored ? 1 : 0, u.name || ''].join(':');
     }
     function tidyTile(t) {
+      // road and owner change gameplay (road movement, iHomeModifier) — the
+      // fingerprint must cover everything the editor can paint, or an author
+      // can edit after test play and the changed-board check passes
       return [t.q, t.r, t.terrain || '', t.height || '', t.vegetation || '',
         t.improvement || '', (t.river || []).slice().sort().join(','),
-        t.city == null ? '' : t.city].join(':');
+        t.city == null ? '' : t.city, t.road ? 1 : 0,
+        t.owner == null ? '' : t.owner].join(':');
     }
     var parts = [
       p.orders || 0, p.radius == null ? 3 : p.radius, p.training || 0,
