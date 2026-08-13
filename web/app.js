@@ -363,8 +363,10 @@
         var pic = ICONS['EFFECT_' + effName.replace('EFFECTUNIT_', '')];
         var bx = x + SIZE * 0.46, by = y - SIZE * 0.36 + pi * 16;
         if (pic) {
-          S.push('<circle cx="' + bx + '" cy="' + by + '" r="8.5" fill="#ffd23e" stroke="' + BOARD_BG + '" stroke-width="1.2" pointer-events="none"/>');
-          S.push('<image href="' + pic + '" x="' + (bx - 6.5) + '" y="' + (by - 6.5) + '" width="13" height="13" pointer-events="none"/>');
+          // dark disc with a gold rim: the game's promotion icons are light
+          // silver and vanished on a solid gold coin, especially on phones
+          S.push('<circle cx="' + bx + '" cy="' + by + '" r="9" fill="#3a2f1b" stroke="#ffd23e" stroke-width="1.6" pointer-events="none"/>');
+          S.push('<image href="' + pic + '" x="' + (bx - 7) + '" y="' + (by - 7) + '" width="14" height="14" pointer-events="none"/>');
         } else {
           S.push('<text x="' + bx + '" y="' + by + '" text-anchor="middle" dominant-baseline="middle" font-size="14" fill="#ffd23e" stroke="' + BOARD_BG + '" stroke-width="2.5" paint-order="stroke" pointer-events="none">★</text>');
         }
@@ -817,6 +819,9 @@
       previewFocus = null;
       hidePreviewPanel();
       render();
+      // touch has no hover: selecting a unit is the only gesture there is,
+      // so it doubles as "tell me about this unit"
+      if (!CAN_HOVER && selected != null) showUnitInfo(id);
       return;
     }
     // enemy: attack if selected unit can. On touch (no hover), the first tap
