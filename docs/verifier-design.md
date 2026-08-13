@@ -142,8 +142,14 @@ Two consequences, both implemented:
   key fragment the state space, so "3 moves per unit" searches more
   distinct states than "any number of moves".
 
-On Bottleneck, verify2 now finds the 35/16 line itself (stage 2u, ~90s to
-the find) and reports it as best known with U=46 — no false PROVEN.
+On Bottleneck, verify2 now finds the 35/16 line itself and reports it as
+best known with U=46 — no false PROVEN. The find is DEEP: first 35 at
+full-play node 1,563,990, tightened to 35/16 at node 1,908,608 (node
+counts are deterministic for a given code version; only the wall time
+varies with the machine). stage2u runs ~4k nodes/s on an M-series
+laptop, so a 420-second budget stops ~1.3M nodes in — just short — which
+is exactly how a shorter run reports best-known 30 without being wrong.
+Budget 900s.
 
 ## Stage 3 — assignment search over deployments (big boards)
 
@@ -344,7 +350,7 @@ Validation summary (2026-08-12, revised after the Bottleneck incident):
 |---|---|---|---|
 | the-shore-riders | 10 | **PROVEN 19 STR / 5 orders** | line meets U0, <1s |
 | horsing-around | 20 | best known 26 STR / 11 orders, U=31 | rationed model complete; full-play search pending |
-| bottleneck | 20 | best known **35** STR / 16 orders, U=46 | stage2u finds the real line (~90s); an earlier rationed-model "PROVEN 30" was wrong and drove the verdict redesign |
+| bottleneck | 20 | best known **35** STR / 16 orders, U=46 | stage2u, first 35 at full-play node ~1.56M (needs ~900s); an earlier rationed-model "PROVEN 30" was wrong and drove the verdict redesign |
 | left-flank-right-flank | 30 | found 19 STR / 22 orders | deployment ~1,750, ~3 min, no TOPK truncation |
 | with-a-little-help (11 blues) | 45 | best known 37, U=52 | 52,850 deployments + 30,211 refuted subtrees / 40 min |
 
@@ -354,3 +360,28 @@ variant (more moves, swaps, any-tile destinations, LATE 8) either
 and — the deeper point — visits FEWER states, because it carries no
 budget counters in its transposition key. Verdicts now grant PROVEN only
 to bound matches and full-play completion.
+
+### Reproduction commands (a table row without one is a rumor)
+
+```
+node tools/verify2.js the-shore-riders 10 60
+    → PROVEN 19 STR / 5 orders (matches U0), seconds
+node tools/verify2.js submissions/horsing-around-e7a297.json 20 300
+    → best known 26 STR / 11 orders, U=31; restricted-model completeness note
+node tools/verify2.js submissions/bottleneck-f5de22.json 20 900
+    → best known 35 STR / 16 orders; first 35 at full-play node 1,563,990,
+      35/16 at node 1,908,608 (~4k nodes/s ⇒ the find lands ~8-10 min in;
+      a 420s budget stops ~1.3M nodes in and honestly reports 30)
+node tools/verify2.js submissions/left-flank-right-flank-95935f.json 30 300
+    → finds 19 STR / 22 orders around deployment ~1,450-1,800
+node tools/verify2.js submissions/with-a-little-help-from-my-friends-f6ff55.json 45 1500
+    → best known (unseeded) has reached 22 STR / 28 orders; worker slicing is
+      wall-clock-dependent, so expect 17-22 across machines. Seeded at 370
+      the run is a coverage/verification pass.
+```
+
+Bare puzzle ids resolve against `web/puzzles.js`; `.json` paths take a
+submission file (its `puzzle` field) and `.js` a def module. stage2u and
+the assignment tree are deterministic in NODE COUNTS for a given code
+version; wall-clock stage boundaries (finder/plan slices, worker splits)
+are not, which is why finder results are quoted as ranges.
