@@ -493,7 +493,7 @@ function feasibleMask(ctx, mask, budget, rows, nodeCap, out) {
   for (var ri = 0; ri < reds.length; ri++) {
     var r = reds[ri], cap = 0;
     blues.forEach(function (b) {
-      var lim = r.zealot ? r.hp - 1 : r.hp;
+      var lim = r.zealot && r.hp > 1 ? r.hp - 1 : r.hp;   // at 1 hp any blow kills (engine.js:428)
       if (b.prim[r.i] > 0) cap += Math.min(b.prim[r.i], lim);        // one primary per (b,red)
       if (b.col[r.i] > 0) cap += Math.min(b.col[r.i], lim) * b.colCap * b.maxAtt;
     });
@@ -543,7 +543,7 @@ function feasibleMask(ctx, mask, budget, rows, nodeCap, out) {
       return true;
     }
     var r = reds[idx];
-    var lim = r.zealot ? r.hp - 1 : r.hp;
+    var lim = r.zealot && r.hp > 1 ? r.hp - 1 : r.hp;   // at 1 hp any blow kills (engine.js:428)
     // candidate blows, descending
     var opts = [];
     blues.forEach(function (b, bi) {
@@ -696,7 +696,7 @@ function stateBound(ctx, s, mayMove) {
       if (s.units[j].id === ctx.REDS[i].id) { R = s.units[j]; break; }
     }
     if (!R || R.hp <= 0) continue;
-    var lim = hasFlag(ctx.REDS[i], 'bLastStand') ? R.hp - 1 : R.hp;
+    var lim = hasFlag(ctx.REDS[i], 'bLastStand') && R.hp > 1 ? R.hp - 1 : R.hp; // at 1 hp any blow kills (engine.js:428)
     var blows = [];
     for (var b = 0; b < nb; b++) {
       var v = bRow[b][i];
