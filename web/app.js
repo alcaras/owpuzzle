@@ -38,6 +38,8 @@
   // the GAMEPLAY content (not brief/lesson text). A stored entry whose hash
   // no longer matches reads as unsolved. Entries without a hash predate this
   // and are trusted as-is.
+  var esc = OWDOM.esc;
+  var fmt10 = OWDOM.fmt10;
   var puzzleHash = E.puzzleHash;   // one canonical implementation, in the engine
   function progEntry(prog, p) { return OWDOM.progEntry(prog, p, puzzleHash); }
 
@@ -922,162 +924,95 @@
     }
   }
 
+  // finish(): DECIDE (pure, node-tested) -> PERSIST -> PRESENT, in that
+  // order. Persistence runs before any presentation branch can return early;
+  // that ordering is what buried the unrecorded-draft bug for a day.
+  var lastResult = null;      // replaces window.__won / window.__perfect
+  var nextSlug = null;        // replaces window.__nextSlug
+
   function finish(won) {
     finished = true;
     selected = null;
-    var r = document.getElementById('result');
-    r.classList.add('show');
-    document.getElementById('result-title').textContent = won ? '⚔️ Victory!' : '💀 Not this time';
-    // Only offer the button when there IS another puzzle, and name it for
-    // what it does: signed in there is no fixed order (the rated queue picks),
-    // so "another"; signed out we really do walk the library in order.
-    var nextBtn = document.getElementById('btn-next');
-    nextBtn.style.display = 'none';
-    window.__nextSlug = null;
-    // Ask for the next puzzle only AFTER this solve has been recorded, or the
-    // queue does not yet know you have beaten this one and hands it straight
-    // back. `exclude` covers the case where the write is still settling.
-    window.__offerNext = function () {
-      fetch('/api/next?exclude=' + encodeURIComponent(puzzle.id))
-        .then(function (r) { return r.json(); }).then(function (d) {
-          if (d && d.slug && d.slug !== puzzle.id) {
-            window.__nextSlug = d.slug;
-            nextBtn.textContent = 'Play another puzzle ▶';
-            nextBtn.style.display = '';
-          }
-        }).catch(function () {});
-    };
-    if (puzzle.id === 'draft') {
-      // a draft has nowhere to go next: the author wants their editor back,
-      // whether or not the line they just played met the objective
-      nextBtn.textContent = '← back to the editor';
-      nextBtn.style.display = '';
-    } else if (won) {
-      if (ME) {
-        // deliberately not called here — see the attempt POST below
-      } else {
-        var cand = nextUnsolvedLocal();
-        if (cand) {
-          window.__nextSlug = cand;
-          nextBtn.textContent = 'Next puzzle ▶';
-          nextBtn.style.display = '';
-        }
-      }
-    }
-    var used = E.poolOrders(puzzle) - state.orders;
-    var perfect = won && used <= puzzle.orders;
-    // Record the author's line FIRST. The maxKill branch below returns early
-    // for a draft (it has no ceiling to judge against yet), and everything
-    // after that return was being skipped — including this. An author would
-    // play their line, end the turn, and find nothing had been recorded.
-    if (puzzle.id === 'draft') {
-      // the author's own play of their puzzle IS the claimed solution
-      try {
-        localStorage.setItem('owpuzzle-draft-solution', JSON.stringify({
-          // Store the board that was actually played, not only its
-          // fingerprint. Comparing two hash strings means trusting that the
-          // player page and the editor page are running the same vintage of
-          // the code — one stale cached file and the author is told they
-          // changed a puzzle they never touched.
-          puzzle: puzzle,
-          v: puzzleHash(puzzle),
-          line: lineLog,
-          orders: E.poolOrders(puzzle) - state.orders,
-          strength: E.strKilledOf(state),
-          kills: E.killsOf(state),
-          met: E.checkObjective(state, puzzle.objective),
-        }));
-      } catch (e) {}
-      // …and lodge a copy with the server, so a browser that cannot keep
-      // localStorage does not silently lose the author's line
-      if (ME) {
-        fetch('/api/draft-solution', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            puzzle: puzzle, line: lineLog,
-            orders: E.poolOrders(puzzle) - state.orders,
-            strength: E.strKilledOf(state), kills: E.killsOf(state),
-            met: E.checkObjective(state, puzzle.objective),
-          }),
-        }).catch(function () {});
-      }
-    }
+    var res = OWPLAYERLOGIC.computeResult(puzzle, state, won, E);
+    lastResult = res;
+    persistResult(res);
+    presentResult(res);
+  }
 
-    var blueDmg = state.units.filter(function (u) { return u.player === 0; })
-      .reduce(function (s, u) { return s + (E.hpMax(u) - Math.max(0, u.hp)); }, 0);
-    var body;
-    if (puzzle.objective.kind === 'maxKill') {
-      var killStr = E.strKilledOf(state);
-      var kills = E.killsOf(state);
-      if (!puzzle.objective.count) {
-        // draft test-play: the ceiling is computed at review, so the game
-        // cannot judge "maximum" — report the tally without a verdict.
-        document.getElementById('result-title').textContent = '⚔️ Turn complete';
-        document.getElementById('result-body').textContent =
-          'You destroyed ' + kills + ' unit' + (kills === 1 ? '' : 's') + ' (' + fmt10(killStr) +
-          ' strength) in ' + used + ' orders. ' +
-          (puzzle.id === 'draft'
-            ? 'The target ceiling is set during review — this draft cannot score itself.'
-            : 'This submission has no ceiling yet — it is set when the puzzle is approved.');
-        window.__perfect = false; window.__won = false;
-        return;
-      }
-      if (won) {
-        body = '\u2b50 MAXIMUM DESTRUCTION \u2014 ' + kills + ' kills, ' + fmt10(killStr) +
-          ' strength: the most possible!' +
-          (perfect ? ' And in the fewest orders (' + used + '). \u2b50' : ' (' + used + ' orders \u2014 it can be done in fewer\u2026)') +
-          ' Damage taken: ' + blueDmg + '.';
-      } else {
-        body = 'You destroyed ' + kills + ' unit' + (kills === 1 ? '' : 's') + ' (' + fmt10(killStr) +
-          ' strength) \u2014 more destruction is possible\u2026 Study the field and try again.';
-      }
-    } else {
-      body = won
-        ? (perfect
-          ? '\u2b50 PERFECT \u2014 solved in ' + used + ' orders, the fewest possible! Damage taken: ' + blueDmg + '.'
-          : 'Solved in ' + used + ' orders \u2014 but it can be done in fewer\u2026 Damage taken: ' + blueDmg + '.')
-        : 'The objective was not met. Study the field and try again.';
+  var postedLines = {};   // one POST per distinct line, whatever undo/redo does
+  function persistResult(res) {
+    if (res.recordDraft) {
+      var rec = OWPLAYERLOGIC.draftRecording(puzzle, state, lineLog, E);
+      try { localStorage.setItem('owpuzzle-draft-solution', JSON.stringify(rec)); } catch (e) {}
+      // and lodge a copy with the server, so a browser that cannot keep
+      // localStorage does not silently lose the author's line
+      if (ME) api.logged(api.post('/api/draft-solution', rec), 'draft recording');
     }
-    document.getElementById('result-body').textContent = body;
-    window.__perfect = perfect;
-    document.getElementById('result-lesson').textContent = won && puzzle.lesson ? puzzle.lesson : '';
-    window.__won = won;
-    if (ME && puzzle.id !== 'draft') {
-      fetch('/api/attempt', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: puzzle.id, line: lineLog }),
-      }).then(function (r) { return r.json(); }).then(function (d) {
+    var lineKey = JSON.stringify(lineLog);
+    if (res.postAttempt && ME && postedLines[lineKey]) {
+      // redoing the final action re-finishes the same line; the attempt is
+      // already on the server, so only the next-puzzle offer needs re-arming
+      if (res.won) offerNext();
+    } else if (res.postAttempt && ME) {
+      postedLines[lineKey] = true;
+      api.post('/api/attempt', { slug: puzzle.id, line: lineLog }).then(function (d) {
+        var b = document.getElementById('result-body');
         if (typeof d.ratingDelta === 'number' && d.rated) {
-          var b = document.getElementById('result-body');
           b.textContent += ' Rating ' + (d.ratingDelta >= 0 ? '+' : '') + d.ratingDelta +
             ' → ' + d.user.rating + '.';
           ME = d.user; renderAuth();
         }
         // the puzzle's own Elo is disclosed only once you have beaten it
-        if (d.solved && d.puzzleRating) {
-          var rb = document.getElementById('result-body');
-          rb.textContent += ' This puzzle is rated ' + d.puzzleRating + '.';
-        }
+        if (d.solved && d.puzzleRating) b.textContent += ' This puzzle is rated ' + d.puzzleRating + '.';
         if (d.unlocked && d.unlocked.length) celebrate(d.unlocked);
-        if (won && window.__offerNext) window.__offerNext();
-      }).catch(function () { if (won && window.__offerNext) window.__offerNext(); });
+        if (res.won) offerNext();     // only AFTER the attempt is recorded
+      }).catch(function (e) {
+        console.error('attempt post failed:', e);
+        if (res.won) offerNext();
+      });
     }
-    if (won) {
+    if (res.writeProgress) {
       try {
-        var prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}');
-        var used2 = E.poolOrders(puzzle) - state.orders;
-        var prev = progEntry(prog, puzzle) || {};
-        if (!prev.solved || used2 < prev.orders) {
-          prog[puzzle.id] = { solved: true, orders: Math.min(used2, prev.orders || 99),
-            perfect: !!(prev.perfect || window.__perfect), ts: Date.now(),
-            v: puzzleHash(puzzle) };
-          localStorage.setItem('owpuzzle-progress', JSON.stringify(prog));
-        } else if (window.__perfect && !prev.perfect) {
-          prev.perfect = true;
-          localStorage.setItem('owpuzzle-progress', JSON.stringify(prog));
-        }
+        var prog = OWDOM.readProgress();
+        var patched = OWPLAYERLOGIC.progressPatch(prog, puzzle, res, puzzleHash, Date.now());
+        if (patched) localStorage.setItem('owpuzzle-progress', JSON.stringify(patched));
       } catch (e) {}
     }
+  }
+
+  function presentResult(res) {
+    var r = document.getElementById('result');
+    r.classList.add('show');
+    document.getElementById('result-title').textContent = res.title;
+    document.getElementById('result-body').textContent = res.body;
+    document.getElementById('result-lesson').textContent = res.lesson;
+    var nextBtn = document.getElementById('btn-next');
+    nextBtn.style.display = 'none';
+    nextSlug = null;
+    if (res.next === 'editor') {
+      nextBtn.textContent = '← back to the editor';
+      nextBtn.style.display = '';
+    } else if (res.next === 'auto' && !ME) {
+      // signed out: walk the library locally; signed in, offerNext() fires
+      // from the attempt callback so the queue already knows about this solve
+      var cand = OWPLAYERLOGIC.nextUnsolvedLocal(OWPUZZLES, OWDOM.readProgress(), puzzle.id, puzzleHash);
+      if (cand) {
+        nextSlug = cand;
+        nextBtn.textContent = 'Next puzzle ▶';
+        nextBtn.style.display = '';
+      }
+    }
+  }
+
+  function offerNext() {
+    var nextBtn = document.getElementById('btn-next');
+    api('/api/next?exclude=' + encodeURIComponent(puzzle.id)).then(function (d) {
+      if (d && d.slug && d.slug !== puzzle.id) {
+        nextSlug = d.slug;
+        nextBtn.textContent = 'Play another puzzle ▶';
+        nextBtn.style.display = '';
+      }
+    }).catch(function (e) { console.error('next-puzzle offer failed:', e); });
   }
 
   // ---------- controls ----------
@@ -1138,22 +1073,6 @@
 
   // next unsolved puzzle in DISPLAY order (Basics -> Tactics -> Challenges),
   // for anonymous play where an ordering genuinely exists
-  function nextUnsolvedLocal() {
-    var prog = {};
-    try { prog = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}'); } catch (e) {}
-    var list = [];
-    [1, 2, 3].forEach(function (d) {
-      OWPUZZLES.forEach(function (p) { if ((p.difficulty || 2) === d) list.push(p); });
-    });
-    var idx = list.indexOf(list.filter(function (p) { return p.id === puzzle.id; })[0]);
-    for (var i = 1; i <= list.length; i++) {
-      var cand = list[(idx + i) % list.length];
-      var ce = progEntry(prog, cand);
-      if (!(ce && ce.solved)) return cand.id;
-    }
-    return null;
-  }
-
   // ---------- reviewing an author's line ----------
   // ?review=1 on a pending puzzle walks their recorded solution one action at
   // a time, so a reviewer can watch the idea rather than reconstruct it.
@@ -1226,13 +1145,13 @@
 
   document.getElementById('btn-next').addEventListener('click', function () {
     if (puzzle.id === 'draft') { location.href = 'editor.html'; return; }
-    if (window.__nextSlug) { location.href = '?p=' + window.__nextSlug; return; }
+    if (nextSlug) { location.href = '?p=' + nextSlug; return; }
     location.href = './';
   });
   document.getElementById('btn-share').addEventListener('click', function () {
     var used = E.poolOrders(puzzle) - state.orders;
     var txt = 'Old World Combat Puzzle — ' + puzzle.name + '\n' +
-      (window.__won ? '⚔️ Solved in ' + used + '/' + puzzle.orders + ' orders' : '💀 Unsolved') +
+      (lastResult && lastResult.won ? '⚔️ Solved in ' + used + '/' + puzzle.orders + ' orders' : '💀 Unsolved') +
       '\n' + location.origin + location.pathname + '?p=' + puzzle.id;
     if (navigator.share) navigator.share({ text: txt }).catch(function () {});
     else if (navigator.clipboard) {

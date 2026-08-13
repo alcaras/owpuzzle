@@ -11,16 +11,11 @@ const path = require('path');
 const APP = fs.readFileSync(path.join(__dirname, '..', 'web', 'app.js'), 'utf8');
 const EDITOR = fs.readFileSync(path.join(__dirname, '..', 'web', 'editor.js'), 'utf8');
 
-test("a draft's line is recorded before anything can return early", () => {
-  // The maxKill branch returns early for a draft (no ceiling to judge yet).
-  // Everything after that return is skipped, so the recording must come first
-  // or the author plays a turn that is never saved.
-  const record = APP.indexOf("'owpuzzle-draft-solution'");
-  const earlyReturn = APP.indexOf('this draft cannot score itself');
-  assert.ok(record > 0 && earlyReturn > 0, 'both landmarks should exist');
-  assert.ok(record < earlyReturn,
-    'the draft recording must be written before the maxKill early return');
-});
+// The source-order guard that lived here is deleted: finish() is now
+// decide->persist->present by construction (web/js/player-logic.js), and
+// test/player-logic.test.js asserts BEHAVIOURALLY that a no-ceiling draft
+// computes recordDraft=true. The ordering cannot regress without that
+// failing. (testing-strategy.md deletion table, entry 1.)
 
 test('every puzzle field persists what the author types', () => {
   // Fields that only live in the DOM are lost on the way back from a test
