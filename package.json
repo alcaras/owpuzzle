@@ -6,6 +6,8 @@
     "test": "node --test \"test/**/*.test.js\"",
     "test:ceilings": "OWP_SLOW=1 node --test test/ceilings.test.js",
     "start": "node server/index.js",
-    "data": "python3 tools/extract_data.py"
+    "data": "python3 tools/extract_data.py",
+    "deploy:dev": "fly deploy --now -c fly.dev.toml",
+    "deploy:prod": "npm test && fly deploy --now"
   }
 }

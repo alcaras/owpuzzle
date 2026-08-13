@@ -1,0 +1,24 @@
+# The DEV site: owpuzzle-dev.fly.dev. Deploy work-in-progress here, never to
+# prod, until the ship-a-change gates pass. Ephemeral DB (no volume): every
+# deploy starts from the seeded core library, which is exactly what you want
+# for testing — wreck it freely.
+#   npm run deploy:dev
+app = "owpuzzle-dev"
+primary_region = "sjc"
+
+[build]
+
+[env]
+  BASE_URL = "https://owpuzzle-dev.fly.dev"
+  DB_PATH = "/tmp/owpuzzle-dev.db"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0   # dev can cold-start; nobody is rated here
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
