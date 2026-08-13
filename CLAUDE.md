@@ -97,16 +97,20 @@ a duller line that reached the same ceiling without using the idea.
 
 ## Verifiers
 
-Two independent implementations, deliberately:
+Three independent implementations, deliberately:
 
 - `tools/compute_ceilings.js` — exhaustive branch-and-bound over the order pool
 - `tools/deploy_fight.js` — engine-exact search with a seat model, plus
   `MODE=deploy` best-first over whole deployments for large boards
+- `tools/verify2.js` — kill-set upper bounds + assignment search over
+  deployments; scales to 10+ blue units and can PROVE a ceiling without
+  exhaustive search when a found line meets the bound
+  (see [docs/verifier-design.md](docs/verifier-design.md))
 
-Keep both. Each has caught the other being confidently wrong — including a
+Keep all of them. Each has caught another being confidently wrong — including a
 `deploy_fight` bound that pruned whole trees while reporting "search complete".
 **Treat "search complete" with the same suspicion as a finding**; agreement
-between the two tools is what makes a ceiling trustworthy.
+between independent tools is what makes a ceiling trustworthy.
 
 Publishing checklist for a maxKill puzzle: prove the ceiling, confirm the
 intended line **is** the optimum (not merely *a* line that reaches it), and

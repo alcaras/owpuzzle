@@ -471,6 +471,23 @@ app.post('/api/review/:slug', (req, res) => {
   const user = userFromReq(req);
   if (!user || !user.is_admin) return res.status(403).json({ error: 'admin only' });
   const verdict = req.body && req.body.approve ? 'approved' : 'rejected';
+  // A maxKill draft has no ceiling — the review sets it. Approving one bare
+  // would publish a puzzle that cannot score anybody, so default the ceiling
+  // to the author's replay-verified strength (best-known until proven).
+  if (verdict === 'approved') {
+    const row = db.prepare(`SELECT id, json, notes FROM puzzles WHERE slug = ? AND status = 'pending'`).get(req.params.slug);
+    if (row) {
+      const p = JSON.parse(row.json);
+      if (p.objective && p.objective.kind === 'maxKill' && !p.objective.count) {
+        let claimed = 0;
+        try { claimed = JSON.parse(row.notes).replayed.strength || 0; } catch (e) {}
+        if (claimed > 0) {
+          p.objective.count = claimed;
+          db.prepare('UPDATE puzzles SET json = ? WHERE id = ?').run(JSON.stringify(p), row.id);
+        }
+      }
+    }
+  }
   db.prepare(`UPDATE puzzles SET status = ? WHERE slug = ? AND status = 'pending'`).run(verdict, req.params.slug);
   res.json({ ok: true, status: verdict });
 });

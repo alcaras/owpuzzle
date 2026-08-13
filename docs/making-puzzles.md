@@ -87,6 +87,11 @@ node tools/deploy_fight.js <puzzle.json|def.js> [pool] [seconds] [seedStrX10]
     LATE=n        cap on mid-fight moves (default: deepen 0,1,2,3)
     TOPK=n        keep only each unit's n best seats — finder mode, not a proof
     MODE=deploy   best-first over whole deployments, for large boards
+node tools/verify2.js <puzzle.json|def.js> [pool] [seconds] [seedStrX10]
+                  # kill-set bounds + deployment search; the big-board tool.
+                  # Prints PROVEN only with its assumptions attached; a found
+                  # line that meets the kill-set bound proves the ceiling
+                  # without exhaustion. V2_WORKERS=n parallelises big boards.
 node tools/compute_ceilings.js <id…>      # the independent implementation
 ```
 
