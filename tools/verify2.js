@@ -1192,6 +1192,7 @@ function stage3(ctx, inc, deadline, opts) {
       noteBest(inc, localBest.str, localBest.orders, startLine.concat(localBest.line),
         'deployment ' + stats.leaves);
     }
+    return localBest.str;
   }
 
   function evalLeaf(assignment) {
@@ -1234,11 +1235,17 @@ function stage3(ctx, inc, deadline, opts) {
       best.pairs.forEach(function (p) { placement[p.id] = p.tile; });
     });
     if (!ok || cost > POOL || training > ctx.INIT.training) { stats.illegal++; return; }
+    evalPlacement(placement, cost);
+  }
 
+  // evaluate a concrete unit->tile placement (used by the tree's leaves and
+  // by the hill-climbing polish pass); returns the fight's best strength,
+  // or -1 when the placement was already fought or could not be executed
+  function evalPlacement(placement, cost) {
     var sig2 = Object.keys(placement).map(function (id) {
       return classOf[id] + '@' + placement[id];
     }).sort().join(';') + '|' + Math.min(POOL - cost, 63);
-    if (mem.fightMemo[sig2]) { stats.dedup++; return; }
+    if (mem.fightMemo[sig2]) { stats.dedup++; return -1; }
     mem.fightMemo[sig2] = 1;
 
     // Split the placement: pre-fight walkers vs deferred/pending. A deferred
@@ -1293,11 +1300,79 @@ function stage3(ctx, inc, deadline, opts) {
     stats.leaves++;
     stats.tWalk += Date.now() - tW0;
     var tF0 = Date.now();
-    fightOut(st, startLine, FCAP, pending);
+    var fstr = fightOut(st, startLine, FCAP, pending);
     stats.tFight += Date.now() - tF0;
+    // remember the best deployments seen — seeds for the polish pass
+    var tl = mem.topLeaves = mem.topLeaves || [];
+    if (tl.length < 16 || fstr > tl[tl.length - 1].str) {
+      tl.push({ placement: Object.assign({}, placement), str: fstr });
+      tl.sort(function (a, b) { return b.str - a.str; });
+      if (tl.length > 16) tl.pop();
+    }
     if (stats.leaves % 20000 === 0) {
       console.log('  … ' + stats.leaves + ' deployments fought, best ' + (inc.str / 10) + ' STR');
     }
+    return fstr;
+  }
+
+  // Hill-climbing polish: take the strongest deployments seen so far and
+  // improve them one seat at a time, refighting after each swap. Coordination
+  // has local gradients (add the missing flank partner, pull a softener into
+  // range) that a global best-first order cannot follow — local search can.
+  if (opts.polishOnly) {
+    var listById = {};
+    ctx.BLUE.forEach(function (b, i) { listById[b.id] = lists[i]; });
+    function claimants(pl, k, exceptId) {
+      var out = [];
+      Object.keys(pl).forEach(function (id) {
+        if (+id !== exceptId && pl[id] === k) out.push(+id);
+      });
+      return out;
+    }
+    function placementCost(pl) {
+      var c = 0, t = 0;
+      var ids = Object.keys(pl);
+      for (var i = 0; i < ids.length; i++) {
+        var s = seatEntry(+ids[i], pl[ids[i]]);
+        if (!s) return null;
+        c += s.orders;
+        if (s.march) t += GLOB.UNIT_MARCH_COST;
+      }
+      return c <= POOL && t <= ctx.INIT.training ? c : null;
+    }
+    var seeds = (mem.topLeaves || []).slice();
+    for (var sd = 0; sd < seeds.length; sd++) {
+      if (Date.now() > deadline) break;
+      var cur = Object.assign({}, seeds[sd].placement);
+      var curStr = seeds[sd].str;
+      var improved = true;
+      while (improved && Date.now() < deadline) {
+        improved = false;
+        for (var bi = 0; bi < ctx.BLUE.length && !improved; bi++) {
+          var uid = ctx.BLUE[bi].id;
+          var origK = cur[uid];
+          var cand = listById[uid];
+          for (var ci = 0; ci < cand.length && ci < 20; ci++) {
+            if (Date.now() > deadline) break;
+            var k2 = cand[ci].key;
+            if (k2 === origK) continue;
+            var others = claimants(cur, k2, uid);
+            if (others.length >= 2) continue;
+            if (others.length === 1 && !cand[ci].rout && !ctx.OPT[others[0]].rout) continue;
+            cur[uid] = k2;
+            var c2 = placementCost(cur);
+            if (c2 === null) { cur[uid] = origK; continue; }
+            var r = evalPlacement(Object.assign({}, cur), c2);
+            if (r > curStr) { curStr = r; improved = true; break; }
+            cur[uid] = origK;
+          }
+        }
+      }
+    }
+    console.log('  stage3 polish done · leaves ' + stats.leaves + ' · best ' + (inc.str / 10));
+    stats.exhausted = false;
+    stats.expressive = true;
+    return stats;
   }
 
   // Best-first over the assignment TREE: nodes are partial assignments,
@@ -1455,20 +1530,30 @@ function scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, partW, partK) 
   }
   var planBudget = Math.max(20, SECONDS * 0.45) * 1000;
   var perPlan = Math.max(12000, planBudget / Math.max(1, plans.length));
+  var planEnd = Date.now() + planBudget;
   console.log('--- stage3 (plan slices: ' + plans.length + ' kill-sets)' +
     (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
   var s3 = null;
   for (var pi = 0; pi < plans.length; pi++) {
-    if (Date.now() + 5000 > DEADLINE) break;
+    if (Date.now() + 5000 > DEADLINE || Date.now() > planEnd) break;
     if (plans[pi].str <= curBest(inc)) continue;          // already beaten
     var pEnd = Math.min(DEADLINE, Date.now() + perPlan);
     s3 = stage3(ctx, inc, pEnd, { masks: masks, state: s3state, plan: plans[pi],
       partW: partW, partK: partK });
   }
   if (Date.now() < DEADLINE) {
-    console.log('--- stage3 (full, expressive)' + (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
-    s3 = stage3(ctx, inc, DEADLINE, { masks: masks, state: s3state,
-      partW: partW, partK: partK, expressive: true });
+    // alternate coverage and polish: the tree finds fresh material, the
+    // climb turns the best of it into coordinated deployments
+    for (var round = 0; round < 6 && Date.now() < DEADLINE; round++) {
+      var covEnd = Math.min(DEADLINE, Date.now() + Math.max(30000, (DEADLINE - Date.now()) * 0.25));
+      console.log('--- stage3 (full, expressive)' + (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
+      s3 = stage3(ctx, inc, covEnd, { masks: masks, state: s3state,
+        partW: partW, partK: partK, expressive: true });
+      if (Date.now() >= DEADLINE || s3.exhausted) break;
+      var polEnd = Math.min(DEADLINE, Date.now() + Math.max(20000, (DEADLINE - Date.now()) * 0.2));
+      console.log('--- stage3 (polish)' + (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
+      stage3(ctx, inc, polEnd, { masks: masks, state: s3state, polishOnly: true, expressive: true });
+    }
   }
   return s3;
 }
@@ -1557,9 +1642,18 @@ function main() {
     console.error('usage: node tools/verify2.js <puzzle.json|def.js> [pool] [seconds] [seedStrX10]');
     process.exit(1);
   }
-  var P = /\.json$/.test(SRC)
-    ? (function () { var j = JSON.parse(require('fs').readFileSync(SRC, 'utf8')); return j.puzzle || j; })()
-    : require(path.resolve(SRC));
+  var P;
+  if (/\.json$/.test(SRC)) {
+    var j = JSON.parse(require('fs').readFileSync(SRC, 'utf8'));
+    P = j.puzzle || j;
+  } else if (/\.js$/.test(SRC)) {
+    P = require(path.resolve(SRC));
+  } else {
+    // bare id: look it up in the shipped library, for reproducible commands
+    P = require(path.join(__dirname, '..', 'web', 'puzzles.js'))
+      .filter(function (x) { return x.id === SRC; })[0];
+    if (!P) { console.error('no puzzle with id "' + SRC + '" in web/puzzles.js'); process.exit(1); }
+  }
   var POOL = parseInt(process.argv[3], 10) || E.poolOrders(P);
   var SECONDS = parseInt(process.argv[4], 10) || 600;
   var SEED = parseInt(process.argv[5], 10) || 0;

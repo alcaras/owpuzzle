@@ -216,6 +216,44 @@ the CLI or `poolOrders`, training = author's value or 300. deploy_fight
 ignores training entirely — lines that need a march exist (the 11-blue
 author line marches its ballista), so verify2 must not.
 
+## Stage 3 expressiveness: deferred seats, shared seats, polish
+
+Decoding the author's line on the 11-blue board showed stage 3's original
+model excluded it twice over: five of its nine seats are RED tiles or
+ground behind red ZOC (reachable only after kills), and one seat serves
+two units in sequence (a router takes it, routs away, an elephant walks
+in). March-extended seats were already present. Three mechanisms close
+the gap:
+
+- **deferred seats**: every cleared-reach tile that live reach cannot
+  enter joins the seat lists, flagged; its walk executes DURING the fight
+  as a pending action, offered whenever the engine says the move is now
+  legal. Cost floors use the cleared-reach cost; the engine charges truth
+  at execution.
+- **shared seats**: a tile may carry two claims when a router is
+  involved; the router walks first, the partner pends. The fight realises
+  the reuse only if the rout actually vacates.
+- **two-phase ordering**: speculative branches reshuffled the plain tree
+  so badly that left-flank's 19 vanished — so the plain pass (live seats,
+  no shares: the exact old arrival order) runs first, and the expressive
+  pass extends it. Plan slices are always expressive (a witness's seats
+  are often exactly the deferred ones).
+- **polish**: hill-climbing repair of the best deployments seen — swap
+  one unit's seat, refight, keep improvements. Coordination has local
+  gradients (add the missing flank partner, pull a softener into range)
+  that global best-first cannot follow. Coverage rounds and polish rounds
+  alternate on big boards.
+
+Honest status on the unaided-find gate (f6ff55 pool 45, no seed): the
+model now CONTAINS the author's 37-line — all nine seats claimable,
+sharing expressible, march included — and the unaided best went 12 → 17
+(expressiveness) → 22 (deep plan sweep + polish, 25 min, 8 workers,
+replay-verified). It has not reached 37: an 11-unit coordination optimum
+sits deeper than ~60k fights of ordering heuristics can reach. Next
+levers, unbuilt: population search over deployments (crossover of
+per-front seat blocks), conditioning on the spanning units with per-front
+exact fights, and annealing restarts from plan witnesses.
+
 ## Ideas considered and rejected
 
 - **Hungarian/LP assignment bounds.** The value of a seat is not additive
