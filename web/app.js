@@ -93,6 +93,14 @@
   fetch('/api/me').then(function (r) { return r.json(); })
     .then(function (d) {
       ME = d.user; renderAuth();
+      // The library may already have painted (700ms timer) before this
+      // response arrived, and the paint only loads the review queue when it
+      // already knows you are an admin — lose that race and the queue never
+      // appears. Loading it here as well covers both orders; it is idempotent.
+      if (ME && ME.isAdmin && document.getElementById('home') &&
+          document.getElementById('home').classList.contains('show')) {
+        loadReviewQueue();
+      }
       // your account's unit-art choice wins over whatever this browser had
       if (ME && ME.unitArt && ME.unitArt !== ICON_STYLE) {
         ICON_STYLE = ME.unitArt;
@@ -160,6 +168,11 @@
     }).catch(function () {});
   }
 
+  // the game displays strength / 10 (a 50-strength unit shows "5").
+  // Shared scope: the review cards on the library page use it too, and a
+  // swallowed ReferenceError here silently deleted the whole review queue.
+  function fmt10(v) { return (v / 10).toFixed(1).replace(/\.0$/, ''); }
+
   function loadReviewQueue() {
     fetch('/api/review').then(function (r) { return r.json(); }).then(function (d) {
       var home = document.getElementById('home');
@@ -202,7 +215,11 @@
       });
       sec.appendChild(grid);
       home.insertBefore(sec, home.firstChild);
-    }).catch(function () {});
+    }).catch(function (e) {
+      // a silent catch here cost a day once — an undefined helper deleted the
+      // whole queue with no trace. Log it; admins read consoles.
+      console.error('review queue failed to render:', e);
+    });
   }
 
   // SERVER_SOLVED: slugs this signed-in account has solved (from /api/puzzles)
@@ -232,6 +249,7 @@
     window.__firstPaint = function () {
       if (painted) return;
       painted = true;
+      window.__painted = true;   // the data-arrival path checks THIS flag
       renderLibrary();
       if (ME && ME.isAdmin) loadReviewQueue();
     };
@@ -371,8 +389,6 @@
     var inf = E.DATA.units[u.type];
     return (inf.iRangeMax || 0) > 0 ? '🏹' : '⚔';
   }
-  // the game displays strength / 10 (a 50-strength unit shows "5")
-  function fmt10(v) { return (v / 10).toFixed(1).replace(/\.0$/, ''); }
   function prettyEffectName(e) {
     return e.replace('EFFECTUNIT_', '').toLowerCase().replace(/_/g, ' ');
   }
@@ -1419,7 +1435,11 @@
         '<button id="rv-step" class="primary">step ▶</button>' +
         '<button id="rv-all">play all ⏭</button>' +
         '<button id="rv-reset">restart</button>' +
-        '<span id="rv-at" style="font-size:13px;color:var(--muted)"></span>';
+        '<span id="rv-at" style="font-size:13px;color:var(--muted)"></span>' +
+        '<span style="flex-basis:100%"></span>' +
+        '<button id="rv-approve" style="border-color:#2f7d43;color:#2f7d43">✓ Approve</button>' +
+        '<button id="rv-reject" style="border-color:var(--accent);color:var(--accent)">✗ Reject</button>' +
+        '<span id="rv-verdict" style="font-size:13px;color:var(--muted)"></span>';
       var host = document.querySelector('.controls-final');
       host.parentNode.insertBefore(bar, host);
       function label() {
@@ -1449,6 +1469,22 @@
         while (step() && guard++ < 500) { /* to the end */ }
       };
       document.getElementById('rv-reset').onclick = function () { location.reload(); };
+      // the verdict belongs where the evidence is — no trip back to the queue
+      function verdict(approve) {
+        fetch('/api/review/' + puzzle.id, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ approve: approve }),
+        }).then(function (r) { return r.json(); }).then(function (res) {
+          document.getElementById('rv-verdict').textContent = res.status +
+            (res.status === 'approved' ? ' — it is live' : '');
+          document.getElementById('rv-approve').disabled = true;
+          document.getElementById('rv-reject').disabled = true;
+        }).catch(function () {
+          document.getElementById('rv-verdict').textContent = 'could not reach the server';
+        });
+      }
+      document.getElementById('rv-approve').onclick = function () { verdict(true); };
+      document.getElementById('rv-reject').onclick = function () { verdict(false); };
       label();
     }).catch(function () {});
   }
