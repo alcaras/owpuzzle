@@ -1074,73 +1074,23 @@
   // next unsolved puzzle in DISPLAY order (Basics -> Tactics -> Challenges),
   // for anonymous play where an ordering genuinely exists
   // ---------- reviewing an author's line ----------
-  // ?review=1 on a pending puzzle walks their recorded solution one action at
-  // a time, so a reviewer can watch the idea rather than reconstruct it.
+  // ?review=1 on a pending puzzle: js/review.js drives the stepper; every
+  // player internal it needs is passed explicitly.
   if (params.get('review')) {
-    fetch('/api/review').then(function (r) { return r.json(); }).then(function (d) {
+    api('/api/review').then(function (d) {
       var item = ((d && d.pending) || []).filter(function (x) { return x.slug === puzzle.id; })[0];
       if (!item || !item.solution || !item.solution.line) return;
-      var line = item.solution.line, at = 0;
-      var bar = document.createElement('div');
-      bar.className = 'controls';
-      bar.style.cssText = 'gap:8px;align-items:center;flex-wrap:wrap';
-      bar.innerHTML =
-        '<button id="rv-back">◀ back</button>' +
-        '<button id="rv-step" class="primary">step ▶</button>' +
-        '<button id="rv-all">play all ⏭</button>' +
-        '<button id="rv-reset">restart</button>' +
-        '<span id="rv-at" style="font-size:13px;color:var(--muted)"></span>' +
-        '<span style="flex-basis:100%"></span>' +
-        '<button id="rv-approve" style="border-color:#2f7d43;color:#2f7d43">✓ Approve</button>' +
-        '<button id="rv-reject" style="border-color:var(--accent);color:var(--accent)">✗ Reject</button>' +
-        '<span id="rv-verdict" style="font-size:13px;color:var(--muted)"></span>';
-      var host = document.querySelector('.controls-final');
-      host.parentNode.insertBefore(bar, host);
-      function label() {
-        var a = line[at];
-        var what = at >= line.length ? 'line complete'
-          : (at + 1) + ' of ' + line.length + ': ' +
-            (a.type === 'move' ? 'move to (' + a.q + ',' + a.r + ')'
-              : a.type + (a.target != null ? ' →' : ''));
-        document.getElementById('rv-at').textContent = what +
-          '  ·  ' + fmt10(E.strKilledOf(state)) + ' STR destroyed, ' +
-          (E.poolOrders(puzzle) - state.orders) + ' orders';
-      }
-      function step() {
-        if (at >= line.length) return false;
-        try { act(line[at]); } catch (e) { document.getElementById('rv-at').textContent =
-          'step ' + (at + 1) + ' would not replay: ' + e.message; return false; }
-        at++; label(); return true;
-      }
-      document.getElementById('rv-step').onclick = step;
-      document.getElementById('rv-back').onclick = function () {
-        if (at === 0) return;
-        document.getElementById('btn-undo').click();
-        at--; label();
-      };
-      document.getElementById('rv-all').onclick = function () {
-        var guard = 0;
-        while (step() && guard++ < 500) { /* to the end */ }
-      };
-      document.getElementById('rv-reset').onclick = function () { location.reload(); };
-      // the verdict belongs where the evidence is — no trip back to the queue
-      function verdict(approve) {
-        fetch('/api/review/' + puzzle.id, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ approve: approve }),
-        }).then(function (r) { return r.json(); }).then(function (res) {
-          document.getElementById('rv-verdict').textContent = res.status +
-            (res.status === 'approved' ? ' — it is live' : '');
-          document.getElementById('rv-approve').disabled = true;
-          document.getElementById('rv-reject').disabled = true;
-        }).catch(function () {
-          document.getElementById('rv-verdict').textContent = 'could not reach the server';
-        });
-      }
-      document.getElementById('rv-approve').onclick = function () { verdict(true); };
-      document.getElementById('rv-reject').onclick = function () { verdict(false); };
-      label();
-    }).catch(function () {});
+      OWREVIEW.attach(item.solution.line, {
+        puzzle: puzzle,
+        act: act,
+        undo: function () { document.getElementById('btn-undo').click(); },
+        tally: function () {
+          return fmt10(E.strKilledOf(state)) + ' STR destroyed, ' +
+            (E.poolOrders(puzzle) - state.orders) + ' orders';
+        },
+        api: api,
+      });
+    }).catch(function (e) { console.error('review stepper failed to load:', e); });
   }
 
   document.getElementById('btn-next').addEventListener('click', function () {

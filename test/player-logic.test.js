@@ -106,3 +106,11 @@ test('nextUnsolvedLocal walks display order and skips solved', () => {
   const all = { a1: { solved: true }, a2: { solved: true }, b1: { solved: true }, c1: { solved: true } };
   assert.equal(L.nextUnsolvedLocal(ps, all, 'a1'), null);
 });
+
+test('stepLabel narrates position, action kind, and completion', () => {
+  const { stepLabel } = require(path.join(__dirname, '..', 'web', 'js', 'review.js'));
+  const line = [{ type: 'move', unit: 1, q: 2, r: -1 }, { type: 'attack', unit: 1, target: 4 }];
+  assert.match(stepLabel(line, 0, 'T'), /1 of 2: move to \(2,-1\)/);
+  assert.match(stepLabel(line, 1, 'T'), /2 of 2: attack/);
+  assert.match(stepLabel(line, 2, 'T'), /line complete/);
+});
