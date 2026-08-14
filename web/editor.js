@@ -396,6 +396,17 @@
   var puzzleHash = E.puzzleHash;   // shared with the player, so a round trip matches
 
   function submitWith(p, sol) {
+    // The recording already knows whether the author's own line met the
+    // objective — no solver involved, the engine judged it during test play.
+    // A non-solving reference line is probably a sloppy run (it cost a real
+    // review round-trip once), but marathon boards sometimes get submitted
+    // mid-polish on purpose, so warn, don't block.
+    if (sol.met === false && !confirm(
+        'Your recorded test play did NOT meet the objective (' +
+        (sol.strength / 10) + ' STR in ' + sol.orders + ' orders).\n\n' +
+        'Reviewers use your line as the reference solution. Submit it anyway?')) {
+      return out('Submission held \u2014 hit \u25b6 Test play and finish a winning line first.');
+    }
     out('submitting\u2026 (with your solution: ' + (sol.strength / 10) + ' STR in ' + sol.orders + ' orders)');
     fetch('/api/submit', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
