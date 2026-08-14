@@ -654,11 +654,31 @@
     // row expands the full card; tapping the expanded card collapses it back.
     // Selection is never affected by any of it.
     if (compact) {
+      // promotions and generalship as the board's own glyphs — icons cost
+      // ~16px each where words would cost a second row
+      var chips = '';
+      var lead = E.effectsOf(u).filter(function (e) { return /_LEADER$/.test(e); })[0];
+      if (u.general || lead) {
+        var gic = ICONS['EFFECT_' + String(lead || 'EFFECTUNIT_COMMANDER').replace('EFFECTUNIT_', '')] ||
+                  ICONS['EFFECT_COMMANDER'];
+        if (gic) chips += '<img src="' + gic + '" style="width:16px;height:16px;' +
+          'vertical-align:-3px;margin-left:5px" alt="general">';
+      }
+      var promoChips = (u.promotions || []).filter(function (pr) { return !/_LEADER$/.test(pr); });
+      promoChips.slice(0, 4).forEach(function (pr) {
+        var eff = (E.DATA.promotions[pr] && E.DATA.promotions[pr].effect) || pr;
+        var pic = ICONS['EFFECT_' + eff.replace('EFFECTUNIT_', '')];
+        if (pic) chips += '<img src="' + pic + '" style="width:15px;height:15px;' +
+          'vertical-align:-3px;margin-left:3px;background:#3a2f1b;border:1px solid #ffd23e;' +
+          'border-radius:50%;padding:1px" alt="">';
+      });
+      if (promoChips.length > 4) chips += '<span style="color:#ffd23e;font-size:11px;margin-left:3px">+' +
+        (promoChips.length - 4) + '</span>';
       p.innerHTML =
         '<div class="who" style="margin:0">' +
         (ic ? '<img class="p' + u.player + '" src="' + ic + '" alt="">' : '') +
-        shortName(u) +
-        '<span style="margin-left:auto;font-weight:400;color:#b9b4a4">' +
+        shortName(u) + chips +
+        '<span style="margin-left:auto;font-weight:400;color:#b9b4a4;white-space:nowrap">' +
         fmt10(inf.iStrength) + ' str · ' + u.hp + '/' + E.hpMax(u) + ' hp · ' +
         inf.iMovement + ' mv</span>' +
         '<span style="margin-left:8px;color:#ffb020">ⓘ</span></div>';
