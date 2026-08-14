@@ -1,0 +1,41 @@
+{
+  "_doc": "The solver's eval set: every board where a human line is the best known result, plus proven boards as regression anchors. The optimizer's bar is match-or-beat each 'target' UNAIDED (seed 0) within 'budgetSeconds'. Human lines referenced here are replay-verified; they are ground truth, not aspiration.",
+  "boards": [
+    {
+      "id": "closing-in", "file": "submissions/closing-in-8f4afe.json", "pool": 30,
+      "target": { "strength": 100, "orders": 22 }, "budgetSeconds": 600,
+      "source": "Aran, replay-verified 2026-08-13 (submissions/closing-in-8f4afe-line.json)",
+      "class": "walk-then-fight, march-extended seat; solver: PROVEN 10/22 unaided (2026-08-14)"
+    },
+    {
+      "id": "left-flank-right-flank", "file": "submissions/left-flank-right-flank-95935f.json", "pool": 30,
+      "target": { "strength": 190, "orders": 22 }, "budgetSeconds": 600,
+      "source": "Aran, replay-verified; solver reproduces at ~1.5k deployments",
+      "class": "flank-seat coordination, rout-vacated seat sharing"
+    },
+    {
+      "id": "with-a-little-help", "file": "submissions/with-a-little-help-from-my-friends-f6ff55.json", "pool": 45,
+      "target": { "strength": 370, "orders": 37 }, "budgetSeconds": 2400,
+      "source": "Aran, replay-verified. Solver unaided best: 170-220 depending on schedule knobs (post zealot-cap fix, 2026-08-14) — no tuning trend toward 370",
+      "class": "11-unit deep coordination; THE open problem"
+    },
+    {
+      "id": "bottleneck-v2", "file": "submissions/bottleneck-aded0b.json", "pool": 20,
+      "target": { "strength": 350, "orders": 16 }, "budgetSeconds": 2400,
+      "source": "solver's own find, replay-verified (submissions/bottleneck-aded0b-line.json); /16 lands at full-play node 5,547,451 (~24min stage2u), hence the 2400s budget; humans at 24-30. Ceiling is best-known 35 (U=46) — an older run claimed PROVEN but its completeness doesn't reproduce on current code",
+      "class": "waiting-tile choreography — solver super-human on strength; the 16th order is stage2u depth"
+    },
+    {
+      "id": "king-of-the-hill", "file": "submissions/king-of-the-hill-41e478.json", "pool": 25,
+      "target": { "strength": 180, "orders": 20 }, "budgetSeconds": 900,
+      "source": "problemgambler, replay-verified (submissions/king-of-the-hill-41e478-line.json, exported from the v1 row; boards unit-identical)",
+      "class": "fortified hill assault; solver: PROVEN 180 STR unaided, /21 orders — the /20 is the ordering gap"
+    },
+    {
+      "id": "horsing-around", "file": "submissions/horsing-around-e7a297.json", "pool": 20,
+      "target": { "strength": 260, "orders": 11 }, "budgetSeconds": 300,
+      "source": "PROVEN (full-play complete + independent agreement) — regression anchor",
+      "class": "small board; must stay proven"
+    }
+  ]
+}

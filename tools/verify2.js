@@ -924,21 +924,13 @@ function stage2u(ctx, inc, deadline) {
     model: 'full legal play — engine legalActions, fortify excluded (provably irrelevant to maxKill)' };
 }
 
-// --------------------------------- stage 3: assignment search (deploy) ----
-function stage3(ctx, inc, deadline, opts) {
+// ------------------------------------------- seat lists (search order) ----
+// The exact per-unit seat lists and unit processing order stage3 searches.
+// Extracted so V2_TRACE_LINE can report the REAL rank of a human line's
+// seats in the current ordering — misranking data drives heuristic work.
+function buildSeatLists(ctx, opts) {
   opts = opts || {};
-  var POOL = ctx.POOL;
   var LAMBDA = process.env.LAMBDA ? parseFloat(process.env.LAMBDA) : 6;
-  var masks = opts.masks;                 // sorted by strength desc
-  // persistent across calls: fights already evaluated, prune decisions made
-  var mem = opts.state || { fightMemo: {}, pruneCache: {} };
-  var stats = { leaves: 0, dedup: 0, illegal: 0, boundCut: 0, costCut: 0,
-    tWalk: 0, tFight: 0, tPrune: 0, fightCapped: 0 };
-  // fights are exact except in plan (finder) passes, where a node cap keeps
-  // the leaf rate up; a capped fight is honesty-tracked in the verdict
-  var FCAP = process.env.FCAP ? parseInt(process.env.FCAP, 10)
-    : (opts.plan ? 2500 : Infinity);
-
   // symmetry classes: identical type+promotions+hp fight identically
   var classOf = {}, classes = {};
   ctx.BLUE.forEach(function (b) {
@@ -987,9 +979,27 @@ function stage3(ctx, inc, deadline, opts) {
         if (keys.indexOf(k) < 0) keys.push(k);
       });
     }
+    // which reds can this unit hit from any IMMEDIATE seat? A deferred seat
+    // that reaches a red the unit cannot otherwise touch is not speculative —
+    // it is the unit's only door (Closing In: the axeman's target is walled
+    // off by rivers until the first kill vacates the tile between them), and
+    // burying it behind every immediate seat hides the only winning lines.
+    var hasImm = new Array(ctx.NR).fill(false);
+    Object.keys(ctx.SEAT3[b.id]).forEach(function (k) {
+      var row = o.tiles[k];
+      if (!row) return;
+      for (var i = 0; i < ctx.NR; i++) if (row[i] > 0) hasImm[i] = true;
+    });
     var list = keys.map(function (k) {
       var seat = seatEntry(b.id, k);
       var t = k.split(','), tile = { q: +t[0], r: +t[1] };
+      var essential = false;
+      if (seat.deferred) {
+        var row0 = o.tiles[k];
+        for (var ei = 0; ei < ctx.NR; ei++) {
+          if (row0 && row0[ei] > 0 && !hasImm[ei]) { essential = true; break; }
+        }
+      }
       var own = 0;
       ctx.REDS.forEach(function (R, i) {
         if (!(inMask & (1 << i))) return;
@@ -1017,27 +1027,58 @@ function stage3(ctx, inc, deadline, opts) {
         if (s2 && s2.orders < minCost) minCost = s2.orders;
       });
       // a deferred seat is speculative — it only exists after the right kill —
-      // so it must not outrank the immediate seats that make those kills
-      var defPen = seat.deferred ? DEFPEN : 0;
+      // so it must not outrank the immediate seats that make those kills.
+      // UNLESS it is essential (the unit's only access to some red): then it
+      // ranks with the immediates on merit.
+      var defPen = seat.deferred && !essential ? DEFPEN : 0;
+      // in plan mode the witness has already certified affordability, so
+      // travel is a tiebreak, not a tax — a heavy LAMBDA buries the marched
+      // or far seat whose BLOW the allocation is counting on (Closing In:
+      // the 7-damage march seat lost to cheap 5-damage seats and the fight
+      // came up one point short on a 20-hp axeman)
+      var LAM = plan ? 1 : LAMBDA;
       return { key: k, q: tile.q, r: tile.r, orders: seat.orders, march: seat.march,
-        deferred: seat.deferred, rout: ctx.OPT[b.id].rout,
-        classMin: minCost, score: own + ally - LAMBDA * seat.orders - defPen };
+        deferred: seat.deferred, essential: essential, rout: ctx.OPT[b.id].rout,
+        classMin: minCost, score: own + ally - LAM * seat.orders - defPen };
     }).sort(plan
       // plans rank purely by contribution — the witness's seats may all be deferred
       ? function (a, b) { return b.score - a.score || a.orders - b.orders; }
-      // otherwise immediates first as a block, speculative seats behind them
+      // otherwise immediates (and essential deferred) first, luxuries behind
       : function (a, b) {
-        return (a.deferred ? 1 : 0) - (b.deferred ? 1 : 0) ||
-          b.score - a.score || a.orders - b.orders;
+        var da = a.deferred && !a.essential ? 1 : 0;
+        var db = b.deferred && !b.essential ? 1 : 0;
+        return da - db || b.score - a.score || a.orders - b.orders;
       });
     if (plan) {
-      // keep the start seat reachable so a unit can sit out of a plan
-      var startKey = key(b.q, b.r);
+      // truncation exists for the 11-unit board's sake; on small boards it
+      // is pure loss — the human lines use collision-driven SUBOPTIMAL seats
+      // (king's 13-damage march seat over its 15-damage collidng one) that
+      // no per-red retention heuristic anticipates. Full lists, plan-scored.
+      if (ctx.BLUE.length <= 8) return list;
       var kept = list.slice(0, PLANK);
-      if (!kept.some(function (s) { return s.key === startKey; })) {
-        var st = list.filter(function (s) { return s.key === startKey; })[0];
-        if (st) kept.push(st);
+      function retain(k2) {
+        if (!kept.some(function (s) { return s.key === k2; })) {
+          var extra = list.filter(function (s) { return s.key === k2; })[0];
+          if (extra) kept.push(extra);
+        }
       }
+      // PLANK truncation must never cut the seats that any allocation of
+      // this MASK could depend on: for each red in the mask, retain the
+      // unit's strongest seat against that red. The witness is one arbitrary
+      // allocation — keying retention on it alone left king's marched
+      // 13-damage seat off the list because the witness happened to assign
+      // that unit elsewhere, and the human /20 deployment was unreachable.
+      ctx.REDS.forEach(function (R, i) {
+        if (!(inMask & (1 << i))) return;
+        var bestK = null, bestV = 0;
+        list.forEach(function (s) {
+          var v = o.tiles[s.key][i] || 0;
+          if (v > bestV) { bestV = v; bestK = s.key; }
+        });
+        if (bestK) retain(bestK);
+      });
+      // and the start seat, so a unit can sit out of a plan
+      retain(key(b.q, b.r));
       return kept;
     }
     return list;
@@ -1049,6 +1090,30 @@ function stage3(ctx, inc, deadline, opts) {
     var sb = lists[b].length ? lists[b][0].score : 0;
     return sb - sa;
   });
+  return { classOf: classOf, classes: classes, seatEntry: seatEntry,
+    lists: lists, order: order };
+}
+
+// --------------------------------- stage 3: assignment search (deploy) ----
+function stage3(ctx, inc, deadline, opts) {
+  opts = opts || {};
+  var POOL = ctx.POOL;
+  var LAMBDA = process.env.LAMBDA ? parseFloat(process.env.LAMBDA) : 6;
+  var masks = opts.masks;                 // sorted by strength desc
+  // persistent across calls: fights already evaluated, prune decisions made
+  var mem = opts.state || { fightMemo: {}, pruneCache: {} };
+  var stats = { leaves: 0, dedup: 0, illegal: 0, boundCut: 0, costCut: 0,
+    tWalk: 0, tFight: 0, tPrune: 0, fightCapped: 0 };
+  // fights are exact except in plan (finder) passes, where a node cap keeps
+  // the leaf rate up; a capped fight is honesty-tracked in the verdict
+  var FCAP = process.env.FCAP ? parseInt(process.env.FCAP, 10)
+    : (opts.plan ? 2500 : Infinity);
+
+  var built = buildSeatLists(ctx, { plan: opts.plan, expressive: opts.expressive });
+  var classOf = built.classOf, classes = built.classes, seatEntry = built.seatEntry;
+  var lists = built.lists, order = built.order;
+  var plan = opts.plan || null;
+  var EXPR = !!(opts.expressive || plan);
   var suffixMin = new Array(order.length + 1).fill(0);
   for (var i = order.length - 1; i >= 0; i--) {
     var cheapest = Infinity;
@@ -1192,7 +1257,7 @@ function stage3(ctx, inc, deadline, opts) {
       noteBest(inc, localBest.str, localBest.orders, startLine.concat(localBest.line),
         'deployment ' + stats.leaves);
     }
-    return localBest.str;
+    return { str: localBest.str, orders: localBest.orders };
   }
 
   function evalLeaf(assignment) {
@@ -1300,19 +1365,19 @@ function stage3(ctx, inc, deadline, opts) {
     stats.leaves++;
     stats.tWalk += Date.now() - tW0;
     var tF0 = Date.now();
-    var fstr = fightOut(st, startLine, FCAP, pending);
+    var fres = fightOut(st, startLine, FCAP, pending);
     stats.tFight += Date.now() - tF0;
     // remember the best deployments seen — seeds for the polish pass
     var tl = mem.topLeaves = mem.topLeaves || [];
-    if (tl.length < 16 || fstr > tl[tl.length - 1].str) {
-      tl.push({ placement: Object.assign({}, placement), str: fstr });
-      tl.sort(function (a, b) { return b.str - a.str; });
+    if (tl.length < 16 || fres.str > tl[tl.length - 1].str) {
+      tl.push({ placement: Object.assign({}, placement), str: fres.str, orders: fres.orders });
+      tl.sort(function (a, b) { return b.str - a.str || a.orders - b.orders; });
       if (tl.length > 16) tl.pop();
     }
     if (stats.leaves % 20000 === 0) {
       console.log('  … ' + stats.leaves + ' deployments fought, best ' + (inc.str / 10) + ' STR');
     }
-    return fstr;
+    return fres;
   }
 
   // Hill-climbing polish: take the strongest deployments seen so far and
@@ -1340,14 +1405,41 @@ function stage3(ctx, inc, deadline, opts) {
       }
       return c <= POOL && t <= ctx.INIT.training ? c : null;
     }
-    var seeds = (mem.topLeaves || []).slice();
+    // Acceptance is lexicographic (strength, then fewer orders): the same
+    // machinery that climbs toward a higher ceiling also grinds par down at
+    // a proven one. k=1 sweeps first; when a seed stalls, k=2 rebuild —
+    // destroy two units' seats and enumerate their joint replacement from
+    // the top of each list. Misranking data: winning deployments are often
+    // a couple of substitutions from reached ones, but NOT one (king's /20
+    // shares no seat assignment with the reached /21).
+    function better(r, str0, ord0) {
+      if (r === -1) return false;
+      return r.str > str0 || (r.str === str0 && r.orders < ord0);
+    }
+    function tryPlacement(pl) {
+      var c2 = placementCost(pl);
+      if (c2 === null) return -1;
+      return evalPlacement(Object.assign({}, pl), c2);
+    }
+    function claimOKPl(pl, k2, uid) {
+      var others = claimants(pl, k2, uid);
+      if (others.length >= 2) return false;
+      if (others.length === 1) {
+        var mine = listById[uid].filter(function (x) { return x.key === k2; })[0];
+        if (!(mine && mine.rout) && !ctx.OPT[others[0]].rout) return false;
+      }
+      return true;
+    }
+    var seeds = (mem.topLeaves || []).slice()
+      .sort(function (a, b) { return b.str - a.str || a.orders - b.orders; });
     for (var sd = 0; sd < seeds.length; sd++) {
       if (Date.now() > deadline) break;
       var cur = Object.assign({}, seeds[sd].placement);
-      var curStr = seeds[sd].str;
+      var curStr = seeds[sd].str, curOrd = seeds[sd].orders;
       var improved = true;
       while (improved && Date.now() < deadline) {
         improved = false;
+        // k=1: single-seat swaps
         for (var bi = 0; bi < ctx.BLUE.length && !improved; bi++) {
           var uid = ctx.BLUE[bi].id;
           var origK = cur[uid];
@@ -1355,16 +1447,38 @@ function stage3(ctx, inc, deadline, opts) {
           for (var ci = 0; ci < cand.length && ci < 20; ci++) {
             if (Date.now() > deadline) break;
             var k2 = cand[ci].key;
-            if (k2 === origK) continue;
-            var others = claimants(cur, k2, uid);
-            if (others.length >= 2) continue;
-            if (others.length === 1 && !cand[ci].rout && !ctx.OPT[others[0]].rout) continue;
+            if (k2 === origK || !claimOKPl(cur, k2, uid)) continue;
             cur[uid] = k2;
-            var c2 = placementCost(cur);
-            if (c2 === null) { cur[uid] = origK; continue; }
-            var r = evalPlacement(Object.assign({}, cur), c2);
-            if (r > curStr) { curStr = r; improved = true; break; }
+            var r = tryPlacement(cur);
+            if (better(r, curStr, curOrd)) { curStr = r.str; curOrd = r.orders; improved = true; break; }
             cur[uid] = origK;
+          }
+        }
+        if (improved || Date.now() > deadline) continue;
+        // k=2: joint rebuild of every unit pair from the top of their lists
+        for (var i1 = 0; i1 < ctx.BLUE.length && !improved; i1++) {
+          for (var i2 = i1 + 1; i2 < ctx.BLUE.length && !improved; i2++) {
+            var idA = ctx.BLUE[i1].id, idB = ctx.BLUE[i2].id;
+            var oA = cur[idA], oB = cur[idB];
+            var lA = listById[idA], lB = listById[idB];
+            for (var ai = 0; ai < lA.length && ai < 12 && !improved; ai++) {
+              if (Date.now() > deadline) break;
+              var kA = lA[ai].key;
+              if (!claimOKPl(cur, kA, idA) && kA !== oA) continue;
+              cur[idA] = kA;
+              for (var bi2 = 0; bi2 < lB.length && bi2 < 12; bi2++) {
+                var kB = lB[bi2].key;
+                if (kA === kB) continue;
+                if (!claimOKPl(cur, kB, idB) && kB !== oB) continue;
+                cur[idB] = kB;
+                var r2 = tryPlacement(cur);
+                if (better(r2, curStr, curOrd)) {
+                  curStr = r2.str; curOrd = r2.orders; improved = true; break;
+                }
+                cur[idB] = oB;
+              }
+              if (!improved) cur[idA] = oA;
+            }
           }
         }
       }
@@ -1451,22 +1565,29 @@ function stage3(ctx, inc, deadline, opts) {
   // so the plain assignments the old searches found first still come first
   var SHAREPEN = process.env.SHAREPEN ? parseFloat(process.env.SHAREPEN) : 15;
   // first valid seat rank >= si for depth d under ancestor chain `p`
-  function firstValid(p, d, si, gBase, costBase) {
+  // marches draw on the SHARED training pool: floor(training/UNIT_MARCH_COST)
+  // of them, army-wide. Without this the tree happily assigns every unit a
+  // march seat — king-of-the-hill's budget funds exactly two, and the human
+  // line uses exactly two, so every over-marched subtree is pure waste.
+  var TRAIN = ctx.INIT.training;
+  function firstValid(p, d, si, gBase, costBase, trainBase) {
     var list = lists[order[d]];
     for (; si < list.length; si++) {
       if (d === 0 && partK > 1 && si % partK !== partW) continue;
       var seat = list[si];
       var claim = claimState(p, seat);
       if (!claim) continue;
+      var t2 = trainBase + (seat.march ? GLOB.UNIT_MARCH_COST : 0);
+      if (t2 > TRAIN) { stats.costCut++; continue; }
       var pen = claim === 2 ? SHAREPEN : 0;
       var c2 = costBase + seat.classMin;
       if (c2 + suffixMin[d + 1] > POOL) { stats.costCut++; continue; }
-      return { p: p, d: d, si: si, g: gBase + seat.score - pen, cost: c2,
+      return { p: p, d: d, si: si, g: gBase + seat.score - pen, cost: c2, tr: t2,
         f: gBase + W * (seat.score - pen + suffixBest[d + 1]) };
     }
     return null;
   }
-  var root = firstValid(null, 0, 0, 0, 0);
+  var root = firstValid(null, 0, 0, 0, 0, 0);
   if (root) hpush(root);
   var HEAPCAP = 2000000;
   var exhausted = true;
@@ -1476,7 +1597,7 @@ function stage3(ctx, inc, deadline, opts) {
     var node = hpop();
     // sibling first: the tail this node stood in for lives on
     var sib = firstValid(node.p, node.d, node.si + 1,
-      node.p ? node.p.g : 0, node.p ? node.p.cost : 0);
+      node.p ? node.p.g : 0, node.p ? node.p.cost : 0, node.p ? node.p.tr : 0);
     if (sib) hpush(sib);
     // materialise the assignment chain once
     var assignment = [], pfx = [];
@@ -1492,7 +1613,7 @@ function stage3(ctx, inc, deadline, opts) {
     stats.tPrune += Date.now() - tP0;
     if (cut) { stats.boundCut++; continue; }
     if (node.d === order.length - 1) { evalLeaf(assignment); continue; }
-    var child = firstValid(node, node.d + 1, 0, node.g, node.cost);
+    var child = firstValid(node, node.d + 1, 0, node.g, node.cost, node.tr);
     if (child) hpush(child);
   }
   stats.exhausted = exhausted && !heap.length && !plan;   // plan lists are truncated
@@ -1512,7 +1633,13 @@ function stage3(ctx, inc, deadline, opts) {
 // ---------------------------------------------------- big-board schedule ----
 // Plan slices over the top kill-sets, then the full coverage search. Shared
 // verbatim by the single-threaded path and each worker (with its root slice).
-function scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, partW, partK) {
+// Plan slices: for each top kill-set, a short search restricted to the seats
+// its witness allocation wants. Kill-set-directed deployment assembly — the
+// one order of search that composes a COORDINATED deployment directly. Used
+// by both the big-board schedule and (briefly) small boards, where a
+// must-use deferred seat can otherwise hide behind thousands of plain
+// deployments (Closing In).
+function planSlices(ctx, inc, budgetMs, hardEnd, masks, s3state, partW, partK, plansMax, includeEqual) {
   var POOL = ctx.POOL;
   var walkRows = fullRows(ctx, 'walk');
   // Sweep DEEP down the kill-set list, not just the summit: the strongest
@@ -1520,27 +1647,47 @@ function scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, partW, partK) 
   // army thin; the masks just above what's actually playable are where a
   // plan's fight cashes in — and every realized plan raises the incumbent,
   // which silently skips everything weaker.
-  var PLANS = process.env.PLANS ? parseInt(process.env.PLANS, 10) : 48;
+  var PLANS = process.env.PLANS ? parseInt(process.env.PLANS, 10) : (plansMax || 48);
   var plans = [];
   for (var mi = 0; mi < masks.length && plans.length < PLANS; mi++) {
-    var outw = {};
-    if (feasibleMask(ctx, masks[mi].mask, POOL, walkRows, 300000, outw) && outw.assign) {
-      plans.push({ mask: masks[mi].mask, str: masks[mi].str, assign: outw.assign });
+    // WITNESS DIVERSIFICATION: one mask has many allocations, and the plan
+    // ordering follows the allocation — king's human /20 assigns roles the
+    // first-found witness does not, so its seats rank mid-list under that
+    // witness and near the top under the right one. Rotating the allocator's
+    // unit order yields structurally different witnesses cheaply.
+    var seen = {};
+    for (var rot = 0; rot < 3 && plans.length < PLANS; rot++) {
+      var rows2 = walkRows.slice(rot * Math.ceil(walkRows.length / 3))
+        .concat(walkRows.slice(0, rot * Math.ceil(walkRows.length / 3)));
+      var outw = {};
+      if (feasibleMask(ctx, masks[mi].mask, POOL, rows2, 300000, outw) && outw.assign) {
+        var sig = JSON.stringify(outw.assign);
+        if (seen[sig]) continue;
+        seen[sig] = 1;
+        plans.push({ mask: masks[mi].mask, str: masks[mi].str, assign: outw.assign });
+      } else break;                                    // infeasible: no more rotations
     }
   }
-  var planBudget = Math.max(20, SECONDS * 0.45) * 1000;
-  var perPlan = Math.max(12000, planBudget / Math.max(1, plans.length));
-  var planEnd = Date.now() + planBudget;
+  var perPlan = Math.max(12000, budgetMs / Math.max(1, plans.length));
+  var planEnd = Date.now() + budgetMs;
   console.log('--- stage3 (plan slices: ' + plans.length + ' kill-sets)' +
     (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
   var s3 = null;
   for (var pi = 0; pi < plans.length; pi++) {
-    if (Date.now() + 5000 > DEADLINE || Date.now() > planEnd) break;
-    if (plans[pi].str <= curBest(inc)) continue;          // already beaten
-    var pEnd = Math.min(DEADLINE, Date.now() + perPlan);
+    if (Date.now() + 5000 > hardEnd || Date.now() > planEnd) break;
+    // par refinement wants EQUAL-strength kill-sets (cheaper lines to the
+    // same ceiling); the strength hunt wants only better ones
+    if (includeEqual ? plans[pi].str < curBest(inc) : plans[pi].str <= curBest(inc)) continue;
+    var pEnd = Math.min(hardEnd, Date.now() + perPlan);
     s3 = stage3(ctx, inc, pEnd, { masks: masks, state: s3state, plan: plans[pi],
       partW: partW, partK: partK });
   }
+  return s3;
+}
+
+function scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, partW, partK) {
+  var s3 = planSlices(ctx, inc, Math.max(20, SECONDS * 0.45) * 1000, DEADLINE,
+    masks, s3state, partW, partK);
   if (Date.now() < DEADLINE) {
     // alternate coverage and polish: the tree finds fresh material, the
     // climb turns the best of it into coordinated deployments
@@ -1619,6 +1766,120 @@ function workerMain(wd) {
     tainted: TAINted });
 }
 
+// ------------------------------------------------------- line trace mode ----
+// V2_TRACE_LINE=<file.json>: replay a (human) action line through the engine,
+// then interrogate the solver's own machinery about it — is each attack seat
+// in the live/deferred seat sets, would the deployment survive the kill-set
+// bound, does the fight model even contain the line's shape? This is the
+// diagnostic that separates "ordering problem" from "expressiveness problem"
+// without an afternoon of bisection.
+function traceLine(ctx, line) {
+  var E2 = E, POOL = ctx.POOL;
+  var s = E.loadPuzzle(ctx.base);
+  var fought = false;
+  var info = {};   // unit id -> {seat, marched, moveActions, midFightMoves}
+  var okAll = true;
+  line.forEach(function (a, i) {
+    var u = E.unitById(s, a.unit);
+    // capture the tile the unit attacks FROM before the engine applies the
+    // action — a routing kill advances the attacker, and the post-apply
+    // position is the victim's tile, not the seat the tree must assign
+    var preAt = u ? key(u.q, u.r) : null;
+    var rec = info[a.unit] = info[a.unit] || { moveActions: 0, midFightMoves: 0, marched: false, seat: null, attacks: 0 };
+    try { s = E.applyAction(s, a); } catch (e) {
+      console.log('  trace: action ' + (i + 1) + ' ' + JSON.stringify(a) + ' ILLEGAL under current engine: ' + e.message);
+      okAll = false;
+      return;
+    }
+    if (a.type === 'move') { rec.moveActions++; if (fought) rec.midFightMoves++; }
+    if (a.type === 'march') rec.marched = true;
+    if (a.type === 'swap') { rec.moveActions++; console.log('  trace: line uses SWAP — outside every stage3 model'); }
+    if (a.type === 'attack') {
+      fought = true;
+      rec.attacks++;
+      if (rec.seat === null) rec.seat = preAt;
+    }
+  });
+  var str = E.strKilledOf(s), used = POOL - s.orders;
+  console.log('trace: line replays to ' + (str / 10) + ' STR in ' + used + ' orders' + (okAll ? '' : ' (WITH ILLEGAL ACTIONS)'));
+  var mask = 0;
+  s.units.forEach(function (u) { if (u.player === 1 && u.hp <= 0) mask |= (1 << ctx.ridx[u.id]); });
+  console.log('trace: kill-set mask str ' + (str / 10));
+  // the REAL search orders: rank of each traced seat in the plain tree, the
+  // expressive tree, and the plan tree for this line's own kill-set witness
+  var plainB = buildSeatLists(ctx, {});
+  var exprB = buildSeatLists(ctx, { expressive: true });
+  var planB = null;
+  var outw = {};
+  if (ctx.NR <= 20 &&
+      feasibleMask(ctx, mask, POOL, fullRows(ctx, 'walk'), 300000, outw) && outw.assign) {
+    planB = buildSeatLists(ctx, { plan: { mask: mask, str: str, assign: outw.assign } });
+  }
+  function rankIn(built, id, seatKey) {
+    var bi = ctx.BLUE.findIndex(function (b) { return b.id === +id; });
+    if (bi < 0) return '-';
+    var idx = built.lists[bi].findIndex(function (s) { return s.key === seatKey; });
+    return idx < 0 ? 'ABSENT/' + built.lists[bi].length : idx + '/' + built.lists[bi].length;
+  }
+  Object.keys(info).forEach(function (id) {
+    var r = info[id];
+    if (r.seat === null) { console.log('  unit ' + id + ': never attacks'); return; }
+    var s3 = ctx.SEAT3[id] && ctx.SEAT3[id][r.seat];
+    var sc = ctx.SEAT[id] && ctx.SEAT[id][r.seat];
+    var row = ctx.OPT[id] && ctx.OPT[id].tiles[r.seat];
+    console.log('  unit ' + id + ': attack seat ' + r.seat +
+      (s3 ? ' [live, ' + s3.orders + ' orders' + (s3.march ? ', march' : '') + ']'
+          : sc ? ' [DEFERRED, floor ' + sc.orders + (sc.march ? ', march' : '') + ']'
+               : ' [NOT A SEAT — outside the seat model!]') +
+      ' · ' + r.moveActions + ' move action(s), ' + r.midFightMoves + ' mid-fight' +
+      (r.marched ? ', marched' : '') + ' · ' + r.attacks + ' attack(s)' +
+      (row ? ' · OPT row ' + row.join(',') : '') +
+      ' · rank plain ' + rankIn(plainB, id, r.seat) +
+      ', expr ' + rankIn(exprB, id, r.seat) +
+      (planB ? ', plan ' + rankIn(planB, id, r.seat) : ''));
+  });
+  // the tree's arrival cost for the whole deployment: sum of expressive ranks
+  var sumExpr = 0, sumPlan = 0, worst = null;
+  Object.keys(info).forEach(function (id) {
+    var r = info[id];
+    if (r.seat === null) return;
+    var bi = ctx.BLUE.findIndex(function (b) { return b.id === +id; });
+    var ei = exprB.lists[bi].findIndex(function (s) { return s.key === r.seat; });
+    if (ei >= 0) { sumExpr += ei; if (worst === null || ei > worst.rank) worst = { id: id, rank: ei }; }
+    if (planB) {
+      var pi2 = planB.lists[bi].findIndex(function (s) { return s.key === r.seat; });
+      if (pi2 >= 0) sumPlan += pi2;
+    }
+  });
+  console.log('trace: rank-sum expressive ' + sumExpr +
+    (planB ? ', plan ' + sumPlan : '') +
+    (worst ? ' · worst-ranked: unit ' + worst.id + ' at expr rank ' + worst.rank : ''));
+  // would the pinned deployment survive the kill-set bound?
+  var pins = {};
+  Object.keys(info).forEach(function (id) { if (info[id].seat) pins[id] = info[id].seat; });
+  var rows = ctx.BLUE.map(function (b) {
+    var o = ctx.OPT[b.id];
+    var pin = pins[b.id];
+    if (!pin) {
+      return { id: b.id, prim: o.stat, col: o.cstat, colCap: o.colCap, maxAtt: o.maxAtt,
+        travel: o.travel, travelAny: 0 };
+    }
+    var row = o.tiles[pin] || new Array(ctx.NR).fill(0);
+    if (o.rout && ctx.adjRed[pin]) {
+      row = row.map(function (v, i2) { return Math.max(v, o.routFire[i2]); });
+    }
+    return { id: b.id, prim: row, col: (o.col && o.col[pin]) || new Array(ctx.NR).fill(0),
+      colCap: o.colCap, maxAtt: o.maxAtt, travel: new Array(ctx.NR).fill(0), travelAny: 0 };
+  });
+  var cost = 0;
+  Object.keys(pins).forEach(function (id) {
+    var e3 = ctx.SEAT3[id][pins[id]] || ctx.SEAT[id][pins[id]];
+    cost += e3 ? e3.orders : 0;
+  });
+  console.log('trace: pinned kill-set feasible under the bound: ' +
+    feasibleMask(ctx, mask, POOL - cost, rows, 300000) + ' (assigned cost floor ' + cost + ')');
+}
+
 // ----------------------------------------------------------------- main ----
 function replay(ctx, line) {
   var s = E.loadPuzzle(ctx.base);
@@ -1670,6 +1931,12 @@ function main() {
   });
   console.log('tables built in ' + ((Date.now() - t0) / 1000).toFixed(1) + 's');
 
+  if (process.env.V2_TRACE_LINE) {
+    var traced = JSON.parse(require('fs').readFileSync(process.env.V2_TRACE_LINE, 'utf8'));
+    traceLine(ctx, traced.line || traced);
+    return;
+  }
+
   // ---- stage 1: kill-set upper bounds
   var masks = null, U = null, U0 = null;
   if (ctx.NR <= 20) {
@@ -1703,9 +1970,38 @@ function main() {
     }
     s3 = scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, 0, 1);
   } else {
-    var sliceEnd = Math.min(DEADLINE, Date.now() + Math.max(20, SECONDS * 0.2) * 1000);
-    console.log('--- stage3 (finder slice)');
-    s3 = stage3(ctx, inc, sliceEnd, { masks: masks, state: s3state });
+    // small boards: brief kill-set-directed plan slices, but ONLY when the
+    // ceiling actually depends on deferred (kill-opened) seats — measured by
+    // recomputing the upper bound with blows restricted to live-reach seats.
+    // If immediate seats already support U0, plans are a luxury that eats
+    // the plain pass's budget (left-flank's winning leaf sits ~2,800 fights
+    // in); if they don't (Closing In: the axeman's real blow only exists on
+    // the tile a kill vacates), plans are the only fast route.
+    if (masks) {
+      // primary blows only: the allocator's collateral model is decoupled-
+      // generous, and on Closing In the cleave pseudo-blows paper over the
+      // one missing point that makes the deferred seat load-bearing. A
+      // primaries-only selector errs toward running plans, which costs 30s
+      // on boards that did not need them — the right direction to be wrong.
+      var immRows = fullRows(ctx, 'walk').map(function (r) {
+        var o = ctx.OPT[r.id];
+        var prim = new Array(ctx.NR).fill(0);
+        Object.keys(ctx.SEAT3[r.id]).forEach(function (k) {
+          for (var i = 0; i < ctx.NR; i++) {
+            if (o.tiles[k] && o.tiles[k][i] > prim[i]) prim[i] = o.tiles[k][i];
+          }
+        });
+        return { id: r.id, prim: prim, col: new Array(ctx.NR).fill(0), colCap: 0,
+          maxAtt: r.maxAtt, travel: r.travel, travelAny: r.travelAny };
+      });
+      var Uimm = upperBound(ctx, masks, immRows, POOL, []).U;
+      if (Uimm < U0) {
+        console.log('immediate-seat ceiling ' + (Uimm / 10) + ' < U0 ' + (U0 / 10) +
+          ' — deferred seats are load-bearing, running plan slices');
+        s3 = planSlices(ctx, inc, Math.max(15, SECONDS * 0.1) * 1000, DEADLINE,
+          masks, s3state, 0, 1, 8);
+      }
+    }
   }
 
   // ---- stage 2: exhaustive in-state search on small boards. It gets a
@@ -1714,34 +2010,81 @@ function main() {
   var s2 = null;
   if (ctx.BLUE.length <= S2MAX && !(U !== null && inc.str >= U)) {
     var lateLevels = process.env.LATE !== undefined ? [parseInt(process.env.LATE, 10)] : [0, 1, 2, 3];
-    var s2end = Math.min(DEADLINE, Date.now() + Math.max(30, (DEADLINE - Date.now()) * 0.4 / 1000) * 1000);
+    var s2end = Math.min(DEADLINE, Date.now() + Math.max(30, (DEADLINE - Date.now()) * 0.2 / 1000) * 1000);
     console.log('--- stage2 (exact in-state search)');
     s2 = stage2(ctx, inc, s2end, lateLevels);
-    // then TRUE full play with the remaining time: Bottleneck's 35 lives in
-    // waiting-tile choreography the rationed model cannot express, and its
-    // budget counters fragment transpositions so badly that widening the
-    // ration searches MORE states than searching the real game. If this
-    // completes, the ceiling is proven outright.
+    // then TRUE full play: Bottleneck's 35 lives in waiting-tile choreography
+    // the rationed model cannot express, and its budget counters fragment
+    // transpositions so badly that widening the ration searches MORE states
+    // than searching the real game. If this completes, the ceiling is proven
+    // outright. When the rationed pass timed out the state space is large —
+    // stage2u then waits its turn BEHIND the stage-3 passes (see below), so
+    // the deployment search keeps the budget that finds real lines.
     if (s2.complete && Date.now() < DEADLINE && !(U !== null && inc.str >= U)) {
       console.log('--- stage2u (full legal play)');
       var before = inc.str;
       var s2u = stage2u(ctx, inc, DEADLINE);
       if (s2u.complete) s2 = s2u;
-      else if (inc.str > before) s2 = null;   // narrow completion is now moot
+      else if (inc.str > before) s2 = null;                // narrow completion is now moot
     }
   }
 
   // ---- stage 3 full runs with the remaining time: plain first (the arrival
-  // order that finds real lines on live-seat boards), expressive after
+  // order that finds real lines on live-seat boards), expressive after, and
+  // a deferred stage2u slice last when the rationed pass could not finish
   if (!(s2 && s2.complete) && !(U !== null && inc.str >= U) && Date.now() < DEADLINE) {
     console.log('--- stage3 (full)');
-    var s3end = Math.min(DEADLINE, Date.now() + (DEADLINE - Date.now()) * 0.6);
+    var s3end = Math.min(DEADLINE, Date.now() + (DEADLINE - Date.now()) * 0.55);
     s3 = stage3(ctx, inc, s3end, { masks: masks, state: s3state });
     if (Date.now() < DEADLINE && !(U !== null && inc.str >= U)) {
       console.log('--- stage3 (full, expressive)');
-      var s3x = stage3(ctx, inc, DEADLINE, { masks: masks, state: s3state, expressive: true });
+      var s3xend = Math.min(DEADLINE, Date.now() + (DEADLINE - Date.now()) * 0.6);
+      var s3x = stage3(ctx, inc, s3xend, { masks: masks, state: s3state, expressive: true });
       if (s3x.exhausted) s3 = s3x;
     }
+    if (ctx.BLUE.length <= S2MAX && Date.now() < DEADLINE && !(U !== null && inc.str >= U)) {
+      console.log('--- stage2u (full legal play, tail slice)');
+      stage2u(ctx, inc, DEADLINE);
+    }
+  }
+
+  // A bound-match proof ends the strength hunt the moment the ceiling is
+  // found — usually NOT on the cheapest line. Par matters (it is the
+  // published number players chase), so spend part of the leftover budget
+  // minimising orders at the proven strength: with the incumbent at the
+  // ceiling, the bound prunes everything that cannot at least equal it, and
+  // the rationed search runs fast.
+  if (!TAINted && inc.line && Date.now() + 10000 < DEADLINE &&
+      ((U0 !== null && inc.str >= U0) || (U !== null && inc.str >= U)) &&
+      ctx.BLUE.length <= S2MAX) {
+    var before = inc.orders;
+    console.log('--- par refinement (ceiling proven, minimising orders)');
+    // equal-strength plan slices first: the witness for the PROVEN kill-set
+    // assembles cheaper deployments of the same kills directly (king's 18/20
+    // is an 18/21-proof plus a better-ordered deployment of the same mask)
+    if (masks) {
+      planSlices(ctx, inc, Math.max(20, (DEADLINE - Date.now()) * 0.25 / 1000) * 1000,
+        DEADLINE, masks, s3state, 0, 1, 8, true);
+    }
+    // LNS polish over the best deployments seen — lexicographic acceptance
+    // means it grinds orders down at the proven strength
+    if (Date.now() + 5000 < DEADLINE) {
+      stage3(ctx, inc, Math.min(DEADLINE, Date.now() + (DEADLINE - Date.now()) * 0.3),
+        { masks: masks, state: s3state, polishOnly: true, expressive: true });
+    }
+    stage2(ctx, inc, Math.min(DEADLINE, Date.now() +
+      Math.max(30, (DEADLINE - Date.now()) * 0.3 / 1000) * 1000),
+      process.env.LATE !== undefined ? [parseInt(process.env.LATE, 10)] : [0, 1, 2, 3]);
+    // the deployment tree keeps equal-strength kill-sets alive, so its
+    // coverage passes also refine par — often past the rationed model
+    if (Date.now() + 5000 < DEADLINE) {
+      stage3(ctx, inc, Math.min(DEADLINE, Date.now() + (DEADLINE - Date.now()) * 0.6),
+        { masks: masks, state: s3state });
+    }
+    if (Date.now() + 5000 < DEADLINE) {
+      stage3(ctx, inc, DEADLINE, { masks: masks, state: s3state, expressive: true });
+    }
+    if (inc.orders < before) console.log('  par tightened: ' + before + ' -> ' + inc.orders + ' orders');
   }
 
   verdict(ctx, inc, U, U0, s2, s3);
@@ -1759,6 +2102,14 @@ function verdict(ctx, inc, U, U0, s2, s3) {
     var rep = replay(ctx, inc.line);
     console.log('verified: ' + (rep.str / 10) + ' STR in ' + rep.orders + ' orders' +
       (rep.str === inc.str && rep.orders === inc.orders ? '  ✓ matches' : '  ✗ MISMATCH'));
+    // V2_DUMP_LINE=<path>: persist the replay-verified best line as the same
+    // plain action-array JSON the trace mode consumes — lines are how results
+    // travel between tools, reviews and future traces
+    if (process.env.V2_DUMP_LINE) {
+      require('fs').writeFileSync(process.env.V2_DUMP_LINE, JSON.stringify({
+        strength: rep.str, orders: rep.orders, line: inc.line }, null, 1));
+      console.log('line dumped to ' + process.env.V2_DUMP_LINE);
+    }
   } else if (inc.str > 0) {
     console.log('  (best value came from the seed; no line to replay)');
   }
