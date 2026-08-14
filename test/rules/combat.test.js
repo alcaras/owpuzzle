@@ -202,3 +202,58 @@ test('TOUGH raises a wounded unit\'s own strength, attacking AND defending [Unit
   const wholePlain = pair(20, null), wholeTough = pair(20, 'EFFECTUNIT_TOUGH');
   assert.deepEqual(wholeTough, wholePlain, 'undamaged, TOUGH does nothing at all');
 });
+
+test('CIRCLE strikes every enemy around the attacker except the main target [Tile.cs:12538, ATTACK_CIRCLE 10%]', () => {
+  // cataphracts and the Hittite chariots carry EFFECTUNIT_CIRCLE: on attack,
+  // every OTHER tile adjacent to the attacker takes a 10% side-blow
+  const g = setup(`
+    blue CATAPHRACT 0,0
+    red AXEMAN 1,0 hp=12
+    red SLINGER 0,1 hp=9
+    red ARCHER 1,-1 hp=9
+    red SPEARMAN -2,0 hp=9
+  `);
+  g.attack(g.blue(), g.at('1,0'));
+  // 10% of the per-victim damage (15 vs the slinger -> 2 after rounding);
+  // the exact figure is the engine's getAttackDamage port, cited there
+  assert.equal(g.at('0,1').hp, 7, 'adjacent slinger clipped by the side-blow');
+  assert.equal(g.at('1,-1').hp, 7, 'adjacent archer clipped by the side-blow');
+  assert.equal(g.at('-2,0').hp, 9, 'two tiles away: untouched');
+});
+
+test('CIRCLE never clips friendly units', () => {
+  const g = setup(`
+    blue CATAPHRACT 0,0
+    blue MILITIA 0,1
+    red AXEMAN 1,0 hp=12
+  `);
+  const hp0 = g.at('0,1').hp;
+  g.attack(g.blue(0), g.at('1,0'));
+  assert.equal(g.at('0,1').hp, hp0, 'the militia beside the swing is unharmed');
+});
+
+// iVsGeneralModifier fires on a unit that HAS a general (Unit.cs:8833 gates
+// the bonus on pToUnit.hasGeneral(), Unit.cs:2274). A leader effect is granted
+// BY that attached general, so a unit carrying one is a general — the two ways
+// a puzzle can say it must agree, or promotions aimed at generals do nothing.
+test('heckler hits a general marked by the general flag (Unit.cs:8833)', () => {
+  const plain = setup(`
+    blue LONGBOWMAN 0,0 promo=EFFECTUNIT_HECKLER
+    red LONGBOWMAN 1,0
+  `);
+  const led = setup(`
+    blue LONGBOWMAN 0,0 promo=EFFECTUNIT_HECKLER
+    red LONGBOWMAN 1,0 general
+  `);
+  assert.equal(mods(led, led.blue(), led.red())['att:vs general'], 25);
+  assert.ok(damage(led, led.blue(), led.red()) > damage(plain, plain.blue(), plain.red()));
+});
+
+test('a leader effect makes the unit a general (Unit.cs:2274 hasGeneral)', () => {
+  const g = setup(`
+    blue LONGBOWMAN 0,0 promo=EFFECTUNIT_HECKLER
+    red LONGBOWMAN 1,0 promo=EFFECTUNIT_COMMANDER_LEADER
+  `);
+  assert.equal(g.red().general, true, 'COMMANDER_LEADER implies an attached general');
+  assert.equal(mods(g, g.blue(), g.red())['att:vs general'], 25, 'so heckler applies');
+});
