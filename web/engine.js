@@ -1254,6 +1254,28 @@
     (d.aeEffectUnitImmune || []).forEach(function (im) {
       out.push(im === 'EFFECTUNIT_ROUT' ? 'Cannot be routed' : 'Immune to ' + effectName(im));
     });
+    // positional modifiers — dropped in the tooltip rewrite, restored:
+    // Highlander/Warden read as blank cards without these
+    Object.keys(d.aiHeightFromModifier || {}).forEach(function (h) {
+      var v = d.aiHeightFromModifier[h];
+      out.push((v > 0 ? '+' : '') + v + '% fighting on ' + h.replace('HEIGHT_', '').toLowerCase() + 's');
+    });
+    Object.keys(d.aiTerrainFromModifier || {}).forEach(function (t) {
+      var v = d.aiTerrainFromModifier[t];
+      out.push((v > 0 ? '+' : '') + v + '% fighting on ' + t.replace('TERRAIN_', '').toLowerCase() + ' ground');
+    });
+    Object.keys(d.aiVegetationFromModifier || {}).forEach(function (t) {
+      var v = d.aiVegetationFromModifier[t];
+      out.push((v > 0 ? '+' : '') + v + '% fighting in ' + t.replace('VEGETATION_', '').toLowerCase());
+    });
+    Object.keys(d.aiMeleeToClearTerrainTargetModifier || {}).forEach(function (t) {
+      out.push((d.aiMeleeToClearTerrainTargetModifier[t] > 0 ? '+' : '') +
+        d.aiMeleeToClearTerrainTargetModifier[t] + '% attacking open terrain');
+    });
+    Object.keys(d.aiAttackValue || {}).forEach(function (a) {
+      var pct = (d.aiAttackPercent || {})[a] || 0;
+      out.push(a.replace('ATTACK_', '').toLowerCase() + ' attack' + (pct ? ' at ' + pct + '%' : ''));
+    });
     ['aiUnitTraitModifier', 'aiUnitTraitModifierAttack', 'aiUnitTraitModifierDefense',
      'aiUnitTraitModifierMelee'].forEach(function (f, i) {
       Object.keys(d[f] || {}).forEach(function (tr) {

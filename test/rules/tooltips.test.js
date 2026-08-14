@@ -66,3 +66,9 @@ test('the panel sticks to what matters in a fight', () => {
 test('a spearman reads as un-routable, in plain English', () => {
   assert.match(E.describeUnitAbilities('UNIT_SPEARMAN').join(' | '), /cannot be routed/i);
 });
+
+test('positional promotions describe themselves [aiHeightFromModifier and friends]', () => {
+  assert.match(E.describeEffect('EFFECTUNIT_HIGHLANDER').join(' '), /\+25% fighting on hills/);
+  assert.match(E.describeEffect('EFFECTUNIT_WARDEN').join(' '), /\+25% fighting on urban ground/);
+  assert.match(E.describeEffect('EFFECTUNIT_PIERCE1').join(' '), /pierce attack/);
+});
