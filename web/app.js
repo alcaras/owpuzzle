@@ -787,6 +787,8 @@
     p.classList.add('show');
   }
   function hidePreviewPanel() {
+    var pp = document.getElementById('preview-panel');
+    if (pp) pp.onclick = null;
     var p = document.getElementById('preview-panel');
     p.classList.remove('show');
     p.innerHTML = '';
@@ -917,12 +919,30 @@
     p.classList.add('show');
   }
 
-  function showUnitInfo(uid) {
+  function showUnitInfo(uid, compact) {
     var u = E.unitById(state, uid);
     if (!u || u.hp <= 0) return;
     var inf = E.DATA.units[u.type];
     var p = document.getElementById('preview-panel');
     var ic = unitIcon(u.type);
+    // Community feedback (zophister, Aran): the full card on every selection
+    // covered half the phone. Selecting now shows ONE SLIM ROW; tapping the
+    // row expands the full card; tapping the expanded card collapses it back.
+    // Selection is never affected by any of it.
+    if (compact) {
+      p.innerHTML =
+        '<div class="who" style="margin:0">' +
+        (ic ? '<img class="p' + u.player + '" src="' + ic + '" alt="">' : '') +
+        shortName(u) +
+        '<span style="margin-left:auto;font-weight:400;color:#b9b4a4">' +
+        fmt10(inf.iStrength) + ' str · ' + u.hp + '/' + E.hpMax(u) + ' hp · ' +
+        inf.iMovement + ' mv</span>' +
+        '<span style="margin-left:8px;color:#ffb020">ⓘ</span></div>';
+      p.classList.add('show');
+      p.onclick = function () { showUnitInfo(uid); };   // expand on tap
+      return;
+    }
+    p.onclick = function () { hidePreviewPanel(); };    // collapse on tap
     var promoNames = (u.promotions || []).map(function (pr) {
       var eff = (E.DATA.promotions[pr] && E.DATA.promotions[pr].effect) || pr;
       var nm = eff.replace(/^(EFFECTUNIT_|PROMOTION_)/, '').toLowerCase().replace(/_/g, ' ');
@@ -1096,8 +1116,9 @@
       hidePreviewPanel();
       render();
       // touch has no hover: selecting a unit is the only gesture there is,
-      // so it doubles as "tell me about this unit"
-      if (!CAN_HOVER && selected != null) showUnitInfo(id);
+      // so it doubles as "tell me about this unit" — but slim, so the card
+      // does not bury the map (tap the strip for the full card)
+      if (!CAN_HOVER && selected != null) showUnitInfo(id, true);
       return;
     }
     // enemy: attack if selected unit can. On touch (no hover), the first tap
