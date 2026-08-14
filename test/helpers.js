@@ -42,6 +42,8 @@ function setup(spec, opts) {
         if (p.startsWith('hp=')) u.hp = Number(p.slice(3));
         else if (p.startsWith('promo=')) u.promotions = p.slice(6).split(',');
         else if (p === 'general') u.general = true;
+        else if (p === 'unlimbered') u.unlimbered = true;
+        else if (p === 'anchored') u.anchored = true;
         else if (p.startsWith('fortify=')) u.fortifyTurns = Number(p.slice(8));
         else throw new Error('unknown unit token: ' + p);
       }

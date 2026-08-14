@@ -27,9 +27,9 @@
     },
     {
       "id": "king-of-the-hill", "file": "submissions/king-of-the-hill-41e478.json", "pool": 25,
-      "target": { "strength": 180, "orders": 20 }, "budgetSeconds": 900,
-      "source": "problemgambler, replay-verified (submissions/king-of-the-hill-41e478-line.json, exported from the v1 row; boards unit-identical)",
-      "class": "fortified hill assault; solver: PROVEN 180 STR unaided, /21 orders — the /20 is the ordering gap"
+      "target": { "strength": 180, "orders": 18 }, "budgetSeconds": 900,
+      "source": "Aran, 18 orders — the LIVE par on owpuzzle.fly.dev (folded in from a better-than-par record). problemgambler's authored 20-order line is in submissions/king-of-the-hill-41e478-line.json; the local submission file still carries its stale par of 20, so read the live puzzle, not the file",
+      "class": "fortified hill assault; solver unaided: 21 orders before the heckler fix, 19 after — still two short of the human 18"
     },
     {
       "id": "horsing-around", "file": "submissions/horsing-around-e7a297.json", "pool": 20,

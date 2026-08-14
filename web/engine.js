@@ -99,6 +99,27 @@
     return t;
   }
 
+  // Which promotions supplied a modifier. The attack preview labels bonuses by
+  // category — "terrain +25%" — which reads as if the promotion that granted
+  // it were missing; naming the source is the whole difference between a
+  // player trusting the number and filing a bug about it.
+  function effectSources(u, field, k) {
+    var names = [];
+    effectsOf(u).forEach(function (e) {
+      var d = DATA.effects[e];
+      var v = d && (k == null ? d[field] : (d[field] && d[field][k]));
+      if (typeof v === 'number' && v !== 0) {
+        var nm = (DATA.effectNames && DATA.effectNames[e]) || e.replace('EFFECTUNIT_', '');
+        names.push(nm.replace(/^link\([^)]*\)\s*/, ''));
+      }
+    });
+    return names;
+  }
+  function labelWith(base, u, field, k) {
+    var s = effectSources(u, field, k);
+    return s.length ? base + ' (' + s.join(', ') + ')' : base;
+  }
+
   function hasEffectFlag(u, flag) {
     return effectsOf(u).some(function (e) {
       var d = DATA.effects[e];
@@ -129,6 +150,11 @@
     if (r > 0) r += sumEffect(u, 'iRangeExtra');
     return r;
   }
+  // Unit.cs:8493 — a shot inside the unit's minimum range is illegal
+  // (`if (iDistance < info().miRangeMin) return false`), and getTargetTiles
+  // starts its scan at that distance (Unit.cs:6434). Siege engines (onager 2,
+  // mangonel 2) cannot hit what is standing on top of them.
+  function rangeMin(u) { return isMelee(u) ? 1 : Math.max(1, info(u).iRangeMin || 0); }
   // Unit.baseStrength + Unit.baseStrengthModifier (Unit.cs:6278-6291): the
   // wounded modifier is part of the unit OWN strength, so it counts when it
   // attacks, when it defends, and when it counterattacks. Adding it on the
@@ -283,8 +309,10 @@
     if (from) {
       if (from.vegetation) add('fighting from ' + from.vegetation.replace('VEGETATION_', '').toLowerCase(),
         sumEffectPair(att, 'aiVegetationFromModifier', from.vegetation));
-      add('terrain', sumEffectPair(att, 'aiTerrainFromModifier', from.terrain));
-      add('height', sumEffectPair(att, 'aiHeightFromModifier', from.height));
+      add(labelWith('terrain', att, 'aiTerrainFromModifier', from.terrain),
+        sumEffectPair(att, 'aiTerrainFromModifier', from.terrain));
+      add(labelWith('height', att, 'aiHeightFromModifier', from.height),
+        sumEffectPair(att, 'aiHeightFromModifier', from.height));
       if (from.owner === att.player) add('friendly territory', sumEffect(att, 'iHomeModifier'));
 
       if (to) {
@@ -346,7 +374,7 @@
     var adjSame = sumEffect(def, 'iAdjacentSameModifier');
     if (adjSame !== 0 && adjacentFriendSame(state, def, to)) add('adjacent same unit', adjSame);
 
-    if (def.unlimbered) add('set up (unlimbered)', G.UNLIMBERED_DEFENSE_MODIFIER);
+    if (def.unlimbered) add('unlimbered', G.UNLIMBERED_DEFENSE_MODIFIER);
 
     // tileDefenseModifier (Unit.cs:8982)
     if (to) {
@@ -356,8 +384,10 @@
       if (isUrbanTile(to)) add('urban', sumEffect(def, 'iUrbanDefenseModifier'));
       if (to.vegetation) add('in ' + to.vegetation.replace('VEGETATION_', '').toLowerCase(),
         sumEffectPair(def, 'aiVegetationFromModifier', to.vegetation));
-      add('terrain', sumEffectPair(def, 'aiTerrainFromModifier', to.terrain));
-      add('height', sumEffectPair(def, 'aiHeightFromModifier', to.height));
+      add(labelWith('terrain', def, 'aiTerrainFromModifier', to.terrain),
+        sumEffectPair(def, 'aiTerrainFromModifier', to.terrain));
+      add(labelWith('height', def, 'aiHeightFromModifier', to.height),
+        sumEffectPair(def, 'aiHeightFromModifier', to.height));
       if (to.owner === def.player) add('friendly territory', sumEffect(def, 'iHomeModifier'));
       if (to.improvement) {
         var imp = DATA.improvements[to.improvement];
@@ -474,7 +504,8 @@
     for (var i = 0; i < state.units.length; i++) {
       var o = state.units[i];
       if (o.hp <= 0 || o.player === u.player || o.id === excludeId) continue;
-      if (hexDistance(pos, o) <= r) return true;
+      var d = hexDistance(pos, o);
+      if (d >= rangeMin(u) && d <= r) return true;
     }
     return false;
   }
@@ -838,7 +869,7 @@
       var dist = hexDistance(u, t);
       if (isMelee(u)) {
         if (dist === 1) out.push(t);
-      } else if (dist >= 1 && dist <= effectiveRange(state, u, u, t) &&
+      } else if (dist >= rangeMin(u) && dist <= effectiveRange(state, u, u, t) &&
                  !isShotObstructed(state, u, t)) {
         out.push(t);
       }
@@ -1333,12 +1364,22 @@
       var ter = DATA.terrain[t2.terrain], imp = t2.improvement && DATA.improvements[t2.improvement];
       if ((ter && ter.bRoadFree) || (imp && imp.bRoadFree) || t2.city != null) t2.road = true;
     });
+    // A unit counts as a general if the puzzle says so, or if it carries a
+    // leader effect — in the game those effects exist only BECAUSE a general
+    // is attached (Unit.cs:2274 hasGeneral, and the vs-general bonus at
+    // Unit.cs:8833 gates on it). Deriving it here keeps the two ways an author
+    // can express "this is the general" from disagreeing: king-of-the-hill
+    // marked its general with EFFECTUNIT_COMMANDER_LEADER alone, so the two
+    // Hecklers aimed at it silently did nothing.
+    function hasGeneral(u) {
+      return !!u.general || (u.promotions || []).some(function (pr) { return /_LEADER$/.test(pr); });
+    }
     var units = p.units.map(function (u, i) {
       return {
         id: i, player: u.player, type: u.type, q: u.q, r: u.r,
         hp: u.hp != null ? u.hp : DATA.units[u.type].iHPMax,
         promotions: u.promotions || [], fortifyTurns: u.fortifyTurns || 0,
-        cooldown: null, steps: 0, general: !!u.general, name: u.name || null,
+        cooldown: null, steps: 0, general: hasGeneral(u), name: u.name || null,
         march: false, unlimbered: DATA.units[u.type].bUnlimber ? !!u.unlimbered : undefined,
         anchored: DATA.units[u.type].bAnchor ? !!u.anchored : undefined,
       };

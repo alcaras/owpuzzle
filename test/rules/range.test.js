@@ -141,3 +141,25 @@ test('base range never includes terrain height [Unit.range, Unit.cs:6345]', () =
   assert.equal(canHit(hillToFlat, hillToFlat.blue(), hillToFlat.red()), true,
     'shooting down adds exactly one');
 });
+
+// Unit.cs:8493 — a ranged unit cannot fire INSIDE its minimum range:
+// `if (iDistance < info().miRangeMin) return false`. The onager (unit.xml
+// iRangeMin 2) therefore cannot hit what is standing next to it, which is the
+// whole reason a siege train needs a screen.
+test('an onager cannot shoot an adjacent enemy (Unit.cs:8493, iRangeMin 2)', () => {
+  const g = setup(`
+    blue ONAGER 0,0 unlimbered
+    red SLINGER 1,0
+    red SLINGER 2,0
+  `);
+  assert.equal(canHit(g, g.blue(), g.at('1,0')), false, 'adjacent: inside minimum range');
+  assert.equal(canHit(g, g.blue(), g.at('2,0')), true, 'two tiles away: a legal shot');
+});
+
+test('minimum range does not restrict units that have none (Unit.cs:6434)', () => {
+  const g = setup(`
+    blue SLINGER 0,0
+    red ARCHER 1,0
+  `);
+  assert.equal(canHit(g, g.blue(), g.at('1,0')), true);
+});

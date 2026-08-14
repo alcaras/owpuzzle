@@ -85,6 +85,38 @@ the final kill + routed-unit move rejected; horseman vs archer = 9 (mounted
 vs axeman = 4 with pierce 1 to the unit behind; ranged defenders never
 counter; melee counter = 1.
 
+## Playing a puzzle in Old World itself
+
+`tools/export_save.js <puzzle-id|submission.json>` writes the board as a real,
+loadable Old World save (`.zip`), via the harness's `--puzzle` mode:
+
+```
+node tools/export_save.js over-the-hills --out /tmp/over-the-hills.zip
+```
+
+Carried: unit types, positions, owners, hp, promotions, fortify, and tile
+heights. Every tile in the puzzle radius gets an **explicit** height — the
+harness's arena is cleared of vegetation but not levelled, so natural hills
+otherwise survive under tiles the puzzle never mentions (found the hard way:
+Over the Hills first exported with its warrior on a stray hill).
+
+Not carried, because the harness's puzzle spec has no grammar for it:
+terrain (including water), vegetation, rivers, improvements, the general
+flag, the objective, and the order budget (the save grants 99). Each export
+prints exactly what it dropped; boards that need those aren't faithfully
+exportable until `--puzzle` grows `--pterrain`/`--pveg`/`--privers`.
+
+Every export self-checks: pairwise hex distances in the emitted save must
+match the puzzle's, the play area's terrain is audited for tiles that move
+differently (sand/marsh cost 18, urban is a free road), and the file is
+loaded back through the engine's own save loader.
+
+Coordinates: our boards are axial (q,r) pointy-top; Old World's grid is
+**even-r offset** — `q = x - ceil(y/2)`, `r = y` — measured from the harness's
+own reach ring, not assumed. The conversion depends on the parity of the arena
+centre row, which the harness chooses, so the exporter emits, reads back the
+centre, and re-emits if its parity guess was wrong.
+
 ## Server (fly.io) — rated puzzles, Discord login, submissions
 
 `server/` is a Node app (express + better-sqlite3) that serves `web/` plus a

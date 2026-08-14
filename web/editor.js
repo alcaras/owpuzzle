@@ -284,7 +284,14 @@
           q: t.q, r: t.r,
           hp: isNaN(hp) ? undefined : hp,
           promotions: promos.length ? promos : undefined,
-          general: document.getElementById('u-general').checked || undefined,
+          // A leader effect only exists in the game because a general is
+          // attached to the unit (Unit.cs:2274 hasGeneral), so picking one
+          // makes the unit a general. Without this, an author gets a unit
+          // that reads as a general and grants a leader's flanking bonus but
+          // is invisible to everything that asks "is this a general" —
+          // king-of-the-hill shipped that way and its Hecklers did nothing.
+          general: document.getElementById('u-general').checked
+            || promos.some(function (pr) { return /_LEADER$/.test(pr); }) || undefined,
           anchored: (document.getElementById('u-anchored').checked && E.DATA.units[sel.value].bAnchor) || undefined,
         });
       }

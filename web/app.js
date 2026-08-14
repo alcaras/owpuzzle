@@ -722,7 +722,7 @@
         : 'carries a GENERAL');
     }
     if (E.DATA.units[u.type].bUnlimber) {
-      stateBits.push(u.unlimbered ? 'set up — ready to fire (-25% defense)' : 'packed up — must Set Up before firing');
+      stateBits.push(u.unlimbered ? 'unlimbered — ready to fire (-25% defense)' : 'not unlimbered — must Unlimber before firing');
     }
     if (u.cooldown === 'ROUT') stateBits.push('routing — may attack again');
     else if (u.cooldown) stateBits.push('done for this turn (' + u.cooldown.toLowerCase() + ')');
@@ -841,7 +841,7 @@
         msg += '. FATIGUED: further moves are a FORCE MARCH costing 2 orders each (orange dots).';
       }
       if (E.DATA.units[sel.type].bUnlimber && !sel.unlimbered) {
-        msg = shortName(sel) + ' is PACKED UP — setting up ends its turn, so it cannot fire until next turn.';
+        msg = shortName(sel) + ' is NOT UNLIMBERED — unlimbering ends its turn, so it cannot fire until next turn.';
       }
       st.textContent = msg;
     } else {

@@ -897,7 +897,7 @@ var OWPUZZLES = [
     difficulty: 2,
     name: 'The Barrage',
     author: 'owpuzzle',
-    brief: 'Your onager is set up and loaded. Kill all three enemies.',
+    brief: 'Your onager is unlimbered and loaded. Kill all three enemies.',
     lesson: 'Siege must SET UP a turn in advance (setting up ends the turn). Once deployed: shots ignore distance entirely, and the blast SPLASHES everything adjacent to the target for 25%. Aim at the middle.',
     orders: 1,
     radius: 4,

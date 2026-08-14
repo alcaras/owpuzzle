@@ -231,3 +231,29 @@ test('CIRCLE never clips friendly units', () => {
   g.attack(g.blue(0), g.at('1,0'));
   assert.equal(g.at('0,1').hp, hp0, 'the militia beside the swing is unharmed');
 });
+
+// iVsGeneralModifier fires on a unit that HAS a general (Unit.cs:8833 gates
+// the bonus on pToUnit.hasGeneral(), Unit.cs:2274). A leader effect is granted
+// BY that attached general, so a unit carrying one is a general — the two ways
+// a puzzle can say it must agree, or promotions aimed at generals do nothing.
+test('heckler hits a general marked by the general flag (Unit.cs:8833)', () => {
+  const plain = setup(`
+    blue LONGBOWMAN 0,0 promo=EFFECTUNIT_HECKLER
+    red LONGBOWMAN 1,0
+  `);
+  const led = setup(`
+    blue LONGBOWMAN 0,0 promo=EFFECTUNIT_HECKLER
+    red LONGBOWMAN 1,0 general
+  `);
+  assert.equal(mods(led, led.blue(), led.red())['att:vs general'], 25);
+  assert.ok(damage(led, led.blue(), led.red()) > damage(plain, plain.blue(), plain.red()));
+});
+
+test('a leader effect makes the unit a general (Unit.cs:2274 hasGeneral)', () => {
+  const g = setup(`
+    blue LONGBOWMAN 0,0 promo=EFFECTUNIT_HECKLER
+    red LONGBOWMAN 1,0 promo=EFFECTUNIT_COMMANDER_LEADER
+  `);
+  assert.equal(g.red().general, true, 'COMMANDER_LEADER implies an attached general');
+  assert.equal(mods(g, g.blue(), g.red())['att:vs general'], 25, 'so heckler applies');
+});
