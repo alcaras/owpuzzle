@@ -514,8 +514,31 @@ app.post('/api/admin/records/:id', (req, res) => {
   const user = userFromReq(req);
   if (!user || !user.is_admin) return res.status(403).json({ error: 'admin only' });
   const verdict = req.body && req.body.accept ? 'accepted' : 'rejected';
+  const rec = db.prepare('SELECT * FROM records WHERE id = ?').get(req.params.id);
+  let folded = null;
+  if (verdict === 'accepted' && rec) {
+    // 'Fold in' must actually fold: the record's line beat the published
+    // answer, so the puzzle's numbers move to match it. For an orders record
+    // par tightens; for a strength record the maxKill ceiling rises (and par
+    // becomes that line's orders). The line was replay-verified when the
+    // attempt landed — accepting is a human judgement, not a re-check.
+    const prow = db.prepare('SELECT id, json FROM puzzles WHERE id = ?').get(rec.puzzle_id);
+    if (prow) {
+      const pz = JSON.parse(prow.json);
+      if (rec.kind === 'orders' && rec.orders_used < pz.orders) {
+        folded = { par: [pz.orders, rec.orders_used] };
+        pz.orders = rec.orders_used;
+      } else if (rec.kind === 'strength' && pz.objective && pz.objective.kind === 'maxKill' &&
+                 rec.str_killed > (pz.objective.count || 0)) {
+        folded = { ceiling: [pz.objective.count, rec.str_killed], par: [pz.orders, rec.orders_used] };
+        pz.objective.count = rec.str_killed;
+        pz.orders = rec.orders_used;
+      }
+      if (folded) db.prepare('UPDATE puzzles SET json = ? WHERE id = ?').run(JSON.stringify(pz), prow.id);
+    }
+  }
   db.prepare('UPDATE records SET status = ? WHERE id = ?').run(verdict, req.params.id);
-  res.json({ ok: true, status: verdict });
+  res.json({ ok: true, status: verdict, folded });
 });
 
 app.get('/api/admin/stats', (req, res) => {

@@ -2875,5 +2875,97 @@ var OWPUZZLES = [
    ],
    "difficulty": 3
   },
+  {
+   "id": "one-point-of-pride",
+   "name": "One Point of Pride",
+   "author": "owpuzzle",
+   "brief": "Kill the zealot general this turn.",
+   "lesson": "Last stand makes a zealot's final hit points two separate deaths \u2014 no single blow, however mighty, pays for both. Spend your champion where strength matters, and send the cheap blades to do the arithmetic.",
+   "orders": 2,
+   "radius": 3,
+   "objective": {
+    "kind": "killTarget",
+    "target": 3
+   },
+   "tiles": [
+    {
+     "q": 1,
+     "r": -2,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": 2,
+     "r": -2,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": 0,
+     "r": 2,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": 1,
+     "r": 1,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": 3,
+     "r": -1,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": 3,
+     "r": -2,
+     "height": "HEIGHT_MOUNTAIN"
+    },
+    {
+     "q": 3,
+     "r": 0,
+     "height": "HEIGHT_MOUNTAIN"
+    }
+   ],
+   "units": [
+    {
+     "player": 0,
+     "type": "UNIT_CATAPHRACT",
+     "q": 1,
+     "r": 0
+    },
+    {
+     "player": 0,
+     "type": "UNIT_MILITIA",
+     "q": 0,
+     "r": 0
+    },
+    {
+     "player": 1,
+     "type": "UNIT_AXEMAN",
+     "q": 1,
+     "r": -1,
+     "hp": 10,
+     "name": "the guard"
+    },
+    {
+     "player": 1,
+     "type": "UNIT_SWORDSMAN",
+     "q": 2,
+     "r": -1,
+     "hp": 2,
+     "general": true,
+     "promotions": [
+      "EFFECTUNIT_ZEALOT"
+     ],
+     "name": "the zealot general"
+    },
+    {
+     "player": 1,
+     "type": "UNIT_ARCHER",
+     "q": 2,
+     "r": 0,
+     "hp": 20
+    }
+   ],
+   "difficulty": 2
+  },
 ];
 if (typeof module !== 'undefined') module.exports = OWPUZZLES;
