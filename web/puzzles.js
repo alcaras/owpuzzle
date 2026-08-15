@@ -2714,6 +2714,7 @@ var OWPUZZLES = [
    "id": "the-ground-he-wins",
    "name": "The Ground He Wins",
    "author": "owpuzzle",
+   "slowVerify": true,
    "brief": "Destroy as much enemy strength as you can this turn.",
    "lesson": "A kill is also a move. A rout advance puts you where you could never walk, and a bow on a hill reaches one tile further \u2014 far enough to shoot over the line that screens it.",
    "orders": 8,

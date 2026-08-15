@@ -6,8 +6,10 @@ Daily single-turn Old World combat puzzles. Live at https://owpuzzle.fly.dev.
 - `web/app.js`, `web/index.html` — the player
 - `web/editor.js` — the community puzzle editor
 - `server/` — express + sqlite: auth, ratings, submissions, achievements
-- `tools/` — data extraction and the puzzle verifiers
+- `tools/` — data extraction, the puzzle verifiers, and `export_save.js`
+  (writes a board as a real loadable Old World save — see the README)
 - `test/` — the rules suite (see below)
+- `drafts/` — puzzles being designed, not yet published
 
 ## The one rule that matters
 
@@ -46,6 +48,12 @@ it. A sample, all real:
 - urban tiles were not roads, because nobody extracted `bRoadFree`
 - a maceman kept its anti-infantry bonus against arrows, because the bonus is
   gated on the **attacker** being melee, not the defender
+- onagers shot enemies standing next to them for a year: `iRangeMin` was
+  never implemented (Unit.cs:8493). Nobody noticed until a puzzle was
+  designed *around* minimum range
+- a unit carrying a leader effect was not a general, so promotions that
+  hunt generals did nothing. In the game those effects exist only because a
+  general is attached (Unit.cs:2274)
 
 None of these are exotic. They are all "we implemented the neighbouring rule".
 
@@ -68,10 +76,16 @@ title. A test without a citation only freezes today's belief, which is how the
 bugs got in. If a test fails after a change, read the citation first and decide
 which of the two is wrong — twice now the test was wrong and the engine right.
 
-**`test/coverage.test.js`** — enumerates every effect field the data actually
-uses and asserts each is implemented or listed in `ACKNOWLEDGED` with a reason.
-A mechanic can never go missing silently: a new field fails the build and
-forces a decision. Known gaps live there too, so they stay visible.
+**`test/coverage.test.js`** — enumerates every effect field **and every unit
+field** the data actually uses, and asserts each is implemented or listed with
+a reason. A mechanic can never go missing silently: a new field fails the build
+and forces a decision. Known gaps live there too, so they stay visible.
+
+The unit-field half exists because the effect-field half could not have caught
+`iRangeMin`: it lives on the unit, not on an effect, so an entire mechanic sat
+unimplemented for a year inside an audit whose whole job was to prevent that.
+When you add an audit, check it would have caught the bug that motivated it —
+run it against a source with the fix removed and watch it fail.
 
 **`test/library.test.js`** — structural invariants over the shipped puzzles:
 they load, unit types exist, no two units share a tile, ceilings do not exceed
@@ -116,6 +130,22 @@ Publishing checklist for a maxKill puzzle: prove the ceiling, confirm the
 intended line **is** the optimum (not merely *a* line that reaches it), and
 check the trick is *required* — three of five drafts died because a cheaper
 line reached the same ceiling without the idea the puzzle was built around.
+
+## In flight (2026-08-14)
+
+- **`phase1-library-store` branch** carries the frontend refactor (tested on
+  owpuzzle-dev.fly.dev, awaiting a manual pass against `docs/phase1-test-plan.md`
+  before merge) *and* the whole verifier/optimizer programme:
+  `bench/human-baselines.json` plus `docs/optimizer-handoff.md`, which is the
+  resume point for that work — read it before touching `tools/verify2.js`.
+  Four of six benchmark boards pass unaided; the two gaps are search *ordering*,
+  not model expressiveness, and large-neighbourhood search is specced and gated.
+- **`drafts/counterbattery.js`** — a siege puzzle mid-design. Its header holds
+  the measured damage numbers and the idea: an onager with an enemy standing on
+  top of it cannot fire (minimum range), and an elephant's PANIC shove is what
+  clears its own firing lane. Not yet verified for "is the trick *required*".
+- `verify_puzzles.js` truncates at 500k states; puzzles that hit the cap need
+  `slowVerify: true` or they report a scary false negative after ten minutes.
 
 ## Community
 
