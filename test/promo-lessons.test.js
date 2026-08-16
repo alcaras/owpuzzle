@@ -25,24 +25,12 @@ const PUZZLES = require(path.join(__dirname, '..', 'web', 'puzzles.js'));
 
 // id -> what makes the lesson true, and how to take it away
 const LESSONS = {
-  'the-right-sword': { strip: 'EFFECTUNIT_HORSEBANE' },
-  'the-second-blow': { strip: 'EFFECTUNIT_BLOODTHIRSTY' },
   'stand-in-the-woods': { strip: 'EFFECTUNIT_RANGER' },
-  'the-crown': { strip: 'EFFECTUNIT_HECKLER' },
-  'wounded-and-meaner': { strip: 'EFFECTUNIT_TOUGH' },
-  'dont-step-closer': { strip: 'EFFECTUNIT_EAGLE_EYE' },
-  'one-hex-further': { strip: 'EFFECTUNIT_MARKSMAN' },
-  'the-far-bank': { strip: 'EFFECTUNIT_AMPHIBIOUS' },
-  'evict-him': {
-    // PANIC is intrinsic to elephants, and it is the TOOL here. Swap the
-    // elephant for a maceman, which deals the same 9 damage and cannot shove:
-    // that isolates the push rather than the muscle.
-    label: 'elephant swapped for a maceman (same damage, no shove)',
-    neutralise: (p) => {
-      p.units.forEach((u) => { if (u.type === 'UNIT_WAR_ELEPHANT') u.type = 'UNIT_MACEMAN'; });
-      return p;
-    },
-  },
+  // The rest of the set lives in drafts/promo/ and is not shipped: each one
+  // verified — solvable at par, tight at par-1, promotion required at the pool
+  // — and still played flat, because "match the right blue to the right red"
+  // is arithmetic rather than an idea. They are being rebuilt around rout
+  // chains and terrain that means something before they go in here.
 };
 
 function solve(puzzle, ms) {

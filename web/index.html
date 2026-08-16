@@ -154,6 +154,9 @@
   #preview-panel .result b.kill { color: #ff5040; }
   #preview-panel .result b.dmg { color: #ffb020; }
   #preview-panel .note { color: #b9b4a4; font-size: 12px; margin-top: 5px; }
+  /* the arithmetic behind the damage number: quiet, but there when the result
+     looks wrong (it rounds up, and it caps at the target's remaining hp) */
+  #preview-panel .calc { color: #8f8b7e; font-size: 11px; margin: 2px 0 4px; font-variant-numeric: tabular-nums; }
   #preview-panel .arm { margin-top: 8px; text-align: center; color: #ffb020; font-size: 12px; }
   svg { width: 100%; height: auto; display: block; touch-action: manipulation; }
   .controls { display: flex; gap: 10px; margin: 6px 0 4px; flex-wrap: wrap; justify-content: center; }
@@ -226,7 +229,9 @@
   }
   .card.solved { border-color: #5f9e4c; }
   .card .meta { margin-right: 20px; }
-  .card .foes { margin-top: 6px; display: flex; gap: 4px; align-items: center; }
+  /* wrap: a big board can field a dozen enemies and an unwrapped flex row runs
+     straight out of the card (Bottleneck, 11 reds) */
+  .card .foes { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
   .card .foes img { width: 22px; height: 22px; border-radius: 50%; padding: 2px; background: rgb(150,60,60); }
   .card .foes .vs { font-size: 11px; color: var(--muted); margin-right: 2px; letter-spacing: 1px; }
   .card {
@@ -235,9 +240,13 @@
     text-decoration: none; color: var(--ink);
   }
   .card:active { background: #eadfc8; }
-  .card .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-  .card h3 { margin: 0; font-size: 16.5px; color: var(--accent); }
-  .card .meta { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  /* the meta is nowrap, so a long author name ("by problemgambler") stole the
+     title's width and broke it a word per line ("king / of the / hill").
+     Let the head wrap instead: the title keeps the full width and the meta
+     drops to its own line, still right-aligned. */
+  .card .card-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+  .card h3 { margin: 0; font-size: 16.5px; color: var(--accent); flex: 1 1 auto; min-width: 0; }
+  .card .meta { font-size: 12px; color: var(--muted); white-space: nowrap; flex: 0 0 auto; margin-left: auto; max-width: 100%; }
   .card p { margin: 5px 0 0; font-size: 13px; }
   .back-link { font-size: 13px; margin-top: 4px; }
   .back-link a { color: var(--accent); text-decoration: none; }

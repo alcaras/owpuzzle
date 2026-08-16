@@ -393,6 +393,20 @@
     TERRAIN_TUNDRA: 'rgb(200,205,210)', TERRAIN_MARSH: 'rgb(96,110,80)',
     TERRAIN_WATER: 'rgb(26,52,92)', TERRAIN_URBAN: 'rgb(150,128,116)',
   };
+  // Vegetation wash + rim. Translucent on purpose: the base terrain colour has
+  // to survive underneath, because arid-with-trees and lush-with-trees are
+  // different tiles and the palette is how you tell them apart. Jungle is the
+  // heaviest (it was already washed), scrub the lightest.
+  var VEG_WASH = {
+    VEGETATION_TREES: 'rgba(18,64,22,.36)',
+    VEGETATION_JUNGLE: 'rgba(6,44,10,.5)',
+    VEGETATION_SCRUB: 'rgba(126,116,52,.26)',
+  };
+  var VEG_RIM = {
+    VEGETATION_TREES: 'rgba(30,86,34,.85)',
+    VEGETATION_JUNGLE: 'rgba(10,58,14,.9)',
+    VEGETATION_SCRUB: 'rgba(146,134,64,.75)',
+  };
   var PCOL = { 0: 'rgb(110,160,210)', 1: 'rgb(150,60,60)' }; // us blue, them dark red
   var ICONS = (typeof OWICONS !== 'undefined') ? OWICONS : {};
   function glyphFor(u) {
@@ -480,13 +494,29 @@
           '<rect x="' + (x - SIZE) + '" y="' + (y - SIZE) + '" width="' + (2 * SIZE) + '" height="' + (SIZE * 0.85) + '" fill="rgba(255,255,255,.16)"/>' +
           '<rect x="' + (x - SIZE) + '" y="' + (y + SIZE * 0.05) + '" width="' + (2 * SIZE) + '" height="' + SIZE + '" fill="rgba(0,0,0,.30)"/></g>');
       }
-      // trees/jungle: procedural triangle+trunk (viewer :150-158)
+      // Vegetation tints the whole hex, not just the sprites in the middle of
+      // it. A unit disc covers the centre, so a wood with somebody standing in
+      // it used to look like open grass — on a board where the promotion is
+      // about which tile you fight FROM, that is the one thing the player must
+      // be able to see. The wash is translucent so the base terrain still reads
+      // through it: forest on arid stays sandy, forest on lush stays green, and
+      // a hill keeps its two-tone banding underneath.
       var jg = t.vegetation === 'VEGETATION_JUNGLE', fr = t.vegetation === 'VEGETATION_TREES';
       var sc = t.vegetation === 'VEGETATION_SCRUB';
-      if (jg) {
-        var cid2 = 'clipj' + t.q + '_' + t.r;
+      var wash = VEG_WASH[t.vegetation];
+      if (wash) {
+        var cid2 = 'clipv' + t.q + '_' + t.r;
         clips.push('<clipPath id="' + cid2 + '"><polygon points="' + hexPoints(x, y) + '"/></clipPath>');
-        S.push('<rect clip-path="url(#' + cid2 + ')" x="' + (x - SIZE) + '" y="' + (y - SIZE) + '" width="' + (2 * SIZE) + '" height="' + (2 * SIZE) + '" fill="rgba(6,44,10,.5)" pointer-events="none"/>');
+        S.push('<rect clip-path="url(#' + cid2 + ')" x="' + (x - SIZE) + '" y="' + (y - SIZE) + '" width="' + (2 * SIZE) + '" height="' + (2 * SIZE) + '" fill="' + wash + '" pointer-events="none"/>');
+        // an inset rim in the same family: the wash alone can be swallowed by a
+        // large unit disc, and the rim sits outside every disc
+        var vr = [];
+        for (var vi = 0; vi < 6; vi++) {
+          var va = Math.PI / 180 * (60 * vi - 30);
+          vr.push((x + SIZE * 0.9 * Math.cos(va)).toFixed(1) + ',' + (y + SIZE * 0.9 * Math.sin(va)).toFixed(1));
+        }
+        S.push('<polygon points="' + vr.join(' ') + '" fill="none" stroke="' + VEG_RIM[t.vegetation] +
+          '" stroke-width="2.5" pointer-events="none"/>');
       }
       if (sc) drawScrub(S, x, y, t.height === 'HEIGHT_HILL');
       else if (jg || fr) drawTrees(S, x, y, jg ? 3 : 2, t.height === 'HEIGHT_HILL',
@@ -758,6 +788,19 @@
     try { ex = E.explainAttack(state, selected, defId); } catch (e) { return; }
     var attU = E.unitById(state, selected), defU = E.unitById(state, defId);
     var p = document.getElementById('preview-panel');
+    // InfoHelpers.getAttackDamage (InfoHelpers.cs:754), spelled out:
+    //   6 x attacker / defender, and when the attacker is the stronger side the
+    //   division rounds UP instead of down. That single rule is why 6.0 against
+    //   5.0 deals 8 and not 7.
+    function damageMath(x) {
+      var a = x.att.total, d = x.def.total;
+      var naive = d ? (6 * a / d) : 0;
+      var s = '6 × ' + fmt10(a) + ' ÷ ' + fmt10(d) + ' = ' + naive.toFixed(1);
+      if (x.rawDamage > Math.floor(naive)) s += ' → ' + x.rawDamage + ' (rounds up)';
+      else s += ' → ' + x.rawDamage;
+      if (x.rawDamage > x.damage) s += ', capped at his ' + x.damage + ' remaining';
+      return s;
+    }
     function chip(u) {
       var ic = unitIcon(u.type);
       return (ic ? '<img class="p' + u.player + '" src="' + ic + '" alt="">' : '') +
@@ -775,8 +818,16 @@
       '<div class="modline"><span>base strength</span><span>' + fmt10(ex.def.base) + '</span></div>' +
       modLines(ex.def.mods) + '</div>' +
       '</div><hr>' +
+      // Two things the bare number hid. A blow is CLAMPED to what the target
+      // has left (engine.js attackUnitDamage), so a 9 against an 8 hp man
+      // printed "8" — identical to a blow that really was 8, which made a
+      // promotion look like it did nothing. And the damage formula rounds UP
+      // when you are the stronger side, so 6.0 vs 5.0 is 8, not the 7.2 the
+      // arithmetic suggests. Show both.
       '<div class="result"><span>Damage</span><b class="' + (ex.kills ? 'kill' : 'dmg') + '">' +
-      ex.damage + (ex.kills ? ' ☠ kill' : '') + ' / ' + defU.hp + ' HP</b></div>' +
+      (ex.rawDamage > ex.damage ? ex.rawDamage + ' → ' + ex.damage : ex.damage) +
+      (ex.kills ? ' ☠ kill' : '') + ' / ' + defU.hp + ' HP</b></div>' +
+      '<div class="calc">' + damageMath(ex) + '</div>' +
       '<div class="result"><span>Counterattack</span><b>' + ex.counter + '</b></div>' +
       (ex.collateral.length ? ex.collateral.map(function (c) {
         var v = E.unitById(state, c.id);
@@ -1579,20 +1630,13 @@
   });
 
   // ---------- header ----------
-  // A community puzzle is not in the core list, so it has no "N of M" number —
-  // it has an author, and that is what belongs in the header instead.
+  // "puzzle 43 of 48" told the player nothing they could use — the library
+  // position of a puzzle is not a fact about the puzzle. A community one still
+  // says so, because who wrote it IS worth knowing.
   var pnum = OWPUZZLES.indexOf(puzzle) + 1;
   var isCore = pnum > 0;
   var dayEl = document.getElementById('day-label');
-  dayEl.textContent = isCore ? 'puzzle ' + pnum + ' of ' + OWPUZZLES.length : 'community puzzle';
-  // the offline count knows only the core set; the library is core + community,
-  // so number this puzzle within the whole thing once the server answers
-  fetch('/api/puzzles').then(function (r) { return r.json(); }).then(function (d) {
-    var list = (d && d.puzzles) || [];
-    if (!list.length) return;
-    var i = list.findIndex(function (x) { return x.slug === puzzle.id; });
-    dayEl.textContent = i >= 0 ? 'puzzle ' + (i + 1) + ' of ' + list.length : 'community puzzle';
-  }).catch(function () {});
+  dayEl.textContent = isCore ? '' : 'community puzzle';
   var byEl = document.getElementById('p-author');
   if (!isCore && puzzle.author) {
     var prof = 'hall.html?u=' + encodeURIComponent(puzzle.author);
