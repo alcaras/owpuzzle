@@ -26,6 +26,16 @@ files.forEach(function (file) {
     console.log('   *** DOES NOT LOAD: ' + e.message + ' ***');
     return;
   }
+  // A maxKill submission has no ceiling yet, so "solvable" is not a question
+  // the solver can answer — it would grind out its whole budget and then report
+  // NOT SOLVABLE about a puzzle that is fine. The ceiling tools answer this one.
+  if (!E.objectiveScorable(p.objective)) {
+    console.log('   maxKill submission — no ceiling yet, so there is nothing to solve for.');
+    console.log('   Find the TRUE ceiling before approving (see docs/verifier-design.md):');
+    console.log('     node tools/deploy_fight.js ' + file);
+    console.log('     node tools/verify2.js ' + file);
+    return;
+  }
   var t0 = Date.now();
   var res = SOLVER.solve(p, { maxStates: 2000000, maxMs: 300000 });
   var ok = res.best && res.best.met;

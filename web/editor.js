@@ -408,7 +408,11 @@
     // A non-solving reference line is probably a sloppy run (it cost a real
     // review round-trip once), but marathon boards sometimes get submitted
     // mid-polish on purpose, so warn, don't block.
-    if (sol.met === false && !confirm(
+    // …but only where "the objective" is a thing that exists yet: a maxKill
+    // draft has no ceiling until review, so there is nothing for the line to
+    // miss. Gate on the objective rather than on sol.met alone, so recordings
+    // made before this fix (which stored met:false) do not warn either.
+    if (sol.met === false && E.objectiveScorable(p.objective) && !confirm(
         'Your recorded test play did NOT meet the objective (' +
         (sol.strength / 10) + ' STR in ' + sol.orders + ' orders).\n\n' +
         'Reviewers use your line as the reference solution. Submit it anyway?')) {

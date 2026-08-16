@@ -1295,6 +1295,12 @@
     // after that return was being skipped — including this. An author would
     // play their line, end the turn, and find nothing had been recorded.
     if (puzzle.id === 'draft') {
+      // A bare maxKill draft has no ceiling yet, so its line neither met nor
+      // missed anything — record null, not false. Recording false made the
+      // editor greet every maxKill author with "your test play did NOT meet
+      // the objective", quoting their own (correct) strength back at them.
+      var recordedMet = E.objectiveScorable(puzzle.objective)
+        ? E.checkObjective(state, puzzle.objective) : null;
       // the author's own play of their puzzle IS the claimed solution
       try {
         localStorage.setItem('owpuzzle-draft-solution', JSON.stringify({
@@ -1309,7 +1315,7 @@
           orders: E.poolOrders(puzzle) - state.orders,
           strength: E.strKilledOf(state),
           kills: E.killsOf(state),
-          met: E.checkObjective(state, puzzle.objective),
+          met: recordedMet,
         }));
       } catch (e) {}
       // …and lodge a copy with the server, so a browser that cannot keep
@@ -1321,7 +1327,7 @@
             puzzle: puzzle, line: lineLog,
             orders: E.poolOrders(puzzle) - state.orders,
             strength: E.strKilledOf(state), kills: E.killsOf(state),
-            met: E.checkObjective(state, puzzle.objective),
+            met: recordedMet,
           }),
         }).catch(function () {});
       }

@@ -1106,11 +1106,20 @@
       .reduce(function (t, u) { return t + baseStrength(u); }, 0);
   }
 
+  // A maxKill puzzle has no ceiling until review sets one (server/index.js:477).
+  // Until then "did the player meet it?" has no answer — not "no". Anything that
+  // REPORTS success or failure must ask this first; anything that merely needs a
+  // boolean (win banners, solver pruning) can keep treating unmet as false.
+  function objectiveScorable(objective) {
+    return !(objective && objective.kind === 'maxKill' && !objective.count);
+  }
+
   function checkObjective(state, objective) {
     switch (objective.kind) {
       case 'maxKill':
-        // hidden ceiling: met when the destroyed enemy STRENGTH reaches `count`
-        return strKilledOf(state) >= (objective.count || 999999);
+        // hidden ceiling: met when the destroyed enemy STRENGTH reaches `count`.
+        // No ceiling yet => nothing to reach (see objectiveScorable).
+        return objective.count ? strKilledOf(state) >= objective.count : false;
       case 'killAll':
         return state.units.filter(function (u) { return u.player === 1 && u.hp > 0; }).length === 0;
       case 'killList':
@@ -1422,7 +1431,8 @@
     explainAttack: explainAttack,
     doMove: doMove, doAttack: doAttack, doFortify: doFortify,
     legalActions: legalActions, applyAction: applyAction,
-    checkObjective: checkObjective, loadPuzzle: loadPuzzle, cloneState: cloneState,
+    checkObjective: checkObjective, objectiveScorable: objectiveScorable,
+    loadPuzzle: loadPuzzle, cloneState: cloneState,
     nameOf: nameOf,
   };
 
