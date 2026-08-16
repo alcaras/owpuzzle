@@ -1,11 +1,19 @@
 # The only workflow this repo had was the (now deleted) Pages deploy — nothing
-# ran the tests. Every push runs the fast suite; the slow ceiling re-proof
-# stays local (it takes ~10 minutes and needs no CI to be useful).
+# ran the tests. Every push runs the fast suite; the slow ceiling re-proof runs
+# only when something that can move a ceiling changed, and main deploys to fly
+# once its gates are green.
 name: test
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # never let two deploys of main race each other
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -15,3 +23,68 @@ jobs:
         with:
           node-version: 22
       - run: npm test
+
+  # Does this push touch anything that can change what a published puzzle's
+  # "MAXIMUM DESTRUCTION" number means? Only then is the 8-minute re-proof worth
+  # running. A new puzzle cannot move another puzzle's ceiling; an engine rule
+  # can move every one of them at once.
+  ceiling-risk:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          BASE="${{ github.event.before }}"
+          # first push of a branch (or a force-push landing) has no usable base
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] \
+             || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          FILES=$(git diff --name-only "$BASE" "${{ github.sha }}")
+          echo "$FILES"
+          if echo "$FILES" | grep -qE '^(web/(engine|data|puzzles)\.js|tools/extract_data\.py|test/ceilings\.test\.js)$'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Re-prove every published maxKill ceiling against the current engine. A
+  # ceiling that becomes beatable is a puzzle promising players a maximum they
+  # can exceed — read the output, timeouts print lower-bound notes.
+  ceilings:
+    needs: ceiling-risk
+    if: needs.ceiling-risk.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run test:ceilings
+
+  deploy:
+    needs: [test, ceilings]
+    # ceilings is skipped on most pushes; skipped must not block the deploy,
+    # but a FAILED ceilings run must. always() + explicit result checks.
+    if: >-
+      always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+      && needs.test.result == 'success'
+      && (needs.ceilings.result == 'success' || needs.ceilings.result == 'skipped')
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-owpuzzle
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
