@@ -1,0 +1,286 @@
+{
+ "nestor-charge": {
+  "count": 260,
+  "strength": 260,
+  "orders": 5,
+  "line": [
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 4
+   },
+   {
+    "type": "move",
+    "unit": 1,
+    "q": -2,
+    "r": 0
+   },
+   {
+    "type": "attack",
+    "unit": 1,
+    "target": 5
+   },
+   {
+    "type": "move",
+    "unit": 2,
+    "q": 2,
+    "r": -3
+   },
+   {
+    "type": "attack",
+    "unit": 2,
+    "target": 3
+   }
+  ]
+ },
+ "cut-the-bowstring": {
+  "count": 160,
+  "strength": 160,
+  "orders": 3,
+  "line": [
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 3
+   },
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 4
+   },
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 5
+   }
+  ]
+ },
+ "leave-him": {
+  "count": 150,
+  "strength": 150,
+  "orders": 4,
+  "line": [
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 2
+   },
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 3
+   },
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 4
+   },
+   {
+    "type": "attack",
+    "unit": 1,
+    "target": 4
+   }
+  ]
+ },
+ "the-shore-riders": {
+  "count": 190,
+  "strength": 190,
+  "orders": 5,
+  "line": [
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 2
+   },
+   {
+    "type": "move",
+    "unit": 1,
+    "q": 0,
+    "r": 0
+   },
+   {
+    "type": "attack",
+    "unit": 1,
+    "target": 3
+   },
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 3
+   },
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 4
+   }
+  ]
+ },
+ "the-wood-line": {
+  "count": 150,
+  "strength": 150,
+  "orders": 5,
+  "line": [
+   {
+    "type": "move",
+    "unit": 0,
+    "q": 0,
+    "r": -1
+   },
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 5
+   },
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 4
+   },
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 3
+   },
+   {
+    "type": "attack",
+    "unit": 1,
+    "target": 3
+   }
+  ]
+ },
+ "the-jungle-road": {
+  "count": 140,
+  "strength": 140,
+  "orders": 4,
+  "line": [
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 3
+   },
+   {
+    "type": "attack",
+    "unit": 1,
+    "target": 3
+   },
+   {
+    "type": "attack",
+    "unit": 2,
+    "target": 3
+   },
+   {
+    "type": "attack",
+    "unit": 2,
+    "target": 4
+   }
+  ]
+ },
+ "the-crossed-lanes": {
+  "count": 220,
+  "strength": 220,
+  "orders": 3,
+  "line": [
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 4
+   },
+   {
+    "type": "attack",
+    "unit": 1,
+    "target": 4
+   },
+   {
+    "type": "attack",
+    "unit": 2,
+    "target": 5
+   }
+  ]
+ },
+ "down-the-avenue": {
+  "count": 170,
+  "strength": 170,
+  "orders": 4,
+  "line": [
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 3
+   },
+   {
+    "type": "move",
+    "unit": 1,
+    "q": -1,
+    "r": 3
+   },
+   {
+    "type": "move",
+    "unit": 1,
+    "q": 0,
+    "r": 1
+   },
+   {
+    "type": "attack",
+    "unit": 1,
+    "target": 4
+   }
+  ]
+ },
+ "broken-sword": {
+  "count": 120,
+  "strength": 120,
+  "orders": 9,
+  "line": [
+   {
+    "type": "move",
+    "unit": 0,
+    "q": 0,
+    "r": 0
+   },
+   {
+    "type": "attack",
+    "unit": 0,
+    "target": 4
+   },
+   {
+    "type": "move",
+    "unit": 1,
+    "q": 0,
+    "r": 1
+   },
+   {
+    "type": "attack",
+    "unit": 1,
+    "target": 4
+   },
+   {
+    "type": "move",
+    "unit": 2,
+    "q": 1,
+    "r": -1
+   },
+   {
+    "type": "attack",
+    "unit": 2,
+    "target": 4
+   },
+   {
+    "type": "move",
+    "unit": 3,
+    "q": -1,
+    "r": 0
+   },
+   {
+    "type": "move",
+    "unit": 3,
+    "q": 1,
+    "r": -2
+   },
+   {
+    "type": "attack",
+    "unit": 3,
+    "target": 5
+   }
+  ]
+ }
+}
