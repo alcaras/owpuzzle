@@ -58,6 +58,40 @@ All verified against the game's source (see CLAUDE.md for where it lives).
 | **Panic / no escape** | A pushed target with nowhere to go is disarmed instead. Blocking the escape tiles with your own bodies is a real play. |
 | **Zealot last stand** | Damage cannot take it below 1 hp — but splash can finish it. |
 
+## Prove it against the POOL, not against par
+
+Par is the tight number. **Play is not played at par**: `poolOrders` grants
+par + 5 rounded up to a multiple of 5, so a par-2 board hands the player
+**ten** orders. Every "is the idea required?" probe must run at the pool, or
+it is answering a question nobody is asked.
+
+This is not a hypothetical. Two of the nine promotion puzzles passed the
+required-ness check at par and failed it at the pool:
+
+- **Wounded and Meaner** — the spare orders bought a **rout chain**: the fresh
+  axeman killed the soft target, advanced, and swung again, so the promotion
+  was never needed. Fixed by making both reds polearms, which are rout-immune,
+  so exactly two blows exist.
+- **Don't Step Closer** — the spare orders bought a **walk around the water**
+  to the "unreachable" archer. An undeclared tile is open ground; only some
+  tiles had been walled.
+
+Two habits fall out of that, and both are cheap:
+
+- **Declare every tile** on a board whose difficulty depends on somewhere
+  being unreachable. Undeclared is open.
+- **Count the blows, not the orders.** Attacking sets `cooldown = 'ATTACK'`
+  and nothing clears it, so each unit swings once — unless a kill routs it,
+  which grants another attack and is exactly how an order surplus turns into
+  extra damage. Polearms break that chain.
+
+Watch for **collateral** too: an axeman's cleave splashed 2 onto a second red
+standing next to its target and let a plain 7 finish a gate set at 9. Adjacent
+reds share damage; separate them or budget for it.
+
+`tools/promo_check.js` runs all of this — damage matrix, solvable at par, par
+tight at par-1, and the idea required at the pool.
+
 ## Numbers first, board second
 
 Damage is `6 × attackStrength / defendStrength` with all modifiers additive.

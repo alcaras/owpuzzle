@@ -2968,5 +2968,1012 @@ var OWPUZZLES = [
    ],
    "difficulty": 2
   },
+  // --- Promotions I: one promotion each, and in every one of them the
+  // promotion is REQUIRED, not merely available. test/promo-lessons.test.js
+  // strips the taught promotion from each board and asserts par becomes
+  // unreachable, so none of these lessons can quietly stop being true.
+  {
+    "id": "the-far-bank",
+    "difficulty": 2,
+    "name": "The Far Bank",
+    "author": "owpuzzle",
+    "brief": "Destroy the spearman.",
+    "lesson": "Every melee unit in the game strikes across a river at half force. Amphibious does not beat the river, it cancels the penalty.",
+    "orders": 2,
+    "radius": 2,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": 1,
+        "r": 0,
+        "river": [
+          3
+        ]
+      },
+      {
+        "q": 1,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": 0,
+        "height": "HEIGHT_MOUNTAIN"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_AXEMAN",
+        "q": -1,
+        "r": 0,
+        "promotions": [
+          "EFFECTUNIT_AMPHIBIOUS"
+        ]
+      },
+      {
+        "player": 1,
+        "type": "UNIT_SPEARMAN",
+        "q": 1,
+        "r": 0,
+        "hp": 8
+      }
+    ]
+  },
+  {
+    "id": "one-hex-further",
+    "difficulty": 2,
+    "name": "One Hex Further",
+    "author": "owpuzzle",
+    "brief": "Destroy the archer.",
+    "lesson": "One extra hex of range is the difference between an enemy you cannot touch and a dead one.",
+    "orders": 2,
+    "radius": 3,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": 0,
+        "r": 0,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": 1,
+        "r": 0,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": 2,
+        "r": 0,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": 0,
+        "r": -1,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": 1,
+        "r": -1,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": 2,
+        "r": -1,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": 3,
+        "r": -1,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": 0,
+        "r": 1,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": 1,
+        "r": 1,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": 2,
+        "r": 1,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": -1,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -3,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_LONGBOWMAN",
+        "q": -2,
+        "r": 0,
+        "promotions": [
+          "EFFECTUNIT_MARKSMAN"
+        ]
+      },
+      {
+        "player": 1,
+        "type": "UNIT_ARCHER",
+        "q": 3,
+        "r": 0,
+        "hp": 3
+      }
+    ]
+  },
+  {
+    "id": "the-second-blow",
+    "difficulty": 2,
+    "name": "The Second Blow",
+    "author": "owpuzzle",
+    "brief": "Destroy the axeman.",
+    "lesson": "Bloodthirsty pays nothing against an unwounded enemy, so it is worth nothing to the first blow and everything to the second. The same two attacks in the other order kill a man they otherwise leave standing.",
+    "orders": 3,
+    "radius": 2,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": 0,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": 0,
+        "height": "HEIGHT_MOUNTAIN"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_SWORDSMAN",
+        "q": 1,
+        "r": 0,
+        "promotions": [
+          "EFFECTUNIT_BLOODTHIRSTY"
+        ]
+      },
+      {
+        "player": 0,
+        "type": "UNIT_SPEARMAN",
+        "q": -2,
+        "r": 0
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 0,
+        "r": 0
+      }
+    ]
+  },
+  {
+    "id": "stand-in-the-woods",
+    "difficulty": 2,
+    "name": "Stand in the Woods",
+    "author": "owpuzzle",
+    "brief": "Destroy the axeman.",
+    "lesson": "Ranger measures the ground under your own feet, not the enemy's — so walking past a perfectly good attacking position to stand in the trees is the strongest move on the board.",
+    "orders": 3,
+    "radius": 2,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": 1,
+        "r": -1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 1,
+        "r": 0,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": 0,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 0,
+        "height": "HEIGHT_MOUNTAIN"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_AXEMAN",
+        "q": -1,
+        "r": -1,
+        "promotions": [
+          "EFFECTUNIT_RANGER"
+        ]
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 0,
+        "r": 0,
+        "hp": 8
+      }
+    ]
+  },
+  {
+    "id": "the-crown",
+    "difficulty": 2,
+    "name": "The Crown",
+    "author": "owpuzzle",
+    "brief": "Destroy both.",
+    "lesson": "Two identical axemen stop being identical the moment one of them carries the general.",
+    "orders": 3,
+    "radius": 2,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": 0,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": 0,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 0,
+        "height": "HEIGHT_MOUNTAIN"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_AXEMAN",
+        "q": -1,
+        "r": -1,
+        "promotions": [
+          "EFFECTUNIT_HECKLER"
+        ]
+      },
+      {
+        "player": 0,
+        "type": "UNIT_AXEMAN",
+        "q": -1,
+        "r": 1
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 1,
+        "r": 0,
+        "hp": 8,
+        "general": true
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 0,
+        "r": 0,
+        "hp": 6
+      }
+    ]
+  },
+  {
+    "id": "wounded-and-meaner",
+    "difficulty": 2,
+    "name": "Wounded and Meaner",
+    "author": "owpuzzle",
+    "brief": "Destroy both.",
+    "lesson": "Tough turns injury into strength, so the casualty you would instinctively spare is the one you should send.",
+    "orders": 3,
+    "radius": 2,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": 0,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_AXEMAN",
+        "q": 0,
+        "r": -1,
+        "hp": 10,
+        "promotions": [
+          "EFFECTUNIT_TOUGH"
+        ]
+      },
+      {
+        "player": 0,
+        "type": "UNIT_AXEMAN",
+        "q": -1,
+        "r": 0
+      },
+      {
+        "player": 1,
+        "type": "UNIT_SPEARMAN",
+        "q": 2,
+        "r": 0,
+        "hp": 9
+      },
+      {
+        "player": 1,
+        "type": "UNIT_SPEARMAN",
+        "q": -2,
+        "r": 0,
+        "hp": 8
+      }
+    ]
+  },
+  {
+    "id": "dont-step-closer",
+    "difficulty": 2,
+    "name": "Don't Step Closer",
+    "author": "owpuzzle",
+    "brief": "Destroy both.",
+    "lesson": "Every other bow loses a fifth of its strength for each hex it shoots across. Eagle Eye does not, so it is the only one worth aiming at something far away.",
+    "orders": 2,
+    "radius": 2,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": 0,
+        "r": 0,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": 1,
+        "r": 0,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": 2,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_ARCHER",
+        "q": -1,
+        "r": 0,
+        "promotions": [
+          "EFFECTUNIT_EAGLE_EYE"
+        ]
+      },
+      {
+        "player": 0,
+        "type": "UNIT_ARCHER",
+        "q": -2,
+        "r": 0
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 2,
+        "r": 0,
+        "hp": 6
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": -2,
+        "r": 1,
+        "hp": 6
+      }
+    ]
+  },
+  {
+    "id": "the-right-sword",
+    "difficulty": 2,
+    "name": "The Right Sword",
+    "author": "owpuzzle",
+    "brief": "Destroy all three.",
+    "lesson": "A promotion is not extra damage, it is extra damage against someone in particular — so the question is never how hard you hit, but who you send.",
+    "orders": 4,
+    "radius": 2,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": 0,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 0,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_AXEMAN",
+        "q": 0,
+        "r": 0,
+        "promotions": [
+          "EFFECTUNIT_HORSEBANE"
+        ]
+      },
+      {
+        "player": 0,
+        "type": "UNIT_MACEMAN",
+        "q": 0,
+        "r": -1
+      },
+      {
+        "player": 0,
+        "type": "UNIT_AXEMAN",
+        "q": -1,
+        "r": 0
+      },
+      {
+        "player": 1,
+        "type": "UNIT_HORSEMAN",
+        "q": 2,
+        "r": 0,
+        "hp": 7
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 1,
+        "r": -1,
+        "hp": 9
+      },
+      {
+        "player": 1,
+        "type": "UNIT_ARCHER",
+        "q": -1,
+        "r": -1,
+        "hp": 6
+      }
+    ]
+  },
+  {
+    "id": "evict-him",
+    "difficulty": 2,
+    "name": "Evict Him",
+    "author": "owpuzzle",
+    "brief": "Destroy the axeman.",
+    "lesson": "An elephant shoves its victim directly away from the tile you struck from, so choosing where to attack from is choosing where he lands. Arrows are half strength into trees; feet are not.",
+    "orders": 4,
+    "radius": 2,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": 0,
+        "r": 0,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 0,
+        "r": -1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 1,
+        "r": -1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 0,
+        "r": 1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": -1,
+        "r": 1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 0,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -2,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": 2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": 1,
+        "height": "HEIGHT_MOUNTAIN"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_WAR_ELEPHANT",
+        "q": 1,
+        "r": -2
+      },
+      {
+        "player": 0,
+        "type": "UNIT_ARCHER",
+        "q": -2,
+        "r": 0
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 0,
+        "r": 0,
+        "hp": 14
+      }
+    ]
+  },
 ];
 if (typeof module !== 'undefined') module.exports = OWPUZZLES;
