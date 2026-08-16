@@ -1,20 +1,20 @@
-// TOUGH (+10% to its OWN strength while damaged) — the promotion rewards the
-// unit you would instinctively keep out of the fight.
+// TOUGH (+10% to its OWN strength while damaged) — a promotion that is switched
+// OFF at the start of the puzzle and has to be earned.
 //
-// Your two axemen are the same soldier except one is on 10 hp and carries
-// TOUGH: being hurt makes him hit for 7 where the fresh man hits for 6.
-//   the spearman at 9 hp dies only to the wounded man's 9 (the fresh man: 8)
-//   the second spearman at 8 hp dies to the fresh man's 8
-// Two things about this board are defensive, and both were forced by a probe
-// that solved it with no promotion at all once the player's REAL order pool
-// (par+5, so ten) was used instead of par:
-//   * both reds are polearms — polearms are immune to ROUT, so no kill grants
-//     a second swing, and exactly two blows exist
-//   * the reds stand four hexes apart — adjacent, an axeman's cleave splashed
-//     2 onto the far one and a plain 7 then finished a target set at 9
-// TOUGH is worth nothing against a horseman here — 5 damage either way after
-// rounding — which is exactly why the target had to be measured, not assumed.
-// Send the casualty at the harder target and the healthy one at the softer.
+// Your horseman rides in at full health, so TOUGH gives him nothing: 9 damage,
+// same as anyone. The axeman he is already touching is on 10.
+//
+// BOTH men you can reach from where you start are on 10, so both of them shrug
+// off your opening blow — no kill, no rout, turn over. The only 9 hp man is
+// round the far side of them.
+//
+//   ride to him, kill him, and his counterattack costs you a single hit point.
+//   That one point is the whole puzzle: you are damaged now, TOUGH is live, and
+//   every blow after it is 10 — exactly enough. The rout from that kill carries
+//   you into the first tough man, and the rout from HIM into the second.
+//
+// You have to be bloodied before you can break them, so the wound is not the
+// cost of the plan. It IS the plan.
 module.exports = {
   teaches: 'EFFECTUNIT_TOUGH',
   puzzle: {
@@ -22,26 +22,24 @@ module.exports = {
     difficulty: 2,
     name: 'Wounded and Meaner',
     author: 'owpuzzle',
-    brief: 'Destroy both.',
+    brief: 'Destroy all three.',
     lesson: '',
-    orders: 3,
+    orders: 4,
     radius: 2,
     training: 0,
     objective: { kind: 'killAll' },
     tiles: [
-      { q: 0, r: -2, height: 'HEIGHT_MOUNTAIN' }, { q: 1, r: -2, height: 'HEIGHT_MOUNTAIN' },
-      { q: 2, r: -2, height: 'HEIGHT_MOUNTAIN' }, { q: -1, r: -1, height: 'HEIGHT_MOUNTAIN' },
-      { q: 2, r: -1, height: 'HEIGHT_MOUNTAIN' },
-      { q: -2, r: 1, height: 'HEIGHT_MOUNTAIN' }, { q: -1, r: 1, height: 'HEIGHT_MOUNTAIN' },
-      { q: 0, r: 1, height: 'HEIGHT_MOUNTAIN' }, { q: 1, r: 1, height: 'HEIGHT_MOUNTAIN' },
-      { q: -2, r: 2, height: 'HEIGHT_MOUNTAIN' }, { q: -1, r: 2, height: 'HEIGHT_MOUNTAIN' },
-      { q: 0, r: 2, height: 'HEIGHT_MOUNTAIN' },
+      { q: -2, r: 1, vegetation: 'VEGETATION_TREES' },
+      { q: -1, r: 2, vegetation: 'VEGETATION_TREES', height: 'HEIGHT_HILL' },
+      { q: 0, r: -2, height: 'HEIGHT_HILL' },
+      { q: -2, r: 0, height: 'HEIGHT_HILL' },
+      { q: -1, r: -1, vegetation: 'VEGETATION_TREES' },
     ],
     units: [
-      { player: 0, type: 'UNIT_AXEMAN', q: 0, r: -1, hp: 10, promotions: ['EFFECTUNIT_TOUGH'] },
-      { player: 0, type: 'UNIT_AXEMAN', q: -1, r: 0 },
-      { player: 1, type: 'UNIT_SPEARMAN', q: 2, r: 0, hp: 9 },
-      { player: 1, type: 'UNIT_SPEARMAN', q: -2, r: 0, hp: 8 },
+      { player: 0, type: 'UNIT_HORSEMAN', q: 1, r: -2, promotions: ['EFFECTUNIT_TOUGH'] },
+      { player: 1, type: 'UNIT_AXEMAN', q: 1, r: -1, hp: 10 },
+      { player: 1, type: 'UNIT_AXEMAN', q: 1, r: 0, hp: 9 },
+      { player: 1, type: 'UNIT_AXEMAN', q: 2, r: -2, hp: 10 },
     ],
   },
 };

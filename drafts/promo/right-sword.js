@@ -1,16 +1,17 @@
-// HORSEBANE (+25% vs MOUNTED) — which of your soldiers swings IS the puzzle.
+// HORSEBANE (+25% vs MOUNTED) — a promotion that cares WHO it is hitting, set
+// inside a chain that cares about the ORDER you hit them in.
 //
-// Gate: three reds, three blows, and each red dies to exactly one attacker in
-// exactly one blow. The horseman at 7 hp is the pin — only the horsebane axeman
-// reaches it (7). Plain axeman 5, maceman 6.
-//   * no swordsman or spearman on blue: both do 8 to a horseman unaided and
-//     would make the promotion optional without anyone noticing
-//   * red axeman at 9 hp so ONLY the maceman one-shots it (9); both axemen do 6
-//   * the horsebane axeman starts adjacent to the red axeman — the tempting
-//     target it cannot kill — and must walk away from a live enemy to do its job
+// Two rules do the work together:
+//   * a rout advance only happens on a kill, and POLEARMS are immune to it
+//     (routEffectVs, engine.js:138) — killing the spearman leaves you standing
+//     still with your turn over, so he has to die LAST
+//   * the red horseman is on 9 hp, and a blue horseman does 8 to cavalry. Only
+//     HORSEBANE reaches 9, so he is the link that would otherwise break
 //
-// The arena is walled down to seven tiles so the search exhausts and the par,
-// the tightness and the required-ness are all proved rather than assumed.
+// The spearman is the man you start next to, at 6 hp against your 6 damage: a
+// free kill, in reach, first order of the turn. Take it and the chain never
+// begins. Ride the other way, open on the cavalry, and each kill carries you
+// down the line into him.
 module.exports = {
   teaches: 'EFFECTUNIT_HORSEBANE',
   puzzle: {
@@ -25,21 +26,17 @@ module.exports = {
     training: 0,
     objective: { kind: 'killAll' },
     tiles: [
-      { q: 0, r: -2, height: 'HEIGHT_MOUNTAIN' }, { q: 1, r: -2, height: 'HEIGHT_MOUNTAIN' },
-      { q: 2, r: -2, height: 'HEIGHT_MOUNTAIN' }, { q: 2, r: -1, height: 'HEIGHT_MOUNTAIN' },
-      { q: -2, r: 0, height: 'HEIGHT_MOUNTAIN' },
-      { q: -2, r: 1, height: 'HEIGHT_MOUNTAIN' }, { q: -1, r: 1, height: 'HEIGHT_MOUNTAIN' },
-      { q: 0, r: 1, height: 'HEIGHT_MOUNTAIN' }, { q: 1, r: 1, height: 'HEIGHT_MOUNTAIN' },
-      { q: -2, r: 2, height: 'HEIGHT_MOUNTAIN' }, { q: -1, r: 2, height: 'HEIGHT_MOUNTAIN' },
-      { q: 0, r: 2, height: 'HEIGHT_MOUNTAIN' },
+      { q: -1, r: -1, height: 'HEIGHT_HILL' },
+      { q: -2, r: 2, vegetation: 'VEGETATION_TREES', height: 'HEIGHT_HILL' },
+      { q: 0, r: 2, vegetation: 'VEGETATION_TREES' },
+      { q: -2, r: 0, vegetation: 'VEGETATION_TREES' },
+      { q: 2, r: -2, height: 'HEIGHT_HILL' },
     ],
     units: [
-      { player: 0, type: 'UNIT_AXEMAN', q: 0, r: 0, promotions: ['EFFECTUNIT_HORSEBANE'] },
-      { player: 0, type: 'UNIT_MACEMAN', q: 0, r: -1 },
-      { player: 0, type: 'UNIT_AXEMAN', q: -1, r: 0 },
-      { player: 1, type: 'UNIT_HORSEMAN', q: 2, r: 0, hp: 7 },
-      { player: 1, type: 'UNIT_AXEMAN', q: 1, r: -1, hp: 9 },
-      { player: 1, type: 'UNIT_ARCHER', q: -1, r: -1, hp: 6 },
+      { player: 0, type: 'UNIT_HORSEMAN', q: 1, r: -2, promotions: ['EFFECTUNIT_HORSEBANE'] },
+      { player: 1, type: 'UNIT_HORSEMAN', q: 0, r: 0, hp: 9 },
+      { player: 1, type: 'UNIT_AXEMAN', q: 1, r: 0, hp: 9 },
+      { player: 1, type: 'UNIT_SPEARMAN', q: 1, r: -1, hp: 6 },
     ],
   },
 };

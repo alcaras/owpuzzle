@@ -1,18 +1,16 @@
 // AMPHIBIOUS (+50% across a river) — a promotion that removes a penalty
 // everyone else pays. EFFECTUNIT_MELEE itself carries iRiverAttackModifier -50,
-// so every melee unit in the game strikes across water at half force.
+// so every melee unit in the game strikes across a river at half force:
+//   plain horseman across the water -> 5
+//   amphibious horseman             -> 9, the whole blow
 //
-//   plain axeman across the river -> 4      on land -> 8
-//   amphibious axeman             -> 8      on land -> 8
+// The three axemen are on an island, and the only place the bank comes close
+// enough to strike is the river edge in front of you. Each is on 9 hp, so the
+// first one dies only to the full blow — and a rout advance CROSSES the river,
+// putting you on the island where the other two are ordinary work.
 //
-// Both spearmen are on 8 hp, so each dies to exactly one blow on land and the
-// far one dies ONLY to the amphibious man. Both are polearms, immune to ROUT,
-// so no kill buys a second swing: there are two blows for two enemies and the
-// assignment is the whole puzzle.
-//
-// The two axemen start on the wrong sides of it — the plain one already facing
-// the river, the amphibious one already facing the near bank — so the natural
-// line has the wrong man wade in and fall four short.
+// Ride around looking for a ford and there isn't one; strike across at half
+// force and he lives. The river is the door, and Amphibious is the key.
 module.exports = {
   teaches: 'EFFECTUNIT_AMPHIBIOUS',
   puzzle: {
@@ -20,29 +18,30 @@ module.exports = {
     difficulty: 2,
     name: 'The Far Bank',
     author: 'owpuzzle',
-    brief: 'Destroy both spearmen.',
+    brief: 'Destroy all three.',
     lesson: '',
-    orders: 5,
+    orders: 3,
     radius: 2,
     training: 0,
     objective: { kind: 'killAll' },
     tiles: [
-      { q: 1, r: 0, river: [3] },
-      { q: 0, r: -2, height: 'HEIGHT_MOUNTAIN' }, { q: 1, r: -2, height: 'HEIGHT_MOUNTAIN' },
-      { q: 2, r: -2, height: 'HEIGHT_MOUNTAIN' },
-      { q: -1, r: -1, height: 'HEIGHT_MOUNTAIN' }, { q: 1, r: -1, height: 'HEIGHT_MOUNTAIN' },
-      { q: 2, r: -1, height: 'HEIGHT_MOUNTAIN' },
-      { q: 2, r: 0, height: 'HEIGHT_MOUNTAIN' },
-      { q: -2, r: 1, height: 'HEIGHT_MOUNTAIN' }, { q: -1, r: 1, height: 'HEIGHT_MOUNTAIN' },
-      { q: 0, r: 1, height: 'HEIGHT_MOUNTAIN' }, { q: 1, r: 1, height: 'HEIGHT_MOUNTAIN' },
-      { q: -2, r: 2, height: 'HEIGHT_MOUNTAIN' }, { q: -1, r: 2, height: 'HEIGHT_MOUNTAIN' },
-      { q: 0, r: 2, height: 'HEIGHT_MOUNTAIN' },
+      { q: 0, r: 0, river: [3] },
+      { q: 0, r: -1, terrain: 'TERRAIN_WATER' },
+      { q: 1, r: -2, terrain: 'TERRAIN_WATER' },
+      { q: 2, r: -2, terrain: 'TERRAIN_WATER' },
+      { q: 2, r: -1, terrain: 'TERRAIN_WATER' },
+      { q: 1, r: 1, terrain: 'TERRAIN_WATER' },
+      { q: 0, r: 1, terrain: 'TERRAIN_WATER' },
+      { q: 2, r: 0, terrain: 'TERRAIN_WATER' },
+      { q: -1, r: 1, terrain: 'TERRAIN_WATER' },
+      { q: -2, r: 1, height: 'HEIGHT_HILL' },
+      { q: -1, r: -1, vegetation: 'VEGETATION_TREES' },
     ],
     units: [
-      { player: 0, type: 'UNIT_AXEMAN', q: -1, r: 0, promotions: ['EFFECTUNIT_AMPHIBIOUS'] },
-      { player: 0, type: 'UNIT_AXEMAN', q: 0, r: 0 },
-      { player: 1, type: 'UNIT_SPEARMAN', q: 1, r: 0, hp: 8 },
-      { player: 1, type: 'UNIT_SPEARMAN', q: -2, r: 0, hp: 8 },
+      { player: 0, type: 'UNIT_HORSEMAN', q: -1, r: 0, promotions: ['EFFECTUNIT_AMPHIBIOUS'] },
+      { player: 1, type: 'UNIT_AXEMAN', q: 0, r: 0, hp: 9 },
+      { player: 1, type: 'UNIT_AXEMAN', q: 1, r: 0, hp: 9 },
+      { player: 1, type: 'UNIT_AXEMAN', q: 1, r: -1, hp: 9 },
     ],
   },
 };

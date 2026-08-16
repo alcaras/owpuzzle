@@ -3052,5 +3052,225 @@ var OWPUZZLES = [
       }
     ]
   },
+  {
+    "id": "the-second-blow",
+    "difficulty": 2,
+    "name": "The Second Blow",
+    "author": "owpuzzle",
+    "brief": "Destroy the axeman.",
+    "lesson": "Bloodthirsty pays nothing against an unwounded enemy, so it is worth nothing to the first blow and everything to the second. The same two attacks in the other order kill a man they otherwise leave standing.",
+    "orders": 3,
+    "radius": 2,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": -1,
+        "r": -1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 1,
+        "r": 1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 2,
+        "r": -1,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": 2,
+        "r": -2,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": -2,
+        "r": 2,
+        "vegetation": "VEGETATION_TREES"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_SWORDSMAN",
+        "q": 1,
+        "r": 0,
+        "promotions": [
+          "EFFECTUNIT_BLOODTHIRSTY"
+        ]
+      },
+      {
+        "player": 0,
+        "type": "UNIT_SPEARMAN",
+        "q": -2,
+        "r": 0
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 0,
+        "r": 0
+      }
+    ]
+  },
+  {
+    "id": "the-right-sword",
+    "difficulty": 2,
+    "name": "The Right Sword",
+    "author": "owpuzzle",
+    "brief": "Destroy all three.",
+    "lesson": "Polearms cannot be routed, so the spearman is the one man whose death ends your turn instead of continuing it. Kill him last, and let Horsebane open the door.",
+    "orders": 4,
+    "radius": 2,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": -1,
+        "r": -1,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": -2,
+        "r": 2,
+        "vegetation": "VEGETATION_TREES",
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": 0,
+        "r": 2,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": -2,
+        "r": 0,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 2,
+        "r": -2,
+        "height": "HEIGHT_HILL"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_HORSEMAN",
+        "q": 1,
+        "r": -2,
+        "promotions": [
+          "EFFECTUNIT_HORSEBANE"
+        ]
+      },
+      {
+        "player": 1,
+        "type": "UNIT_HORSEMAN",
+        "q": 0,
+        "r": 0,
+        "hp": 9
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 1,
+        "r": 0,
+        "hp": 9
+      },
+      {
+        "player": 1,
+        "type": "UNIT_SPEARMAN",
+        "q": 1,
+        "r": -1,
+        "hp": 6
+      }
+    ]
+  },
+  {
+    "id": "evict-him",
+    "difficulty": 2,
+    "name": "Evict Him",
+    "author": "owpuzzle",
+    "brief": "Destroy the axeman.",
+    "lesson": "An elephant shoves its victim directly away from the tile you struck from, so choosing where to attack from is choosing where he lands \u2014 and arrows are half strength into trees.",
+    "orders": 4,
+    "radius": 2,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": 0,
+        "r": 0,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 0,
+        "r": -1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 0,
+        "r": 1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 1,
+        "r": -1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": -1,
+        "r": 1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": -1,
+        "r": 2,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 1,
+        "r": 1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": -2,
+        "r": 1,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": 2,
+        "r": -2,
+        "height": "HEIGHT_HILL"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_WAR_ELEPHANT",
+        "q": 1,
+        "r": -2
+      },
+      {
+        "player": 0,
+        "type": "UNIT_ARCHER",
+        "q": -2,
+        "r": 0
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 0,
+        "r": 0,
+        "hp": 14
+      }
+    ]
+  },
 ];
 if (typeof module !== 'undefined') module.exports = OWPUZZLES;

@@ -1,12 +1,19 @@
-// HECKLER (+25% vs a GENERAL) — a promotion that cares WHO it is hitting.
+// HECKLER (+25% vs a GENERAL) — worth 11 damage against the crowned axeman
+// where every other blow of yours is 9. He is on 11 hp, so he is the only man
+// on the field your horseman cannot kill without it.
 //
-// Two axemen in the enemy line look identical. One carries the general, and the
-// heckler does 8 to him where it does 6 to anyone else. Both reds sit at the hp
-// that exactly one of your blows reaches:
-//   general at 8 — only the heckler (8); the plain axeman does 6
-//   escort  at 6 — the plain axeman's 6 is exactly enough
-// so the heckler must be spent on the crown and cannot be wasted on the escort.
-// It starts on the wrong side of the line and has to walk around to reach him.
+// He stands BEHIND his two escorts, and a rout advance is the only way to reach
+// him: kills carry you along the line, one tile per body. The escort you START
+// next to is the wrong one.
+//
+//   swing at the man in front of you -> you advance onto his tile, and from
+//     there you can take the general OR the far escort, but never both: whoever
+//     you leave is two hexes away and your horse is spent. Two of three.
+//   ride around to the FAR escort first -> the same three blows sweep the whole
+//     line inward: escort, escort, crown.
+//
+// Nothing here is about damage — both lines kill the general perfectly well.
+// Only one of them arrives at him having already cleared everything behind.
 module.exports = {
   teaches: 'EFFECTUNIT_HECKLER',
   puzzle: {
@@ -14,25 +21,24 @@ module.exports = {
     difficulty: 2,
     name: 'The Crown',
     author: 'owpuzzle',
-    brief: 'Destroy both.',
+    brief: 'Destroy all three.',
     lesson: '',
-    orders: 3,
+    orders: 4,
     radius: 2,
     training: 0,
     objective: { kind: 'killAll' },
     tiles: [
-      { q: 0, r: -2, height: 'HEIGHT_MOUNTAIN' }, { q: 1, r: -2, height: 'HEIGHT_MOUNTAIN' },
-      { q: 2, r: -2, height: 'HEIGHT_MOUNTAIN' }, { q: 2, r: -1, height: 'HEIGHT_MOUNTAIN' },
-      { q: 2, r: 0, height: 'HEIGHT_MOUNTAIN' }, { q: 1, r: 1, height: 'HEIGHT_MOUNTAIN' },
-      { q: 0, r: 2, height: 'HEIGHT_MOUNTAIN' }, { q: -1, r: 2, height: 'HEIGHT_MOUNTAIN' },
-      { q: -2, r: 2, height: 'HEIGHT_MOUNTAIN' }, { q: -2, r: 1, height: 'HEIGHT_MOUNTAIN' },
-      { q: -2, r: 0, height: 'HEIGHT_MOUNTAIN' },
+      { q: -1, r: 0, vegetation: 'VEGETATION_TREES' },
+      { q: -2, r: 1, vegetation: 'VEGETATION_TREES', height: 'HEIGHT_HILL' },
+      { q: 0, r: 2, height: 'HEIGHT_HILL' },
+      { q: 1, r: -2, height: 'HEIGHT_HILL' },
+      { q: -1, r: -1, vegetation: 'VEGETATION_TREES' },
     ],
     units: [
-      { player: 0, type: 'UNIT_AXEMAN', q: -1, r: -1, promotions: ['EFFECTUNIT_HECKLER'] },
-      { player: 0, type: 'UNIT_AXEMAN', q: -1, r: 1 },
-      { player: 1, type: 'UNIT_AXEMAN', q: 1, r: 0, hp: 8, general: true },
-      { player: 1, type: 'UNIT_AXEMAN', q: 0, r: 0, hp: 6 },
+      { player: 0, type: 'UNIT_HORSEMAN', q: 1, r: 1, promotions: ['EFFECTUNIT_HECKLER'] },
+      { player: 1, type: 'UNIT_AXEMAN', q: 2, r: -1, hp: 9 },
+      { player: 1, type: 'UNIT_AXEMAN', q: 1, r: 0, hp: 9 },
+      { player: 1, type: 'UNIT_AXEMAN', q: 0, r: 0, hp: 11, general: true },
     ],
   },
 };

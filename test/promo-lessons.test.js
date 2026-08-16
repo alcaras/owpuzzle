@@ -26,11 +26,19 @@ const PUZZLES = require(path.join(__dirname, '..', 'web', 'puzzles.js'));
 // id -> what makes the lesson true, and how to take it away
 const LESSONS = {
   'stand-in-the-woods': { strip: 'EFFECTUNIT_RANGER' },
-  // The rest of the set lives in drafts/promo/ and is not shipped: each one
-  // verified — solvable at par, tight at par-1, promotion required at the pool
-  // — and still played flat, because "match the right blue to the right red"
-  // is arithmetic rather than an idea. They are being rebuilt around rout
-  // chains and terrain that means something before they go in here.
+  'the-second-blow': { strip: 'EFFECTUNIT_BLOODTHIRSTY' },
+  'the-right-sword': { strip: 'EFFECTUNIT_HORSEBANE' },
+  'evict-him': {
+    // PANIC is intrinsic to elephants and it is the TOOL here. Swap the
+    // elephant for a maceman, which cannot shove: that isolates the push.
+    label: 'elephant swapped for a maceman (no shove)',
+    neutralise: (p) => {
+      p.units.forEach((u) => { if (u.type === 'UNIT_WAR_ELEPHANT') u.type = 'UNIT_MACEMAN'; });
+      return p;
+    },
+  },
+  // Still in drafts/promo/, still being played: the-crown, wounded-and-meaner,
+  // the-far-bank, dont-step-closer, one-hex-further.
 };
 
 function solve(puzzle, ms) {
