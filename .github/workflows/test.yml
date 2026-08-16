@@ -49,7 +49,11 @@ jobs:
           fi
           FILES=$(git diff --name-only "$BASE" "${{ github.sha }}")
           echo "$FILES"
-          if echo "$FILES" | grep -qE '^(web/(engine|data|puzzles)\.js|tools/extract_data\.py|test/ceilings\.test\.js)$'; then
+          # tools/deploy_fight.js belongs here because ceilings.test.js SHELLS OUT
+          # to it — it is the prover, not a bystander, so a change to it can move
+          # a published ceiling exactly as an engine change can. Missed on the
+          # first cut of this filter: a deploy_fight commit skipped the re-proof.
+          if echo "$FILES" | grep -qE '^(web/(engine|data|puzzles)\.js|tools/(extract_data\.py|deploy_fight\.js)|test/ceilings\.test\.js)$'; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
