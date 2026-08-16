@@ -109,8 +109,11 @@ test('search completeness in a restricted move model must NOT print PROVEN', () 
   // "Complete" within a model that excludes legal play is not a proof.
   const fs = require('fs');
   const path = require('path');
+  // The board lives in test/fixtures/, not submissions/ — that directory is
+  // gitignored, so reading the fixture from there passed locally and failed
+  // in CI on every push from the day this test landed.
   const sub = JSON.parse(fs.readFileSync(
-    path.join(__dirname, '..', 'submissions', 'bottleneck-f5de22.json'), 'utf8'));
+    path.join(__dirname, 'fixtures', 'bottleneck-f5de22.json'), 'utf8'));
   const ctx = V.build(sub.puzzle, 20);
 
   // incumbent 30 STR (below U), evidence = stage2 "complete"
