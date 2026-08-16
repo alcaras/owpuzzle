@@ -1,0 +1,15 @@
+{
+  "id": "twin-swords",
+  "name": "twin swords",
+  "brief": "test fixture: two identical blues, one reachable red",
+  "orders": 3,
+  "radius": 1,
+  "training": 0,
+  "objective": { "kind": "maxKill", "count": 80 },
+  "tiles": [],
+  "units": [
+    { "player": 0, "type": "UNIT_SWORDSMAN", "q": -1, "r": 0 },
+    { "player": 0, "type": "UNIT_SWORDSMAN", "q": 0, "r": -1 },
+    { "player": 1, "type": "UNIT_SWORDSMAN", "q": 0, "r": 0, "hp": 2 }
+  ]
+}

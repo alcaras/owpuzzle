@@ -1,0 +1,395 @@
+{
+  "slug": "bottleneck-f75e15",
+  "author": "squidgeny",
+  "submitted": "2026-08-14 20:12:22",
+  "notes": "{\"claimed\":{\"strength\":290,\"orders\":15,\"kills\":5},\"replayed\":{\"strength\":290,\"orders\":15,\"solved\":false},\"line\":[{\"type\":\"move\",\"unit\":1,\"q\":-2,\"r\":-1},{\"type\":\"attack\",\"unit\":7,\"target\":13},{\"type\":\"move\",\"unit\":1,\"q\":0,\"r\":0},{\"type\":\"move\",\"unit\":0,\"q\":-2,\"r\":2},{\"type\":\"attack\",\"unit\":0,\"target\":2},{\"type\":\"attack\",\"unit\":1,\"target\":2},{\"type\":\"attack\",\"unit\":1,\"target\":3},{\"type\":\"attack\",\"unit\":1,\"target\":5},{\"type\":\"move\",\"unit\":14,\"q\":1,\"r\":0},{\"type\":\"attack\",\"unit\":14,\"target\":6},{\"type\":\"attack\",\"unit\":1,\"target\":6},{\"type\":\"attack\",\"unit\":1,\"target\":11}]}",
+  "puzzle": {
+    "id": "bottleneck-f75e15",
+    "name": "Bottleneck",
+    "brief": "Destroy as much enemy strength as you can this turn.",
+    "lesson": "Your troops may sport many promotions, but sometimes the best attack doesn't make use of any of them.",
+    "orders": 15,
+    "training": 0,
+    "radius": 3,
+    "objective": {
+      "kind": "maxKill"
+    },
+    "tiles": [
+      {
+        "q": -3,
+        "r": 0,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": -3,
+        "r": 2,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": -3,
+        "r": 3,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": -2,
+        "r": -1,
+        "height": "HEIGHT_HILL",
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": -2,
+        "r": 0,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": -2,
+        "r": 1,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": -2,
+        "r": 3,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": -1,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": -1,
+        "r": 0,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": -1,
+        "r": 1,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": -1,
+        "r": 2,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": -1,
+        "r": 3,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": 0,
+        "r": -3,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 0,
+        "r": -1,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": 0,
+        "r": 1,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": 0,
+        "r": 2,
+        "height": "HEIGHT_HILL",
+        "vegetation": "VEGETATION_TREES",
+        "river": [
+          2
+        ]
+      },
+      {
+        "q": 0,
+        "r": 3,
+        "terrain": "TERRAIN_WATER"
+      },
+      {
+        "q": 1,
+        "r": -3,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": -1,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 1,
+        "r": 1,
+        "height": "HEIGHT_HILL",
+        "vegetation": "VEGETATION_TREES",
+        "river": [
+          4,
+          5
+        ]
+      },
+      {
+        "q": 1,
+        "r": 2,
+        "vegetation": "VEGETATION_TREES",
+        "river": [
+          2
+        ]
+      },
+      {
+        "q": 2,
+        "r": -3,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -2,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 2,
+        "r": -1,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": 2,
+        "r": 0,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": 2,
+        "r": 1,
+        "vegetation": "VEGETATION_TREES",
+        "river": [
+          3,
+          2,
+          1
+        ]
+      },
+      {
+        "q": 3,
+        "r": -3,
+        "height": "HEIGHT_MOUNTAIN"
+      },
+      {
+        "q": 3,
+        "r": 0,
+        "height": "HEIGHT_HILL",
+        "river": [
+          4
+        ]
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_SLINGER",
+        "q": -2,
+        "r": 0,
+        "hp": 10,
+        "promotions": [
+          "EFFECTUNIT_HIGHLANDER"
+        ]
+      },
+      {
+        "player": 0,
+        "type": "UNIT_HORSEMAN",
+        "q": 0,
+        "r": -1,
+        "hp": 6,
+        "promotions": [
+          "EFFECTUNIT_AMPHIBIOUS",
+          "EFFECTUNIT_HECKLER",
+          "EFFECTUNIT_RANGER"
+        ]
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 0,
+        "r": 1,
+        "hp": 6,
+        "promotions": [
+          "EFFECTUNIT_HORSEBANE"
+        ]
+      },
+      {
+        "player": 1,
+        "type": "UNIT_ARCHER",
+        "q": 1,
+        "r": 0,
+        "hp": 5
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 0,
+        "r": 2,
+        "hp": 3
+      },
+      {
+        "player": 1,
+        "type": "UNIT_HORSE_ARCHER",
+        "q": 2,
+        "r": 0,
+        "hp": 3
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 3,
+        "r": -1,
+        "hp": 11
+      },
+      {
+        "player": 0,
+        "type": "UNIT_WAR_ELEPHANT",
+        "q": -1,
+        "r": 0,
+        "hp": 8
+      },
+      {
+        "player": 1,
+        "type": "UNIT_SPEARMAN",
+        "q": 3,
+        "r": 0,
+        "hp": 4
+      },
+      {
+        "player": 1,
+        "type": "UNIT_HORSEMAN",
+        "q": 1,
+        "r": 1,
+        "hp": 13,
+        "general": true
+      },
+      {
+        "player": 1,
+        "type": "UNIT_ARCHER",
+        "q": 1,
+        "r": 2,
+        "hp": 7
+      },
+      {
+        "player": 1,
+        "type": "UNIT_SWORDSMAN",
+        "q": 3,
+        "r": -2,
+        "hp": 5
+      },
+      {
+        "player": 1,
+        "type": "UNIT_HORSEMAN",
+        "q": 2,
+        "r": -1,
+        "hp": 12
+      },
+      {
+        "player": 1,
+        "type": "UNIT_HORSEMAN",
+        "q": 0,
+        "r": 0,
+        "promotions": [
+          "EFFECTUNIT_FIERCE",
+          "EFFECTUNIT_HORSEBANE"
+        ]
+      },
+      {
+        "player": 0,
+        "type": "UNIT_SLINGER",
+        "q": -1,
+        "r": -1,
+        "hp": 10,
+        "promotions": [
+          "EFFECTUNIT_HIGHLANDER"
+        ]
+      }
+    ],
+    "author": "squidgeny"
+  },
+  "authorSolution": {
+    "claimed": {
+      "strength": 290,
+      "orders": 15,
+      "kills": 5
+    },
+    "replayed": {
+      "strength": 290,
+      "orders": 15,
+      "solved": false
+    },
+    "line": [
+      {
+        "type": "move",
+        "unit": 1,
+        "q": -2,
+        "r": -1
+      },
+      {
+        "type": "attack",
+        "unit": 7,
+        "target": 13
+      },
+      {
+        "type": "move",
+        "unit": 1,
+        "q": 0,
+        "r": 0
+      },
+      {
+        "type": "move",
+        "unit": 0,
+        "q": -2,
+        "r": 2
+      },
+      {
+        "type": "attack",
+        "unit": 0,
+        "target": 2
+      },
+      {
+        "type": "attack",
+        "unit": 1,
+        "target": 2
+      },
+      {
+        "type": "attack",
+        "unit": 1,
+        "target": 3
+      },
+      {
+        "type": "attack",
+        "unit": 1,
+        "target": 5
+      },
+      {
+        "type": "move",
+        "unit": 14,
+        "q": 1,
+        "r": 0
+      },
+      {
+        "type": "attack",
+        "unit": 14,
+        "target": 6
+      },
+      {
+        "type": "attack",
+        "unit": 1,
+        "target": 6
+      },
+      {
+        "type": "attack",
+        "unit": 1,
+        "target": 11
+      }
+    ]
+  }
+}

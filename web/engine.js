@@ -1384,9 +1384,14 @@
       return !!u.general || (u.promotions || []).some(function (pr) { return /_LEADER$/.test(pr); });
     }
     var units = p.units.map(function (u, i) {
+      var hp0 = u.hp != null ? u.hp : DATA.units[u.type].iHPMax;
       return {
         id: i, player: u.player, type: u.type, q: u.q, r: u.r,
-        hp: u.hp != null ? u.hp : DATA.units[u.type].iHPMax,
+        hp: hp0,
+        // the HP this unit walked onto the board with. "Damage taken" means
+        // damage taken THIS TURN; measuring from iHPMax instead reported the
+        // wounds the author painted into the board as the player's own losses
+        hp0: hp0,
         promotions: u.promotions || [], fortifyTurns: u.fortifyTurns || 0,
         cooldown: null, steps: 0, general: hasGeneral(u), name: u.name || null,
         march: false, unlimbered: DATA.units[u.type].bUnlimber ? !!u.unlimbered : undefined,

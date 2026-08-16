@@ -1333,8 +1333,15 @@
       }
     }
 
+    // damage taken THIS TURN: measured from the HP each unit started the
+    // puzzle on, not from full health. A board whose units are painted wounded
+    // (Bottleneck starts 46 HP down) otherwise bills the player for the
+    // author's scenery — it read "Damage taken: 52" for a line that took 6.
     var blueDmg = state.units.filter(function (u) { return u.player === 0; })
-      .reduce(function (s, u) { return s + (E.hpMax(u) - Math.max(0, u.hp)); }, 0);
+      .reduce(function (s, u) {
+        var start = u.hp0 != null ? u.hp0 : E.hpMax(u);
+        return s + Math.max(0, start - Math.max(0, u.hp));
+      }, 0);
     var body;
     if (puzzle.objective.kind === 'maxKill') {
       var killStr = E.strKilledOf(state);
