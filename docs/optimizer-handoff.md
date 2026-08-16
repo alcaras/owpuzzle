@@ -87,6 +87,42 @@ No global best-first order we own reaches rank-sums of 40–60. **But** the
 solver's own proven 18/21 deployment differs from the human 18/20 by only
 2–3 seat substitutions. The gaps are small and *local*.
 
+## Ruled out: seed diversity (2026-08-16)
+
+A plausible theory, tested and dead. `mem.topLeaves` keeps the 16 **strongest**
+deployments as polish seeds, which looks like textbook elitism: 16 spellings of
+one idea, all inside the basin local search already occupies. That reading is
+reinforced by the misranking finding below — king's winning /20 shares no seat
+assignment with the reached /21 — so no 1- or 2-seat repair can walk from one
+to the other.
+
+Replacing it with a quality-diversity archive (admit on merit **or** on being
+structurally unlike everything held) changed nothing:
+
+| | mean pairwise seat distance | king result @900s |
+|---|---|---|
+| elitist top-16 | 0.729 | 18 STR / 19 orders |
+| diversity archive | 0.729 | 18 STR / 19 orders |
+
+The diversity branch fired **zero times** across a full run: no two reached
+deployments were ever within 0.2 of each other. The seeds were already spread —
+they share about 27% of their seats and span strengths 13..18. There was
+nothing to de-duplicate.
+
+The instrument survives as `V2_SEED_DEBUG=1` (prints seed count, mean pairwise
+distance, strength range); the archive was reverted as a no-op.
+
+**What this narrows.** Selection among reached deployments is not the
+bottleneck — the polish pass already receives 16 structurally distinct seeds
+and still cannot find /18. The problem is **coverage**: the winning deployment
+is never reached, and no amount of diversity among the reached set contains it.
+That is an argument *for* the LNS plan below rather than against it, but with a
+sharpened requirement: LNS earns its place by CONSTRUCTING deployments the tree
+never enumerated (destroy k seats and rebuild that subset exactly), not by
+re-ranking what it already has. Any future ordering heuristic should be
+measured against `V2_SEED_DEBUG` first — if the seeds are already spread, the
+heuristic is solving a problem the solver does not have.
+
 ## What to do first next session
 
 **Build large-neighborhood search** over reached deployments: generalise

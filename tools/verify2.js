@@ -1432,6 +1432,36 @@ function stage3(ctx, inc, deadline, opts) {
     }
     var seeds = (mem.topLeaves || []).slice()
       .sort(function (a, b) { return b.str - a.str || a.orders - b.orders; });
+    // V2_SEED_DEBUG: is the seed set one basin or several? Mean pairwise
+    // distance over the unit->tile assignments answers it in one number.
+    // This instrument exists because it KILLED a plausible theory: the top-16
+    // seeds looked like elitism collapsing into a single basin, so they were
+    // replaced with a quality-diversity archive. Measured on king-of-the-hill,
+    // mean pairwise distance was 0.729 either way and the diversity branch
+    // fired zero times — the seeds were already spread (sharing ~27% of their
+    // seats), and the change was a no-op. See optimizer-handoff.md.
+    if (process.env.V2_SEED_DEBUG && seeds.length) {
+      var sum = 0, pairs = 0;
+      function sdesc(x) {
+        return Object.keys(x.placement).map(function (id) {
+          return id + '@' + x.placement[id];
+        }).sort();
+      }
+      function sdist(a, b) {
+        var A = {}, n = 0, i;
+        for (i = 0; i < a.length; i++) A[a[i]] = true;
+        for (i = 0; i < b.length; i++) if (A[b[i]]) n++;
+        var u = a.length + b.length - n;
+        return u === 0 ? 0 : 1 - n / u;
+      }
+      var descs = seeds.map(sdesc);
+      for (var da = 0; da < descs.length; da++) {
+        for (var db = da + 1; db < descs.length; db++) { sum += sdist(descs[da], descs[db]); pairs++; }
+      }
+      console.log('  [seeds] n=' + seeds.length +
+        ' meanPairwiseDist=' + (pairs ? (sum / pairs).toFixed(3) : 'n/a') +
+        ' strRange=' + (seeds[seeds.length - 1].str / 10) + '..' + (seeds[0].str / 10));
+    }
     for (var sd = 0; sd < seeds.length; sd++) {
       if (Date.now() > deadline) break;
       var cur = Object.assign({}, seeds[sd].placement);
