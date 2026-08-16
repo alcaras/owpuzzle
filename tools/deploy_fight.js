@@ -488,4 +488,19 @@ if (incLine) {
   var str = killed.reduce(function (a, u) { return a + STR(u); }, 0);
   console.log('verified: ' + (str / 10) + ' STR in ' + (POOL - s2.orders) + ' orders' +
     (str === incumbent && POOL - s2.orders === incOrders ? '  ✓ matches' : '  ✗ MISMATCH'));
+  // DUMP_LINE=<path>: the line as replayable JSON, not prose. The printed
+  // steps above are for reading; this is for feeding back in — the same idea
+  // as verify2's V2_DUMP_LINE. Written only after the replay above verified
+  // it, so a dumped line is one the engine has just re-executed.
+  if (process.env.DUMP_LINE) {
+    require('fs').writeFileSync(process.env.DUMP_LINE, JSON.stringify({
+      strength: str, orders: POOL - s2.orders,
+      line: incLine.map(function (o) {
+        return o.target === undefined
+          ? { type: 'move', unit: o.unit, q: o.q, r: o.r }
+          : { type: 'attack', unit: o.unit, target: o.target };
+      }),
+    }, null, 1));
+    console.log('line written to ' + process.env.DUMP_LINE);
+  }
 }

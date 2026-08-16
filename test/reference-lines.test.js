@@ -28,11 +28,14 @@ const REF = fs.existsSync(FIXTURE) ? JSON.parse(fs.readFileSync(FIXTURE, 'utf8')
 // Boards with no stored line yet, and why. A new maxKill puzzle that lands
 // without one fails the check below rather than silently skipping — the same
 // discipline as coverage.test.js, so a gap has to be a decision.
-const NO_LINE_YET = {
-  'the-two-fords': 'solver cannot reach par within 45 min; needs a line from deploy_fight',
-  'the-man-beside-him': 'solver cannot reach par within 45 min; needs a line from deploy_fight',
-  'the-ground-he-wins': 'solver cannot reach par within 45 min; needs a line from deploy_fight',
-};
+//
+// Empty, and worth recording how: the three holdouts (the-two-fords,
+// the-man-beside-him, the-ground-he-wins — all slowVerify boards) defeat the
+// full-play solver not for their size, one is 3-on-3 at par 7, but for move
+// branching: every unit may walk to every reachable tile, ~90 branches a state
+// on radius 3. deploy_fight's seat model never pays that, and reached all
+// three ceilings; DUMP_LINE=<path> now emits its verified line as JSON.
+const NO_LINE_YET = {};
 
 const maxKill = PUZZLES.filter((p) => p.objective.kind === 'maxKill');
 
