@@ -200,8 +200,24 @@
     ).map(function (cb) { return cb.value; });
   }
 
-  sel.onchange = refreshPromoList;
+  sel.onchange = function () { refreshPromoList(); applyPanelToSelected(); };
   setTimeout(refreshPromoList, 0);
+
+  // every control in the unit panel edits the selected unit as you touch it
+  ['u-side', 'u-hp', 'u-general', 'u-anchored'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', function () { applyPanelToSelected(); });
+  });
+  if (promoList) promoList.addEventListener('change', function () { applyPanelToSelected(); });
+  var delBtn = document.getElementById('btn-unit-delete');
+  if (delBtn) delBtn.onclick = function () {
+    if (selectedUnit < 0) return;
+    var idx = selectedUnit;
+    units.splice(idx, 1);
+    targets = targets.filter(function (i) { return i !== idx; })
+      .map(function (i) { return i > idx ? i - 1 : i; });
+    selectUnit(-1);   // render() inside selectUnit takes the undo snapshot
+  };
 
   // live pool preview: par -> the order pool players will actually get
   var poolView = document.getElementById('pool-view');
@@ -249,6 +265,59 @@
     return ((d % 6) + 6) % 6;
   }
 
+  // ---------- editing a unit AFTER it is placed ----------
+  // The editor used to be write-only: clicking a placed unit deleted it, so
+  // giving somebody a promotion or a general's flag meant deleting them and
+  // stamping a replacement with the panel set differently. Now a click SELECTS,
+  // the panel loads that unit, and changing any control edits it in place.
+  var selectedUnit = -1;   // index into units, or -1
+
+  function loadPanelFrom(u) {
+    document.getElementById('u-side').value = String(u.player);
+    document.getElementById('u-hp').value = u.hp == null ? '' : u.hp;
+    document.getElementById('u-general').checked = !!u.general;
+    document.getElementById('u-anchored').checked = !!u.anchored;
+    sel.value = u.type;
+    refreshPromoList();
+    Array.prototype.forEach.call(promoList.querySelectorAll('input'), function (cb) {
+      cb.checked = (u.promotions || []).indexOf(cb.value) >= 0;
+    });
+  }
+
+  // Write the panel back onto the selected unit. Mirrors the placement path
+  // exactly — including the rule that a _LEADER promotion implies generalship
+  // (Unit.cs:2274), which is the bug king-of-the-hill shipped with.
+  function applyPanelToSelected() {
+    if (selectedUnit < 0 || !units[selectedUnit]) return;
+    var u = units[selectedUnit];
+    var promos = checkedPromos();
+    var hp = parseInt(document.getElementById('u-hp').value, 10);
+    u.player = +document.getElementById('u-side').value;
+    u.type = sel.value;
+    u.hp = isNaN(hp) ? undefined : hp;
+    u.promotions = promos.length ? promos : undefined;
+    u.general = document.getElementById('u-general').checked
+      || promos.some(function (pr) { return /_LEADER$/.test(pr); }) || undefined;
+    u.anchored = (document.getElementById('u-anchored').checked
+      && E.DATA.units[sel.value].bAnchor) || undefined;
+    render();   // the wrapped render() is what records undo history
+  }
+
+  function selectUnit(idx) {
+    selectedUnit = idx;
+    if (idx >= 0) loadPanelFrom(units[idx]);
+    var del = document.getElementById('btn-unit-delete');
+    if (del) del.style.display = idx >= 0 ? '' : 'none';
+    var hint = document.getElementById('unit-sel-hint');
+    if (hint) {
+      hint.textContent = idx >= 0
+        ? 'editing the ' + units[idx].type.replace('UNIT_', '').toLowerCase().replace(/_/g, ' ') +
+          ' on the board — changes apply to it'
+        : 'click a unit to edit it; click empty ground to place one';
+    }
+    render();
+  }
+
   function onTileClick(t, evt, pt) {
     if (mode === 'terrain' && terrainBrush) {
       var b = terrainBrush;
@@ -284,8 +353,10 @@
     if (mode === 'units') {
       var idx = units.findIndex(function (u) { return u.q === t.q && u.r === t.r; });
       if (idx >= 0) {
-        units.splice(idx, 1);
-        targets = targets.filter(function (i) { return i !== idx; }).map(function (i) { return i > idx ? i - 1 : i; });
+        // select it; deleting is now an explicit button, so a misclick on a
+        // finished unit no longer destroys it
+        selectUnit(idx === selectedUnit ? -1 : idx);
+        return;
       } else {
         var promos = checkedPromos();
         var hp = parseInt(document.getElementById('u-hp').value, 10);
@@ -305,6 +376,12 @@
             || promos.some(function (pr) { return /_LEADER$/.test(pr); }) || undefined,
           anchored: (document.getElementById('u-anchored').checked && E.DATA.units[sel.value].bAnchor) || undefined,
         });
+        // deliberately NOT selected: the panel stays a brush, so the next
+        // thing you do — flip to Red, pick a different unit — configures the
+        // NEXT placement rather than rewriting the one just stamped. Selecting
+        // here turned the e2e's blue swordsman into a red archer.
+        selectUnit(-1);
+        return;
       }
       render();
       return;
@@ -587,6 +664,10 @@
       });
       if (u.anchored) S.push('<text x="' + (x - SIZE * 0.44) + '" y="' + (y + SIZE * 0.05) + '" text-anchor="middle" font-size="13" pointer-events="none">⚓</text>');
       if (u.hp != null) S.push('<text x="' + x + '" y="' + (y + SIZE * 0.86) + '" text-anchor="middle" font-size="11" font-weight="bold" fill="#fff" stroke="' + BOARD_BG + '" stroke-width="2.5" paint-order="stroke" font-family="system-ui">' + u.hp + '</text>');
+      if (i === selectedUnit) {
+        S.push('<circle cx="' + x + '" cy="' + (y + SIZE * 0.24) + '" r="' + SIZE * 0.62 +
+          '" fill="none" stroke="#ffffff" stroke-width="3"/>');
+      }
       if (targets.indexOf(i) >= 0) {
         S.push('<text x="' + x + '" y="' + (y - SIZE * 0.6) + '" text-anchor="middle" dominant-baseline="middle" font-size="14">\ud83c\udfaf</text>');
       }

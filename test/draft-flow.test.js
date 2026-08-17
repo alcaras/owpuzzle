@@ -55,3 +55,38 @@ test('a maxKill draft has no ceiling to meet, so nothing reports it as failure',
   assert.ok(/sol\.met === false && E\.objectiveScorable\(/.test(EDITOR),
     'the editor should not warn about missing an objective that does not exist yet');
 });
+
+// The editor used to be write-only: clicking a placed unit DELETED it, so
+// giving somebody a promotion or a general's flag meant deleting them and
+// stamping a replacement with the panel set differently. Clicking now selects,
+// and the panel edits the selection in place.
+//
+// The subtle half is that PLACING must NOT select. The panel doubles as the
+// brush for the next unit, so if a freshly stamped unit stayed selected, the
+// very next "switch to Red, pick an archer" would rewrite the unit you just
+// put down instead of configuring the next one. The e2e caught exactly that:
+// its blue swordsman turned into a red archer and the board lost its only
+// friendly unit. Behavioural coverage lives in test/e2e/draft-flow.py; these
+// are source-shape guards for browser code.
+test('a placed unit can be selected and edited, and placing does not select', () => {
+  assert.ok(/function selectUnit\(/.test(EDITOR), 'the editor should have a unit selection');
+  assert.ok(/function applyPanelToSelected\(/.test(EDITOR),
+    'panel changes should write back to the selected unit');
+  assert.ok(/selectUnit\(idx === selectedUnit \? -1 : idx\)/.test(EDITOR),
+    'clicking a placed unit should select it, not delete it');
+  assert.ok(/selectUnit\(-1\);\n        return;/.test(EDITOR),
+    'placing a unit must leave nothing selected, or the panel stops being a brush');
+  // deletion has to remain possible, just deliberate
+  assert.ok(/btn-unit-delete/.test(EDITOR), 'there should be an explicit delete control');
+});
+
+test('editing a unit in place honours the leader-implies-general rule', () => {
+  // Same rule as the placement path (Unit.cs:2274): a _LEADER promotion only
+  // exists because a general is attached, so picking one makes the unit a
+  // general. king-of-the-hill shipped without this and its Hecklers did
+  // nothing — the edit path must not reintroduce that.
+  const apply = EDITOR.slice(EDITOR.indexOf('function applyPanelToSelected'));
+  const body = apply.slice(0, apply.indexOf('\n  }'));
+  assert.ok(/_LEADER\$/.test(body),
+    'applyPanelToSelected should mark leader-carrying units as generals');
+});

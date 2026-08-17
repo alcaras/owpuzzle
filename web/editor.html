@@ -111,7 +111,11 @@
         <div class="row"><label>Promotions</label>
           <div id="u-promo-list" class="promo-list"></div>
           <div class="hint">click to toggle — leave all unchecked for a plain unit</div></div>
-        <div class="hint">Click an empty tile to place. Click an existing unit to remove it. In "mark target" objective mode, click enemies to toggle 🎯.</div>
+        <div class="row">
+          <button type="button" id="btn-unit-delete" style="display:none">Delete this unit</button>
+          <span class="hint" id="unit-sel-hint">click a unit to edit it; click empty ground to place one</span>
+        </div>
+        <div class="hint">A placed unit can be changed: click it, then edit side, HP, type, promotions or general — the change applies to it. In "mark target" objective mode, click enemies to toggle 🎯.</div>
       </div>
       <div id="target-tools" style="display:none"><div class="hint">Click enemy units to mark/unmark them as objective targets (🎯).</div></div>
       <div id="mine-wrap" style="display:none">
