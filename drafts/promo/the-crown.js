@@ -1,19 +1,18 @@
-// HECKLER (+25% vs a GENERAL) — worth 11 damage against the crowned axeman
-// where every other blow of yours is 9. He is on 11 hp, so he is the only man
-// on the field your horseman cannot kill without it.
+// HECKLER (+25% vs a GENERAL) — worth exactly two damage, and the whole puzzle
+// is built on those two.
 //
-// He stands BEHIND his two escorts, and a rout advance is the only way to reach
-// him: kills carry you along the line, one tile per body. The escort you START
-// next to is the wrong one.
+// The general is on 14. Your chariot hits for 8 and your warrior for 4 — twelve
+// between them, two short. Against the CROWN specifically the warrior's blow is
+// 6 instead of 4, and 6 + 8 is 14 exactly.
 //
-//   swing at the man in front of you -> you advance onto his tile, and from
-//     there you can take the general OR the far escort, but never both: whoever
-//     you leave is two hexes away and your horse is spent. Two of three.
-//   ride around to the FAR escort first -> the same three blows sweep the whole
-//     line inward: escort, escort, crown.
+// The warrior has one swing in him: he is infantry, so no kill carries him
+// anywhere, and against an 8 hp escort his 4 does not even finish the job. That
+// single blow has to land on the general and nowhere else.
 //
-// Nothing here is about damage — both lines kill the general perfectly well.
-// Only one of them arrives at him having already cleared everything behind.
+// The chariot has the other three: it must ride out to the far escort, kill it,
+// and let the rout carry it along the line — escort, escort, and finally into
+// the general for the 8 that the warrior's 6 completes. Start it anywhere else
+// and the chain does not reach.
 module.exports = {
   teaches: 'EFFECTUNIT_HECKLER',
   puzzle: {
@@ -23,7 +22,7 @@ module.exports = {
     author: 'owpuzzle',
     brief: 'Destroy all three.',
     lesson: '',
-    orders: 4,
+    orders: 5,
     radius: 2,
     training: 0,
     objective: { kind: 'killAll' },
@@ -31,14 +30,15 @@ module.exports = {
       { q: -1, r: 0, vegetation: 'VEGETATION_TREES' },
       { q: -2, r: 1, vegetation: 'VEGETATION_TREES', height: 'HEIGHT_HILL' },
       { q: 0, r: 2, height: 'HEIGHT_HILL' },
-      { q: 1, r: -2, height: 'HEIGHT_HILL' },
       { q: -1, r: -1, vegetation: 'VEGETATION_TREES' },
+      { q: 0, r: -2, height: 'HEIGHT_HILL' },
     ],
     units: [
-      { player: 0, type: 'UNIT_HORSEMAN', q: 1, r: 1, promotions: ['EFFECTUNIT_HECKLER'] },
-      { player: 1, type: 'UNIT_AXEMAN', q: 2, r: -1, hp: 9 },
-      { player: 1, type: 'UNIT_AXEMAN', q: 1, r: 0, hp: 9 },
-      { player: 1, type: 'UNIT_AXEMAN', q: 0, r: 0, hp: 11, general: true },
+      { player: 0, type: 'UNIT_WARRIOR', q: 1, r: -1, promotions: ['EFFECTUNIT_HECKLER'] },
+      { player: 0, type: 'UNIT_CHARIOT', q: 1, r: -2 },
+      { player: 1, type: 'UNIT_AXEMAN', q: 1, r: 0, hp: 14, general: true },
+      { player: 1, type: 'UNIT_AXEMAN', q: 2, r: -1, hp: 8 },
+      { player: 1, type: 'UNIT_AXEMAN', q: 2, r: 0, hp: 8 },
     ],
   },
 };

@@ -3272,5 +3272,79 @@ var OWPUZZLES = [
       }
     ]
   },
+  {
+    "id": "wounded-and-meaner",
+    "difficulty": 2,
+    "name": "Wounded and Meaner",
+    "author": "owpuzzle",
+    "brief": "Destroy all three.",
+    "lesson": "Tough is switched off while you are unhurt. Take the wound first, and the blow you could not land becomes the one that breaks him.",
+    "orders": 4,
+    "radius": 2,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": -2,
+        "r": 1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": -1,
+        "r": 2,
+        "vegetation": "VEGETATION_TREES",
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": 0,
+        "r": -2,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": -2,
+        "r": 0,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": -1,
+        "r": -1,
+        "vegetation": "VEGETATION_TREES"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_HORSEMAN",
+        "q": 1,
+        "r": -2,
+        "promotions": [
+          "EFFECTUNIT_TOUGH"
+        ]
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 1,
+        "r": -1,
+        "hp": 10
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 1,
+        "r": 0,
+        "hp": 9
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 2,
+        "r": -2,
+        "hp": 10
+      }
+    ]
+  },
 ];
 if (typeof module !== 'undefined') module.exports = OWPUZZLES;

@@ -28,6 +28,7 @@ const LESSONS = {
   'stand-in-the-woods': { strip: 'EFFECTUNIT_RANGER' },
   'the-second-blow': { strip: 'EFFECTUNIT_BLOODTHIRSTY' },
   'the-right-sword': { strip: 'EFFECTUNIT_HORSEBANE' },
+  'wounded-and-meaner': { strip: 'EFFECTUNIT_TOUGH' },
   'evict-him': {
     // PANIC is intrinsic to elephants and it is the TOOL here. Swap the
     // elephant for a maceman, which cannot shove: that isolates the push.
@@ -37,8 +38,9 @@ const LESSONS = {
       return p;
     },
   },
-  // Still in drafts/promo/, still being played: the-crown, wounded-and-meaner,
-  // the-far-bank, dont-step-closer, one-hex-further.
+  // Still in drafts/promo/: the-crown (rebuilt around a warrior and a
+  // chariot, awaiting play). the-far-bank, dont-step-closer and
+  // one-hex-further are parked — see the note at the bottom of this file.
 };
 
 function solve(puzzle, ms) {
@@ -118,3 +120,12 @@ test('every teaching board loads and its promotions are real effects', () => {
     }
   }
 });
+
+// PARKED, and why — so nobody rebuilds them expecting a different answer:
+//   the-far-bank (AMPHIBIOUS): crossing the river is the only route, so there
+//     is no decision to make, only an obligation to carry out.
+//   dont-step-closer (EAGLE_EYE) and one-hex-further (MARKSMAN): both promotions
+//     are about distance, and with a par+5 order pool a plain archer can simply
+//     WALK into range and take the same shot. Making them required needs a
+//     barrier the player cannot cross; without one the lesson text is false.
+//     Measured, not assumed: both boards passed at par and failed at the pool.
