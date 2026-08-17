@@ -1129,18 +1129,22 @@
   }
 
   function renderHud() {
-    var used = E.poolOrders(puzzle) - state.orders;
-    var hudLine = '<span class="pill">\ud83d\udcdc Orders <b>' + used + '</b>/' +
-      E.poolOrders(puzzle) + '</span>';
+    // Orders and training are drawn ON the board, top left, with the game's own
+    // yield icons — the player is looking there anyway. Repeating them up here
+    // in emoji said the same thing twice and said it worse, so this line now
+    // carries only what the board does not: the running destruction total.
+    var hudLine = '';
     if (puzzle.objective.kind === 'maxKill') {
       hudLine += '<span class="pill str-killed">\u2620 <b>' +
         fmt10(E.strKilledOf(state)) + '</b> STR destroyed</span>';
     }
-    hudLine += '<span class="hud-hint">spend as few as you can</span>';
+    // and no lone hint either: with the pills gone, "spend as few as you can"
+    // was a sentence floating above the board attached to nothing. Par pressure
+    // belongs next to the order count, which now lives on the board.
     document.getElementById('orders-pips').innerHTML = hudLine;
     var tr = document.getElementById('training-span');
-    tr.style.display = '';
-    tr.innerHTML = '<span class="pill">\ud83d\udee1 Training <b>' + state.training + '</b></span>';
+    tr.style.display = 'none';
+    tr.innerHTML = '';
     var selU = selected != null ? E.unitById(state, selected) : null;
     var bu2 = document.getElementById('btn-undo');
     if (bu2) bu2.disabled = !history.length;

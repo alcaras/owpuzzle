@@ -3346,5 +3346,243 @@ var OWPUZZLES = [
       }
     ]
   },
+  {
+    "id": "the-crown",
+    "difficulty": 3,
+    "name": "The Crown",
+    "author": "owpuzzle",
+    "brief": "Destroy all three.",
+    "lesson": "Heckler makes the general the only man you can kill; the rout chain decides whether you reach him having already cleared everything behind you.",
+    "orders": 18,
+    "radius": 3,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": -3,
+        "r": 1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": -2,
+        "r": 3,
+        "vegetation": "VEGETATION_TREES",
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": 0,
+        "r": -3,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 3,
+        "r": -3,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": -3,
+        "r": 0,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": 2,
+        "r": 1,
+        "vegetation": "VEGETATION_TREES"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_WARRIOR",
+        "q": 0,
+        "r": -1,
+        "promotions": [
+          "EFFECTUNIT_HECKLER"
+        ]
+      },
+      {
+        "player": 0,
+        "type": "UNIT_CHARIOT",
+        "q": -2,
+        "r": 0
+      },
+      {
+        "player": 0,
+        "type": "UNIT_ARCHER",
+        "q": 0,
+        "r": -2
+      },
+      {
+        "player": 0,
+        "type": "UNIT_ARCHER",
+        "q": -1,
+        "r": -1
+      },
+      {
+        "player": 0,
+        "type": "UNIT_ARCHER",
+        "q": -2,
+        "r": -1,
+        "promotions": [
+          "EFFECTUNIT_EAGLE_EYE"
+        ]
+      },
+      {
+        "player": 0,
+        "type": "UNIT_ARCHER",
+        "q": -1,
+        "r": -2,
+        "promotions": [
+          "EFFECTUNIT_EAGLE_EYE"
+        ]
+      },
+      {
+        "player": 0,
+        "type": "UNIT_ARCHER",
+        "q": -1,
+        "r": 0
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 1,
+        "r": -1
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 1,
+        "r": 0
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 1,
+        "r": 1,
+        "general": true
+      }
+    ]
+  },
+  {
+    "id": "two-points-short",
+    "difficulty": 3,
+    "name": "Two Points Short",
+    "author": "owpuzzle",
+    "brief": "Destroy all three.",
+    "lesson": "Sixty hit points stand against you and your army can deliver exactly sixty \u2014 but only because Heckler turns one warrior's blow from 4 into 6 against the general. Strip it and the same seven units muster 58, which is not a harder puzzle but an impossible one.",
+    "orders": 18,
+    "radius": 3,
+    "training": 0,
+    "objective": {
+      "kind": "killAll"
+    },
+    "tiles": [
+      {
+        "q": -3,
+        "r": 1,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": -2,
+        "r": 3,
+        "vegetation": "VEGETATION_TREES",
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": 0,
+        "r": -3,
+        "vegetation": "VEGETATION_TREES"
+      },
+      {
+        "q": 3,
+        "r": -3,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": -3,
+        "r": 0,
+        "height": "HEIGHT_HILL"
+      },
+      {
+        "q": 2,
+        "r": 1,
+        "vegetation": "VEGETATION_TREES"
+      }
+    ],
+    "units": [
+      {
+        "player": 0,
+        "type": "UNIT_WARRIOR",
+        "q": 0,
+        "r": -1,
+        "promotions": [
+          "EFFECTUNIT_HECKLER"
+        ]
+      },
+      {
+        "player": 0,
+        "type": "UNIT_CHARIOT",
+        "q": -2,
+        "r": 0
+      },
+      {
+        "player": 0,
+        "type": "UNIT_ARCHER",
+        "q": 0,
+        "r": -2
+      },
+      {
+        "player": 0,
+        "type": "UNIT_ARCHER",
+        "q": -1,
+        "r": -1
+      },
+      {
+        "player": 0,
+        "type": "UNIT_ARCHER",
+        "q": -2,
+        "r": -1,
+        "promotions": [
+          "EFFECTUNIT_EAGLE_EYE"
+        ]
+      },
+      {
+        "player": 0,
+        "type": "UNIT_ARCHER",
+        "q": -1,
+        "r": -2,
+        "promotions": [
+          "EFFECTUNIT_EAGLE_EYE"
+        ]
+      },
+      {
+        "player": 0,
+        "type": "UNIT_ARCHER",
+        "q": -1,
+        "r": 0
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 1,
+        "r": -1
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 1,
+        "r": 0
+      },
+      {
+        "player": 1,
+        "type": "UNIT_AXEMAN",
+        "q": 1,
+        "r": 1,
+        "general": true
+      }
+    ]
+  },
 ];
 if (typeof module !== 'undefined') module.exports = OWPUZZLES;

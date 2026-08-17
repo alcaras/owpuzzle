@@ -45,6 +45,17 @@
                                  : (ICONS[type] || ICONS['FLAG_' + type]);
   }
   var BOARD_BG = '#0b0c0f';
+  // kept in step with app.js — see the note beside its copy there
+  var VEG_WASH = {
+    VEGETATION_TREES: 'rgba(18,64,22,.36)',
+    VEGETATION_JUNGLE: 'rgba(6,44,10,.5)',
+    VEGETATION_SCRUB: 'rgba(126,116,52,.26)',
+  };
+  var VEG_RIM = {
+    VEGETATION_TREES: 'rgba(30,86,34,.85)',
+    VEGETATION_JUNGLE: 'rgba(10,58,14,.9)',
+    VEGETATION_SCRUB: 'rgba(146,134,64,.75)',
+  };
   var TERRAIN_FILL = {
     TERRAIN_TEMPERATE: 'rgb(104,138,74)', TERRAIN_LUSH: 'rgb(74,110,56)',
     TERRAIN_ARID: 'rgb(170,148,95)', TERRAIN_SAND: 'rgb(206,184,120)',
@@ -521,8 +532,13 @@
         S.push('<rect x="' + (x - SIZE * 0.6) + '" y="' + (y - SIZE * 0.35) + '" width="' + SIZE * 1.2 + '" height="' + SIZE * 0.32 + '" fill="rgba(255,255,255,.16)" pointer-events="none"/>');
         S.push('<rect x="' + (x - SIZE * 0.6) + '" y="' + (y + SIZE * 0.02) + '" width="' + SIZE * 1.2 + '" height="' + SIZE * 0.4 + '" fill="rgba(0,0,0,.30)" pointer-events="none"/>');
       }
-      if (t.vegetation === 'VEGETATION_JUNGLE') {
-        S.push('<polygon points="' + hexPoints(x, y, 0.98) + '" fill="rgba(6,44,10,.5)" pointer-events="none"/>');
+      // Same treatment as the player (app.js): vegetation tints the WHOLE hex
+      // and gets an inset rim, so a wood with a unit standing in it still reads
+      // as a wood. What you paint here has to look like what you play, or the
+      // author is designing against a board they will never see.
+      if (VEG_WASH[t.vegetation]) {
+        S.push('<polygon points="' + hexPoints(x, y, 0.98) + '" fill="' + VEG_WASH[t.vegetation] + '" pointer-events="none"/>');
+        S.push('<polygon points="' + hexPoints(x, y, 0.9) + '" fill="none" stroke="' + VEG_RIM[t.vegetation] + '" stroke-width="2.5" pointer-events="none"/>');
       }
       if (t.vegetation === 'VEGETATION_SCRUB') {
         var yb2 = y + (t.height === 'HEIGHT_HILL' ? -SIZE * 0.05 : SIZE * 0.3);

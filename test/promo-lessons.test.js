@@ -29,6 +29,12 @@ const LESSONS = {
   'the-second-blow': { strip: 'EFFECTUNIT_BLOODTHIRSTY' },
   'the-right-sword': { strip: 'EFFECTUNIT_HORSEBANE' },
   'wounded-and-meaner': { strip: 'EFFECTUNIT_TOUGH' },
+  // Seven blue units is far past what an exhaustive search can close, so this
+  // one is proved by DAMAGE ACCOUNTING instead: sum each unit's best possible
+  // blow (the chariot's three, since two kills rout it onward) and compare
+  // against the reds' total hit points. Exact, instant, and indifferent to how
+  // big the army is. See `byBudget` below.
+  'two-points-short': { strip: 'EFFECTUNIT_HECKLER', byBudget: true },
   'evict-him': {
     // PANIC is intrinsic to elephants and it is the TOOL here. Swap the
     // elephant for a maceman, which cannot shove: that isolates the push.
@@ -54,9 +60,54 @@ test('every taught promotion is on a puzzle that still exists', () => {
   assert.deepEqual(missing, [], `teaching puzzles named here but not in the library: ${missing.join(', ')}`);
 });
 
+// Most damage a blue unit could possibly deal to any red, from any tile it can
+// reach. The chariot gets three swings because each kill routs it onward; every
+// other unit swings once (attacking sets a cooldown nothing clears).
+function bestBlow(state, u) {
+  let mx = 0;
+  const spots = [{ q: u.q, r: u.r }].concat(E.reachableTiles(state, u));
+  for (const t of spots) {
+    const save = { q: u.q, r: u.r };
+    u.q = t.q; u.r = t.r;
+    for (const red of state.units.filter((x) => x.player === 1 && x.hp > 0)) {
+      if (E.attackTargets(state, u).some((z) => z.id === red.id)) {
+        mx = Math.max(mx, E.attackUnitDamage(state, u, { q: u.q, r: u.r }, red));
+      }
+    }
+    u.q = save.q; u.r = save.r;
+  }
+  return mx;
+}
+function deliverable(puzzle) {
+  const s = E.loadPuzzle(puzzle, { play: true });
+  return s.units.filter((u) => u.player === 0)
+    .reduce((sum, u) => sum + bestBlow(s, u) * (u.type === 'UNIT_CHARIOT' ? 3 : 1), 0);
+}
+function redHitPoints(puzzle) {
+  return E.loadPuzzle(puzzle, { play: true })
+    .units.filter((u) => u.player === 1).reduce((a, u) => a + u.hp, 0);
+}
+
 for (const [id, spec] of Object.entries(LESSONS)) {
   const puzzle = PUZZLES.find((p) => p.id === id);
   if (!puzzle) continue;
+
+  if (spec.byBudget) {
+    test(`${id}: the army can only just do it, and only with ${spec.strip.replace('EFFECTUNIT_', '')}`, () => {
+      const need = redHitPoints(puzzle);
+      const withIt = deliverable(puzzle);
+      const stripped = clone(puzzle);
+      stripped.units.forEach((u) => {
+        if (u.promotions) u.promotions = u.promotions.filter((x) => x !== spec.strip);
+      });
+      const without = deliverable(stripped);
+      assert.ok(withIt >= need,
+        `UNSOLVABLE: the army can deliver ${withIt} against ${need} hit points`);
+      assert.ok(without < need,
+        `THE LESSON IS A LIE: without ${spec.strip} the army still delivers ${without} against ${need}`);
+    });
+    continue;
+  }
 
   test(`${id}: solvable at its par of ${puzzle.orders}`, () => {
     const res = solve(puzzle);
