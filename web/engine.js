@@ -1415,6 +1415,39 @@
       par: p.orders, objective: p.objective, log: [] };
   }
 
+  // ---- shared with the editor, the player and the server ----------------
+  // One source for the submission limits, so the editor can warn while you
+  // build instead of the server refusing after you press submit. A puzzle was
+  // lost that way: 26 units, rejected at the last step with no earlier hint.
+  var LIMITS = { maxUnits: 30, maxRadius: 6 };
+  function limitProblems(p) {
+    var out = [];
+    var n = (p.units || []).length;
+    if (n > LIMITS.maxUnits) out.push(n + ' units — the limit is ' + LIMITS.maxUnits);
+    if ((p.radius == null ? 3 : p.radius) > LIMITS.maxRadius) {
+      out.push('radius ' + p.radius + ' — the limit is ' + LIMITS.maxRadius);
+    }
+    return out;
+  }
+
+  // The objective in one consistent sentence, derived from the objective ITSELF
+  // rather than retyped per puzzle. `brief` stays the author's own flavour line;
+  // this is the rule of the puzzle, phrased the same way every time, so a player
+  // never has to guess what winning means from prose.
+  function objectiveText(objective, puzzle) {
+    var o = objective || {};
+    switch (o.kind) {
+      case 'killAll': return 'Destroy every enemy unit.';
+      case 'maxKill': return 'Destroy as much enemy strength as you can.';
+      case 'killTarget': return 'Destroy the marked enemy.';
+      case 'killList':
+        return 'Destroy the ' + ((o.targets || []).length === 1 ? 'marked enemy.' : 'marked enemies.');
+      case 'capture': return 'Move any unit onto the city.';
+      case 'surviveAll': return 'End the turn with every one of your units alive.';
+      default: return '';
+    }
+  }
+
   var api = {
     DATA: DATA, DIRS: DIRS, key: key, hexDistance: hexDistance, dirBetween: dirBetween,
     modify: modify, tileAt: tileAt, unitAt: unitAt, unitById: unitById,
@@ -1437,6 +1470,7 @@
     doMove: doMove, doAttack: doAttack, doFortify: doFortify,
     legalActions: legalActions, applyAction: applyAction,
     checkObjective: checkObjective, objectiveScorable: objectiveScorable,
+    objectiveText: objectiveText, LIMITS: LIMITS, limitProblems: limitProblems,
     loadPuzzle: loadPuzzle, cloneState: cloneState,
     nameOf: nameOf,
   };

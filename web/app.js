@@ -245,6 +245,8 @@
     document.getElementById('p-name').textContent = '';
     document.getElementById('p-brief').textContent =
       'Single-turn tactics puzzles. Find the winning line within your orders.';
+    var libObj = document.getElementById('p-objective-line');
+    if (libObj) libObj.style.display = 'none';
     document.getElementById('main-row').style.display = 'none';
     document.querySelector('.hud').style.display = 'none';
     // every control row, not just the first — Reset lives on the second one
@@ -1657,6 +1659,15 @@
   }
   document.getElementById('p-name').textContent = puzzle.name;
   document.getElementById('p-brief').textContent = puzzle.brief;
+  // The author's brief is flavour and may say anything; the objective is the
+  // RULE. State it in the same words every time, derived from the objective
+  // itself, so a player never has to infer what winning means from prose.
+  var objEl = document.getElementById('p-objective-line');
+  if (objEl) {
+    var objText = E.objectiveText(puzzle.objective, puzzle);
+    objEl.textContent = objText;
+    objEl.style.display = objText ? '' : 'none';
+  }
   document.getElementById('library').innerHTML = '';
 
   render();

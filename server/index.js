@@ -347,8 +347,11 @@ app.post('/api/submit', (req, res) => {
   if (!p || !String(p.name || '').trim() || !Array.isArray(p.units) || !p.objective || !p.orders) {
     return res.status(400).json({ error: 'incomplete puzzle' });
   }
-  if (p.units.length > 20 || (p.radius || 3) > 6) {
-    return res.status(400).json({ error: 'too large (max 20 units, radius 6)' });
+  // the editor warns about this while you build (E.LIMITS); if one still
+  // arrives, say WHICH limit and by how much rather than a bare "too large"
+  const over = E.limitProblems(p);
+  if (over.length) {
+    return res.status(400).json({ error: 'too large: ' + over.join('; ') });
   }
   const blues = p.units.filter(u => u.player === 0);
   const reds = p.units.filter(u => u.player === 1);

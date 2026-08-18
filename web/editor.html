@@ -39,6 +39,11 @@
   button.act.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
   button.act:disabled { opacity: .45; cursor: default; }
   #out { font-size: 12.5px; border-left: 4px solid var(--edge); white-space: pre-wrap; background: var(--bg); border: 1px solid var(--edge); border-radius: 8px; padding: 8px; margin-top: 8px; min-height: 40px; max-height: 220px; overflow: auto; }
+  /* the objective in the player's own words, and the size against its limit —
+     both live, so nothing is a surprise at submit */
+  .obj-view { font-size: 12px; color: #6b5c3f; font-style: italic; }
+  .limit-view { font-size: 12px; color: #6b5c3f; }
+  .limit-view.over { color: #b03030; font-weight: bold; }
   .hint { color: var(--muted); font-size: 12px; }
   .promo-list { max-height: 200px; overflow-y: auto; border: 1px solid var(--edge);
     border-radius: 6px; padding: 4px 6px; background: var(--panel); min-width: 200px; }
@@ -84,14 +89,15 @@
         <label>Par orders (hidden; players get a pool of <b id="pool-view">10</b>) <input type="number" id="p-orders" value="3" min="1" max="60" style="width:52px"></label></div>
       <div class="row"><label>Brief <input type="text" id="p-brief" size="34" value="Kill all enemies."></label></div>
       <div class="row"><label>Lesson (shown after victory) <input type="text" id="p-lesson" size="30" value=""></label></div>
-      <div class="row"><label>Radius <select id="p-radius"><option>2</option><option selected>3</option><option>4</option></select></label>
+      <div class="row"><label>Radius <select id="p-radius"><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select></label>
         <label>Training <input type="number" id="p-training" value="300" min="0" step="50" style="width:64px"></label>
         <label>Objective <select id="p-objective">
           <option value="killAll">kill all enemies</option>
           <option value="killList">kill marked targets</option>
           <option value="capture">capture the enemy city</option>
           <option value="maxKill">kill as many as possible (ceiling auto-computed)</option>
-        </select></label></div>
+        </select></label>
+        <span class="obj-view" id="obj-view"></span></div>
       <h3>Tools</h3>
       <div class="brush-row" id="mode-row"></div>
       <div id="terrain-tools" style="display:none">
@@ -107,7 +113,8 @@
           <label><input type="checkbox" id="u-general"> general</label>
           <label><input type="checkbox" id="u-anchored"> anchored (ships)</label>
         </div>
-        <div class="row"><label>Unit <select id="u-type"></select></label></div>
+        <div class="row"><label>Unit <select id="u-type"></select></label>
+          <span class="limit-view" id="size-view"></span></div>
         <div class="row"><label>Promotions</label>
           <div id="u-promo-list" class="promo-list"></div>
           <div class="hint">click to toggle — leave all unchecked for a plain unit</div></div>

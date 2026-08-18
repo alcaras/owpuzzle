@@ -108,6 +108,7 @@
     'UNIT_LEGIONARY', 'UNIT_HASTATUS', 'UNIT_SHOTELAI', 'UNIT_CHARIOT', 'UNIT_HORSEMAN', 'UNIT_CATAPHRACT',
     'UNIT_HORSE_ARCHER', 'UNIT_CAMEL_ARCHER', 'UNIT_PALTON_CAVALRY', 'UNIT_WAR_ELEPHANT', 'UNIT_TURRETED_ELEPHANT',
     'UNIT_ONAGER', 'UNIT_BALLISTA', 'UNIT_MANGONEL', 'UNIT_POLYBOLOS',
+    'UNIT_BATTERING_RAM', 'UNIT_SIEGE_TOWER',
     'UNIT_BIREME', 'UNIT_TRIREME', 'UNIT_QUADRIREME', 'UNIT_DROMON'];
   // promotions come straight from promotion.xml; validity from each effect's
   // abUnitTraitValid / abUnitTraitInvalid tables vs the unit's traits
@@ -218,6 +219,30 @@
       .map(function (i) { return i > idx ? i - 1 : i; });
     selectUnit(-1);   // render() inside selectUnit takes the undo snapshot
   };
+
+  // Live size readout. The server refuses an oversized puzzle at submit, which
+  // is the worst possible moment to learn it — one author built a 26-unit board
+  // and only found out when they pressed the button. Show the count all the
+  // time, and colour it when it goes over.
+  function refreshLimits() {
+    var el = document.getElementById('size-view');
+    if (!el) return;
+    var radius = +document.getElementById('p-radius').value || 3;
+    var problems = E.limitProblems({ units: units, radius: radius });
+    el.textContent = 'units ' + units.length + '/' + E.LIMITS.maxUnits +
+      ' · radius ' + radius + '/' + E.LIMITS.maxRadius;
+    el.className = problems.length ? 'limit-view over' : 'limit-view';
+    el.title = problems.length ? 'too large to submit: ' + problems.join('; ') : '';
+  }
+
+  // the objective in the same words the player will see, straight from the
+  // engine, so the editor cannot drift from the game
+  function refreshObjectiveLine() {
+    var el = document.getElementById('obj-view');
+    if (!el) return;
+    var kind = document.getElementById('p-objective').value;
+    el.textContent = E.objectiveText({ kind: kind, targets: targets });
+  }
 
   // live pool preview: par -> the order pool players will actually get
   var poolView = document.getElementById('pool-view');
@@ -674,6 +699,8 @@
       S.push('</g>');
     });
     S.push('</svg>');
+    refreshLimits();
+    refreshObjectiveLine();
     var wrap = document.getElementById('board-wrap');
     wrap.innerHTML = S.join('');
     var svg = wrap.querySelector('svg');
