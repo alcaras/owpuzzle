@@ -376,11 +376,11 @@
   var SQ3 = Math.sqrt(3);
   function cx(t) { return SIZE * SQ3 * (t.q + t.r / 2); }
   function cy(t) { return SIZE * 1.5 * t.r; }
-  function hexPoints(x, y) {
-    var pts = [];
+  function hexPoints(x, y, scale) {
+    var pts = [], rad = SIZE * (scale == null ? 1 : scale);
     for (var i = 0; i < 6; i++) {
       var a = Math.PI / 180 * (60 * i - 30);
-      pts.push((x + SIZE * Math.cos(a)).toFixed(1) + ',' + (y + SIZE * Math.sin(a)).toFixed(1));
+      pts.push((x + rad * Math.cos(a)).toFixed(1) + ',' + (y + rad * Math.sin(a)).toFixed(1));
     }
     return pts.join(' ');
   }
@@ -473,6 +473,19 @@
       if (ob.kind === 'maxKill') mustKill[o.id] = 'open'; // strong red, no skull
     });
 
+    // The water your anchored ships open up. Without this a player has no way
+    // to know which water is crossable and which is not — the rule is real
+    // (Unit.cs:4003) but invisible, and "fast water movement doesn't work" is
+    // what it looks like from the outside.
+    var controlledWater = {};
+    if (E.waterControlTiles) {
+      state.units.forEach(function (o) {
+        if (o.player !== 0) return;
+        var own = E.waterControlTiles(state, o);
+        Object.keys(own).forEach(function (k) { controlledWater[k] = true; });
+      });
+    }
+
     // tiles
     var clips = [];
     tiles.forEach(function (t) {
@@ -519,6 +532,10 @@
         }
         S.push('<polygon points="' + vr.join(' ') + '" fill="none" stroke="' + VEG_RIM[t.vegetation] +
           '" stroke-width="2.5" pointer-events="none"/>');
+      }
+      if (controlledWater[E.key(t.q, t.r)]) {
+        S.push('<polygon points="' + hexPoints(x, y, 0.88) + '" fill="none" stroke="rgba(120,190,255,.8)"' +
+          ' stroke-width="1.5" stroke-dasharray="4 3" pointer-events="none"/>');
       }
       if (sc) drawScrub(S, x, y, t.height === 'HEIGHT_HILL');
       else if (jg || fr) drawTrees(S, x, y, jg ? 3 : 2, t.height === 'HEIGHT_HILL',
