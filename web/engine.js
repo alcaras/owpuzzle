@@ -705,7 +705,14 @@
         var k = key(nq, nr);
         if (best[k] != null && best[k] <= c) continue;
         best[k] = c;
-        if (!occ) {
+        // A land unit may move ACROSS controlled water but may not END its move
+        // on it: Tile.canUnitTypeOccupy checks the water rules only when
+        // bFinalTile (Tile.cs:10577-10605). So water stays on the frontier — you
+        // path through it — but never becomes a destination. (bTerritoryWater is
+        // the one exception and only UNIT_WORKER has it.) Crossing to the far
+        // bank is the whole point of water control.
+        var endsOnWater = !info(u).bWater && isWaterTile(t);
+        if (!occ && !endsOnWater) {
           var st = Math.ceil(c / full);
           out[k] = { q: nq, r: nr, cost: c, steps: st, orders: ordersForSteps(st),
                      forced: u.steps + st > limit };

@@ -57,8 +57,10 @@ test('the order pool is bucketed off par [E.poolOrders]', () => {
 // doesn't work, either via territory or anchored ship."
 //
 // Unit.getMovementCost (Unit.cs:7571-7585): a land unit entering water is legal
-// when the tile isWaterMovement for its team, and then costs movement() — the
-// unit's WHOLE allowance, one step.
+// when the tile isWaterMovement for its team, and costs movement() — the RAW
+// value, so water is CHEAP (see the FAST test below).
+// Tile.canUnitTypeOccupy (Tile.cs:10577-10605): those water tiles may be moved
+// ACROSS but never STOPPED on, so every test here crosses to a far bank.
 // Tile.isWaterMovement (Tile.cs:8073-8113): true if the team has water control
 // on the tile, OR the tile is owned by that team or an ally.
 // Unit.waterControl (Unit.cs:3480): radius = the unit's own iWaterControl plus
@@ -67,18 +69,18 @@ test('the order pool is bucketed off par [E.poolOrders]', () => {
 
 test('an anchored bireme controls water out to its own radius of 3 [Unit.cs:3480, unit.xml iWaterControl]', () => {
   const g = setup(`
-    tile 1,0 TERRAIN_WATER
-    tile 2,0 TERRAIN_WATER
-    tile 3,0 TERRAIN_WATER
-    blue AXEMAN 0,0
-    blue BIREME 3,0 anchored
-    red ARCHER -1,0 hp=5
+    tile -2,0 TERRAIN_WATER
+    tile -1,0 TERRAIN_WATER
+    tile 0,0 TERRAIN_WATER
+    blue AXEMAN -3,0
+    blue BIREME -1,0 anchored
+    red ARCHER 3,0 hp=5
   `);
-  const axe = g.blue(0);
-  const reach = E.reachableTiles(g.state, axe).map((t) => t.q + ',' + t.r);
-  // 1,0 is three tiles from the anchored bireme at 3,0 — inside its radius
+  // -2,0 is two tiles from the anchored bireme and 0,0 is one: all three lie
+  // inside its radius of 3, so the axeman can cross the channel to 1,0
+  const reach = E.reachableTiles(g.state, g.blue(0)).map((t) => t.q + ',' + t.r);
   assert.ok(reach.includes('1,0'),
-    'water within the bireme\'s control radius should be enterable, got: ' + reach.join(' '));
+    'the far bank across controlled water should be reachable, got: ' + reach.join(' '));
 });
 
 // This is what "FAST water movement" means. getMovementCost (Unit.cs:7583)
@@ -89,23 +91,20 @@ test('an anchored bireme controls water out to its own radius of 3 [Unit.cs:3480
 // "fast water movement doesn't work".
 test('controlled water is FAST: it costs movement(), not movementFull() [Unit.cs:7583 vs 6341]', () => {
   const g = setup(`
-    tile 1,0 TERRAIN_WATER
-    tile 2,0 TERRAIN_WATER
-    tile 3,0 TERRAIN_WATER
-    tile 4,0 TERRAIN_WATER
-    blue AXEMAN 0,0
-    blue BIREME 2,0 anchored
-    red ARCHER -1,0 hp=5
+    tile -2,0 TERRAIN_WATER
+    tile -1,0 TERRAIN_WATER
+    tile 0,0 TERRAIN_WATER
+    blue AXEMAN -3,0
+    blue BIREME -1,0 anchored
+    red ARCHER 3,0 hp=5
   `);
-  const reach = E.reachableTiles(g.state, g.blue(0));
-  const at = (q) => reach.filter((t) => t.q === q && t.r === 0)[0];
-  assert.ok(at(1), 'the first water tile is reachable');
-  // an axeman has movement 2, so each water tile costs 2 of a 18-point step:
-  // it should skim several tiles inside a single step, not one per step
-  assert.ok(at(3), 'water three tiles out is reachable, got: ' +
-    reach.map((t) => t.q + ',' + t.r).join(' '));
-  assert.equal(at(1).steps, 1, 'and the whole skim is still one step');
-  assert.equal(at(3).steps, 1, 'three water tiles inside a single step');
+  const far = E.reachableTiles(g.state, g.blue(0)).filter((t) => t.q === 1 && t.r === 0)[0];
+  assert.ok(far, 'the far bank is reachable at all');
+  // an axeman has movement 2, so each water tile costs 2 against an 18-point
+  // step: three of them plus the 9 of the far bank is 15, still ONE step.
+  // Charging movementFull() would make the three crossings 54 on their own.
+  assert.equal(far.steps, 1, 'the whole crossing fits in a single step');
+  assert.equal(far.orders, 1, 'and costs one order');
 });
 
 test('water owned by your own territory is crossable without any ship [Tile.cs:8103 areAllied]', () => {
@@ -115,8 +114,9 @@ test('water owned by your own territory is crossable without any ship [Tile.cs:8
     red ARCHER -1,0 hp=5
   `);
   const reach = E.reachableTiles(g.state, g.blue()).map((t) => t.q + ',' + t.r);
-  assert.ok(reach.includes('1,0'),
-    'friendly territory makes water passable; got: ' + reach.join(' '));
+  assert.ok(reach.includes('2,0'),
+    'friendly territory lets you cross to the far bank; got: ' + reach.join(' '));
+  assert.ok(!reach.includes('1,0'), 'but you may not stop on the water itself');
 });
 
 test('enemy-owned water is not crossable [Tile.cs:8103 — allied only]', () => {
@@ -186,4 +186,25 @@ test('the same unit ashore can attack normally [control]', () => {
   const bal = g.blue(0);
   bal.unlimbered = true;
   assert.equal(E.canAttack(g.state, bal), true);
+});
+
+// Tile.canUnitTypeOccupy (Tile.cs:10577-10605): the water rules are checked
+// only `if (bFinalTile)`. A land unit may move ACROSS controlled water but may
+// not END its move on it —
+//     else if (!(game().isWaterUnit(...))) { if (isWater()) return false; }
+// Only UNIT_WORKER carries bTerritoryWater, the one exception, and it is not a
+// combat unit. This is what water control is FOR: crossing to the far bank.
+test('a land unit may cross controlled water but not stop on it [Tile.cs:10600-10605]', () => {
+  const g = setup(`
+    tile 1,0 TERRAIN_WATER
+    tile 2,0 TERRAIN_WATER
+    blue AXEMAN 0,0
+    blue BIREME 1,0 anchored
+    red ARCHER 4,0 hp=5
+  `);
+  const reach = E.reachableTiles(g.state, g.blue(0)).map((t) => t.q + ',' + t.r);
+  assert.ok(!reach.includes('2,0'),
+    'water must not be a legal destination, got: ' + reach.join(' '));
+  assert.ok(reach.includes('3,0'),
+    'but the far bank beyond the water must be reachable, got: ' + reach.join(' '));
 });
