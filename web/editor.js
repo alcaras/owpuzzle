@@ -228,10 +228,10 @@
     return bits.join(' · ');
   }
 
-  // the colour the grid draws its silhouettes in: whichever side is selected
-  function sideInk() {
+  // the disc colour the board gives this side, behind a pale icon
+  function sideBg() {
     return (document.getElementById('u-side') || {}).value === '1'
-      ? 'rgb(150,44,40)' : 'rgb(44,74,140)';
+      ? PCOL[1] : PCOL[0];
   }
 
   function renderUnitGrid() {
@@ -247,16 +247,14 @@
       cell.dataset.unit = t;
       var ic = unitIcon(t);
       if (ic) {
-        // The icons are pale silhouettes and all but vanished on the cream
-        // panel. Fill the shape with the side you are placing, so the grid
-        // reads at a glance and tells you WHOSE unit you are about to put
-        // down. mask-image paints the alpha shape in a solid colour rather
-        // than tinting a washed-out picture.
-        var img = document.createElement('span');
-        img.className = 'ug-ico';
-        img.style.webkitMaskImage = 'url(' + ic + ')';
-        img.style.maskImage = 'url(' + ic + ')';
-        img.style.backgroundColor = sideInk();
+        // The flag-style icons are pale line art and all but vanished against
+        // the cream panel. Put the side's colour BEHIND them — the same thing
+        // the board does with its unit discs — instead of recolouring the art:
+        // the drawing is what tells a warrior from a swordsman. Portraits carry
+        // their own background and are left alone.
+        if (ICON_STYLE === 'flag') cell.style.background = sideBg();
+        var img = document.createElement('img');
+        img.src = ic; img.alt = '';
         cell.appendChild(img);
       } else {
         cell.textContent = t.replace('UNIT_', '').slice(0, 3).toLowerCase();

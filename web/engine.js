@@ -825,6 +825,15 @@
     if (u.hp <= 0) return false;
     if (u.cooldown && u.cooldown !== 'ROUT') return false;
     if (info(u).bUnlimber && !u.unlimbered) return false; // siege must set up first
+    // A land unit afloat is crossing, not fighting: it cannot attack from a
+    // water tile. Reported by zophister — a ballista could march onto owned
+    // water and shoot from there, which the game does not allow. (The nearest
+    // guard in the C#, Unit.canTargetTile at Unit.cs:8449, bars tribe units
+    // only; this rule is the game's behaviour, confirmed by the owner.)
+    if (!info(u).bWater) {
+      var here = tileAt(state, u.q, u.r);
+      if (here && isWaterTile(here)) return false;
+    }
     if (state.orders < 1) return false;
     return true;
   }

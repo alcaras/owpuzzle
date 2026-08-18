@@ -146,3 +146,30 @@ test('water control does not leak onto land [Unit.cs:4003 tile.isWater()]', () =
   assert.ok(!E.waterControlled(g.state, { q: 2, r: 0 }, 0),
     'a land tile inside the radius is not "water controlled"');
 });
+
+// A LAND unit standing on water cannot attack from it. Confirmed as in-game
+// behaviour by the project owner after zophister reported a ballista marching
+// onto owned water and shooting from it; the only guard in the C# I could
+// locate (Unit.canTargetTile, Unit.cs:8449) bars tribe units only, so this
+// citation is the game's behaviour rather than that line.
+test('a land unit on water cannot attack from it [in-game behaviour]', () => {
+  const g = setup(`
+    tile 1,0 TERRAIN_WATER own=0
+    blue BALLISTA 1,0
+    red ARCHER 2,0 hp=5
+  `);
+  const bal = g.blue(0);
+  bal.unlimbered = true;
+  assert.equal(E.canAttack(g.state, bal), false,
+    'a ballista afloat has no shot');
+});
+
+test('the same unit ashore can attack normally [control]', () => {
+  const g = setup(`
+    blue BALLISTA 1,0
+    red ARCHER 2,0 hp=5
+  `);
+  const bal = g.blue(0);
+  bal.unlimbered = true;
+  assert.equal(E.canAttack(g.state, bal), true);
+});
