@@ -2758,6 +2758,7 @@ var OWDATA = {
    "iMovement": 3,
    "iStrength": 60,
    "iVision": 5,
+   "iWaterControl": 3,
    "traits": [
     "UNITTRAIT_SHIP",
     "UNITTRAIT_PROMOTABLE"
@@ -3118,6 +3119,7 @@ var OWDATA = {
    "iMovement": 5,
    "iStrength": 100,
    "iVision": 7,
+   "iWaterControl": 5,
    "traits": [
     "UNITTRAIT_SHIP",
     "UNITTRAIT_PROMOTABLE"
@@ -4661,6 +4663,7 @@ var OWDATA = {
    "iMovement": 4,
    "iStrength": 80,
    "iVision": 6,
+   "iWaterControl": 4,
    "traits": [
     "UNITTRAIT_SHIP",
     "UNITTRAIT_PROMOTABLE"

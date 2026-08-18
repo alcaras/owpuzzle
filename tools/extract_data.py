@@ -120,6 +120,12 @@ for z, e in entries(parse("promotion.xml")):
 KEEP_UNIT = ["bRangeFlat", "iMovement", "iVision", "iFatigue", "iStrength", "iRangeMax",
              "iRangeMin", "iHPMax", "bMelee", "bZOC", "bBlocks", "bFortify",
              "bGeneral", "bRegular", "bWater", "bUnlimber", "bAnchor",
+             # the radius of water control an anchored ship projects
+             # (Unit.waterControl, Unit.cs:3480 — base from the unit, plus
+             # iWaterControlExtra from effects such as Lading). Never extracted,
+             # so the engine hardcoded a radius of 1 while the game gives a
+             # bireme 3, a trireme 4 and a dromon 5.
+             "iWaterControl",
              "bIgnoreZOC"]
 units = {}
 for z, e in entries(parse("unit.xml")):

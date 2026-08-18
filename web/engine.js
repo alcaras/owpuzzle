@@ -548,14 +548,30 @@
   // Tile (q,r) is in hostile ZOC for unit u: an adjacent enemy with ZOC,
   // across a non-river edge (Tile.isHostileZOC, Tile.cs:10061 — ZOC does not
   // project across rivers).
+  // Tile.isWaterMovement (Tile.cs:8073-8113): a team may cross a water tile if
+  // it holds WATER CONTROL there, or if the tile is owned by that team or an
+  // ally. Both halves were wrong here:
+  //   * the control radius was hardcoded to 1. The game reads it off the unit
+  //     (Unit.waterControl, Unit.cs:3480: info().miWaterControl plus
+  //     iWaterControlExtra from effects such as Lading) — a bireme projects 3,
+  //     a trireme 4, a dromon 5. iWaterControl was not even extracted.
+  // Anchoring is required: the tile's control counter is incremented and
+  // decremented exactly on the anchored transition (Unit.setAnchoredTurns,
+  // Unit.cs:3125-3160) and the range check reads isAnchored (Tile.cs:3404).
+  //   * territory was never consulted at all, only adjacent friendly cities,
+  //     which is a much smaller thing than owning the water.
   function waterControlled(state, pos, player) {
     for (var i = 0; i < state.units.length; i++) {
       var o = state.units[i];
       if (o.hp <= 0 || o.player !== player || !info(o).bWater || !o.anchored) continue;
-      var radius = 1 + sumEffect(o, 'iWaterControlExtra');
-      if (hexDistance(o, pos) <= radius) return true;
+      var radius = (info(o).iWaterControl || 0) + sumEffect(o, 'iWaterControlExtra');
+      if (radius > 0 && hexDistance(o, pos) <= radius) return true;
     }
-    // friendly city harbors control adjacent water
+    var here = tileAt(state, pos.q, pos.r);
+    // owned water is your own water (Tile.cs:8103). A friendly city owns its
+    // harbour, so the old adjacent-city rule is subsumed by this — but keep it
+    // for boards that mark a city without painting ownership.
+    if (here && here.owner === player) return true;
     for (var d = 0; d < 6; d++) {
       var t = tileAt(state, pos.q + DIRS[d].q, pos.r + DIRS[d].r);
       if (t && t.city === player) return true;

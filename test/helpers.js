@@ -33,6 +33,9 @@ function setup(spec, opts) {
         else if (p.startsWith('IMPROVEMENT_')) t.improvement = p;
         else if (p.startsWith('river=')) t.river = p.slice(6).split(',').map(Number);
         else if (p.startsWith('city=')) t.city = Number(p.slice(5));
+        // tile ownership: territory decides water movement (Tile.cs:8103) and
+        // the home-field bonus (iHomeModifier)
+        else if (p.startsWith('own=')) t.owner = Number(p.slice(4));
         else throw new Error('unknown tile token: ' + p);
       }
       tiles.push(t);
