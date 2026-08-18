@@ -109,7 +109,17 @@
     'UNIT_HORSE_ARCHER', 'UNIT_CAMEL_ARCHER', 'UNIT_PALTON_CAVALRY', 'UNIT_WAR_ELEPHANT', 'UNIT_TURRETED_ELEPHANT',
     'UNIT_ONAGER', 'UNIT_BALLISTA', 'UNIT_MANGONEL', 'UNIT_POLYBOLOS',
     'UNIT_BATTERING_RAM', 'UNIT_SIEGE_TOWER',
-    'UNIT_BIREME', 'UNIT_TRIREME', 'UNIT_QUADRIREME', 'UNIT_DROMON'];
+    'UNIT_BIREME', 'UNIT_TRIREME', 'UNIT_DROMON',
+    // non-tribal units that were simply never listed. Every mechanic they carry
+    // is implemented; two of their badges are decoration in the data itself —
+    // FORMIDABLE and SHOCK_CAVALRY have no fields at all, so they do nothing.
+    'UNIT_CONSCRIPT', 'UNIT_DMT_WARRIOR',
+    'UNIT_AKKADIAN_ARCHER', 'UNIT_BEJA_ARCHER', 'UNIT_CIMMERIAN_ARCHER', 'UNIT_MEDJAY_ARCHER',
+    'UNIT_KUSHAN_CAVALRY', 'UNIT_KUSHAN_WARLORDS', 'UNIT_CATAPHRACT_ARCHER',
+    'UNIT_MOUNTED_LANCER', 'UNIT_STEPPE_RIDER',
+    'UNIT_LIGHT_CHARIOT', 'UNIT_HITTITE_CHARIOT_1', 'UNIT_HITTITE_CHARIOT_2',
+    'UNIT_AFRICAN_ELEPHANT', 'UNIT_ARMOURED_ELEPHANT', 'UNIT_ASSAULT_ELEPHANT',
+    'UNIT_ARCHER_ELEPHANT', 'UNIT_JAVELIN_ELEPHANT'];
   // promotions come straight from promotion.xml; validity from each effect's
   // abUnitTraitValid / abUnitTraitInvalid tables vs the unit's traits
   var PROMO_ROSTER = Object.keys(E.DATA.promotions).map(function (pr) {
@@ -176,6 +186,90 @@
     o.textContent = t.replace('UNIT_', '').toLowerCase().replace(/_/g, ' ');
     sel.appendChild(o);
   });
+
+  // ---------- the unit picker ----------
+  // A flat <select> of fifty-two names was already hard to shop from, and the
+  // roster is only going to grow. The grid keeps the select as the source of
+  // truth — every existing code path still reads sel.value — and drives it.
+  //
+  // Grouped by CLASS first because that is what actually decides how a unit
+  // behaves: a cataphract at strength 10 and a pikeman at 8 are not comparable,
+  // one routs and the other is immune to routing. Strength only sorts WITHIN a
+  // class, where it means something.
+  function unitClass(type) {
+    var t = (E.DATA.units[type].traits || []).map(function (x) { return x.replace('UNITTRAIT_', ''); });
+    if (t.indexOf('SHIP') >= 0) return 'ships';
+    if (t.indexOf('SIEGE') >= 0) return 'siege';
+    if (t.indexOf('ELEPHANT') >= 0) return 'elephants';
+    if (t.indexOf('CHARIOT') >= 0) return 'chariots';
+    if (t.indexOf('MOUNTED') >= 0) return 'mounted';
+    if (t.indexOf('POLEARM') >= 0) return 'polearm';
+    if (t.indexOf('RANGED') >= 0) return 'ranged';
+    return 'melee';
+  }
+  var CLASS_ORDER = ['melee', 'polearm', 'ranged', 'mounted', 'chariots', 'elephants', 'siege', 'ships'];
+
+  // what the hover text says: the numbers a designer actually needs, plus the
+  // abilities, in the game's own words where the engine can supply them
+  function unitTip(type) {
+    var x = E.DATA.units[type];
+    var bits = [type.replace('UNIT_', '').toLowerCase().replace(/_/g, ' ')];
+    bits.push('strength ' + (x.iStrength / 10));
+    if (x.iRangeMax) bits.push('range ' + x.iRangeMax);
+    bits.push('move ' + x.iMovement);
+    var ab = E.describeUnitAbilities ? E.describeUnitAbilities(type) : null;
+    if (ab && ab.length) bits.push(ab.join('; '));
+    return bits.join(' · ');
+  }
+
+  function renderUnitGrid() {
+    var host = document.getElementById('unit-grid');
+    if (!host) return;
+    host.innerHTML = '';
+    CLASS_ORDER.forEach(function (cls) {
+      var mine = UNIT_ROSTER.filter(function (t) { return unitClass(t) === cls; })
+        .sort(function (a, b) {
+          return E.DATA.units[a].iStrength - E.DATA.units[b].iStrength ||
+                 a.localeCompare(b);
+        });
+      if (!mine.length) return;
+      var head = document.createElement('div');
+      head.className = 'ug-head';
+      head.textContent = cls;
+      host.appendChild(head);
+      var row = document.createElement('div');
+      row.className = 'ug-row';
+      mine.forEach(function (t) {
+        var cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'ug-cell' + (sel.value === t ? ' on' : '');
+        cell.title = unitTip(t);
+        cell.dataset.unit = t;
+        var ic = unitIcon(t);
+        if (ic) {
+          var img = document.createElement('img');
+          img.src = ic; img.alt = '';
+          cell.appendChild(img);
+        } else {
+          cell.textContent = t.replace('UNIT_', '').slice(0, 3).toLowerCase();
+        }
+        var s = document.createElement('span');
+        s.className = 'ug-str';
+        s.textContent = E.DATA.units[t].iStrength / 10;
+        cell.appendChild(s);
+        cell.onclick = function () {
+          sel.value = t;
+          // the select is still the source of truth, so fire its change handler
+          // and everything downstream (promotion validity, editing a selected
+          // unit in place) keeps working untouched
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+          renderUnitGrid();
+        };
+        row.appendChild(cell);
+      });
+      host.appendChild(row);
+    });
+  }
   var promoList = document.getElementById('u-promo-list');
   PROMO_ROSTER.forEach(function (t) {
     var lab = document.createElement('label');
@@ -201,8 +295,8 @@
     ).map(function (cb) { return cb.value; });
   }
 
-  sel.onchange = function () { refreshPromoList(); applyPanelToSelected(); };
-  setTimeout(refreshPromoList, 0);
+  sel.onchange = function () { refreshPromoList(); applyPanelToSelected(); renderUnitGrid(); };
+  setTimeout(function () { refreshPromoList(); renderUnitGrid(); }, 0);
 
   // every control in the unit panel edits the selected unit as you touch it
   ['u-side', 'u-hp', 'u-general', 'u-anchored'].forEach(function (id) {
@@ -274,7 +368,7 @@
     styleBtn.onclick = function () {
       ICON_STYLE = ICON_STYLE === 'flag' ? 'portrait' : 'flag';
       try { localStorage.setItem('owpuzzle-iconstyle', ICON_STYLE); } catch (e) {}
-      styleLabel(); render();
+      styleLabel(); renderUnitGrid(); render();
     };
   }
 
