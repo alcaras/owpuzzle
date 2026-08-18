@@ -133,6 +133,11 @@ for z, e in entries(parse("unit.xml")):
     d = {k: s[k] for k in KEEP_UNIT if k in s}
     traits = strlist(e, "aeUnitTrait") or []
     d["traits"] = traits
+    # which nation may build it (unit.xml NationPrereq). Not a combat rule —
+    # the editor groups the unique units by nation so an author can find them.
+    nation = e.findtext("NationPrereq")
+    if nation:
+        d["nation"] = nation
     innate = strlist(e, "aeEffectUnit") or []
     d["effects"] = [trait_effect[t] for t in traits if t in trait_effect] + innate
     fe = strlist(e, "aeFormations")

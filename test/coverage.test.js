@@ -92,6 +92,7 @@ const ACKNOWLEDGED_UNIT = {
   bNoCapture: 'capture is an objective, authored per puzzle',
   iUpgradeCost: 'production, not a combat rule',
   bWater: 'implemented via terrain and the ship traits',
+  nation: 'which nation may build it — editor grouping, not a combat rule',
 };
 
 test('every unit field a player can meet is implemented or acknowledged', () => {

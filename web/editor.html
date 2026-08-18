@@ -46,6 +46,11 @@
   .unit-grid { margin: 4px 0 2px; }
   .ug-head { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.2px;
     color: var(--muted); margin: 6px 0 2px; }
+  /* the uniques are a section of their own, and each nation a row inside it:
+     a rule above the section, and the nation names indented under it */
+  .ug-head-major { margin-top: 12px; padding-top: 8px; color: var(--ink);
+    border-top: 1px solid var(--rule, rgba(0,0,0,.18)); letter-spacing: 1.6px; }
+  .ug-head-nation { margin-left: 8px; letter-spacing: .8px; text-transform: capitalize; }
   .ug-row { display: flex; flex-wrap: wrap; gap: 4px; }
   .ug-cell { position: relative; width: 40px; height: 40px; padding: 1px;
     border: 1px solid var(--edge); border-radius: 7px; background: var(--panel);

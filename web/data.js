@@ -2419,6 +2419,7 @@ var OWDATA = {
    "iMovement": 2,
    "iStrength": 60,
    "iVision": 4,
+   "nation": "NATION_CARTHAGE",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_MOUNTED",
@@ -2447,6 +2448,7 @@ var OWDATA = {
    "iRangeMax": 3,
    "iStrength": 60,
    "iVision": 4,
+   "nation": "NATION_BABYLONIA",
    "traits": [
     "UNITTRAIT_RANGED",
     "UNITTRAIT_INFANTRY",
@@ -2560,6 +2562,7 @@ var OWDATA = {
    "iRangeMax": 1,
    "iStrength": 80,
    "iVision": 4,
+   "nation": "NATION_TAMIL",
    "traits": [
     "UNITTRAIT_RANGED",
     "UNITTRAIT_MOUNTED",
@@ -2589,6 +2592,7 @@ var OWDATA = {
    "iMovement": 2,
    "iStrength": 80,
    "iVision": 4,
+   "nation": "NATION_MAURYA",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_MOUNTED",
@@ -2618,6 +2622,7 @@ var OWDATA = {
    "iMovement": 2,
    "iStrength": 60,
    "iVision": 4,
+   "nation": "NATION_MAURYA",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_MOUNTED",
@@ -2702,6 +2707,7 @@ var OWDATA = {
    "iMovement": 1,
    "iStrength": 60,
    "iVision": 4,
+   "nation": "NATION_ASSYRIA",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_SIEGE",
@@ -2729,6 +2735,7 @@ var OWDATA = {
    "iRangeMax": 3,
    "iStrength": 80,
    "iVision": 4,
+   "nation": "NATION_KUSH",
    "traits": [
     "UNITTRAIT_RANGED",
     "UNITTRAIT_INFANTRY",
@@ -2877,6 +2884,7 @@ var OWDATA = {
    "iRangeMax": 1,
    "iStrength": 80,
    "iVision": 4,
+   "nation": "NATION_PERSIA",
    "traits": [
     "UNITTRAIT_RANGED",
     "UNITTRAIT_MOUNTED",
@@ -2955,6 +2963,7 @@ var OWDATA = {
    "iRangeMax": 3,
    "iStrength": 80,
    "iVision": 4,
+   "nation": "NATION_BABYLONIA",
    "traits": [
     "UNITTRAIT_RANGED",
     "UNITTRAIT_INFANTRY",
@@ -3090,6 +3099,7 @@ var OWDATA = {
    "iMovement": 2,
    "iStrength": 60,
    "iVision": 4,
+   "nation": "NATION_AKSUM",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_INFANTRY",
@@ -3202,6 +3212,7 @@ var OWDATA = {
    "iMovement": 2,
    "iStrength": 60,
    "iVision": 4,
+   "nation": "NATION_ROME",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_INFANTRY",
@@ -3251,6 +3262,7 @@ var OWDATA = {
    "iMovement": 3,
    "iStrength": 60,
    "iVision": 4,
+   "nation": "NATION_HITTITE",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_MOUNTED",
@@ -3283,6 +3295,7 @@ var OWDATA = {
    "iMovement": 3,
    "iStrength": 80,
    "iVision": 4,
+   "nation": "NATION_HITTITE",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_MOUNTED",
@@ -3316,6 +3329,7 @@ var OWDATA = {
    "iMovement": 2,
    "iStrength": 60,
    "iVision": 4,
+   "nation": "NATION_GREECE",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_INFANTRY",
@@ -3564,6 +3578,7 @@ var OWDATA = {
    "iRangeMax": 1,
    "iStrength": 60,
    "iVision": 4,
+   "nation": "NATION_TAMIL",
    "traits": [
     "UNITTRAIT_RANGED",
     "UNITTRAIT_MOUNTED",
@@ -3613,6 +3628,7 @@ var OWDATA = {
    "iMovement": 3,
    "iStrength": 60,
    "iVision": 4,
+   "nation": "NATION_YUEZHI",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_MOUNTED",
@@ -3643,6 +3659,7 @@ var OWDATA = {
    "iMovement": 3,
    "iStrength": 80,
    "iVision": 4,
+   "nation": "NATION_YUEZHI",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_MOUNTED",
@@ -3673,6 +3690,7 @@ var OWDATA = {
    "iMovement": 2,
    "iStrength": 80,
    "iVision": 4,
+   "nation": "NATION_ROME",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_INFANTRY",
@@ -3758,6 +3776,7 @@ var OWDATA = {
    "iRangeMax": 2,
    "iStrength": 60,
    "iVision": 4,
+   "nation": "NATION_EGYPT",
    "traits": [
     "UNITTRAIT_RANGED",
     "UNITTRAIT_MOUNTED",
@@ -3938,6 +3957,7 @@ var OWDATA = {
    "iRangeMax": 3,
    "iStrength": 60,
    "iVision": 4,
+   "nation": "NATION_KUSH",
    "traits": [
     "UNITTRAIT_RANGED",
     "UNITTRAIT_INFANTRY",
@@ -3988,6 +4008,7 @@ var OWDATA = {
    "iRangeMax": 2,
    "iStrength": 80,
    "iVision": 4,
+   "nation": "NATION_EGYPT",
    "traits": [
     "UNITTRAIT_RANGED",
     "UNITTRAIT_MOUNTED",
@@ -4207,6 +4228,7 @@ var OWDATA = {
    "iRangeMax": 1,
    "iStrength": 60,
    "iVision": 4,
+   "nation": "NATION_PERSIA",
    "traits": [
     "UNITTRAIT_RANGED",
     "UNITTRAIT_MOUNTED",
@@ -4291,6 +4313,7 @@ var OWDATA = {
    "iMovement": 2,
    "iStrength": 80,
    "iVision": 4,
+   "nation": "NATION_GREECE",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_INFANTRY",
@@ -4442,6 +4465,7 @@ var OWDATA = {
    "iMovement": 2,
    "iStrength": 80,
    "iVision": 4,
+   "nation": "NATION_AKSUM",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_INFANTRY",
@@ -4468,6 +4492,7 @@ var OWDATA = {
    "iMovement": 1,
    "iStrength": 80,
    "iVision": 4,
+   "nation": "NATION_ASSYRIA",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_SIEGE",
@@ -4603,6 +4628,7 @@ var OWDATA = {
    "iRangeMax": 2,
    "iStrength": 30,
    "iVision": 5,
+   "nation": "NATION_YUEZHI",
    "traits": [
     "UNITTRAIT_RANGED",
     "UNITTRAIT_MOUNTED",
@@ -4691,6 +4717,7 @@ var OWDATA = {
    "iMovement": 2,
    "iStrength": 80,
    "iVision": 4,
+   "nation": "NATION_CARTHAGE",
    "traits": [
     "UNITTRAIT_MELEE",
     "UNITTRAIT_MOUNTED",

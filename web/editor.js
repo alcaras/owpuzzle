@@ -201,13 +201,19 @@
     if (t.indexOf('SHIP') >= 0) return 'ships';
     if (t.indexOf('SIEGE') >= 0) return 'siege';
     if (t.indexOf('ELEPHANT') >= 0) return 'elephants';
-    if (t.indexOf('CHARIOT') >= 0) return 'chariots';
+    if (t.indexOf('CHARIOT') >= 0) return 'mounted';   // a chariot IS mounted
     if (t.indexOf('MOUNTED') >= 0) return 'mounted';
     if (t.indexOf('POLEARM') >= 0) return 'polearm';
     if (t.indexOf('RANGED') >= 0) return 'ranged';
     return 'melee';
   }
-  var CLASS_ORDER = ['melee', 'polearm', 'ranged', 'mounted', 'chariots', 'elephants', 'siege', 'ships'];
+  var CLASS_ORDER = ['melee', 'polearm', 'ranged', 'mounted', 'elephants', 'siege', 'ships'];
+  // A unique unit is one a single nation may build (unit.xml NationPrereq).
+  // They sit in their own section grouped by nation rather than scattered
+  // through the classes: you pick them because of WHOSE army you are building,
+  // and every nation's pair reads the same way — the 6 then the 8.
+  function nationOf(type) { return E.DATA.units[type].nation || null; }
+  function nationLabel(n) { return n.replace('NATION_', '').toLowerCase().replace(/_/g, ' '); }
 
   // what the hover text says: the numbers a designer actually needs, plus the
   // abilities, in the game's own words where the engine can supply them
@@ -226,48 +232,68 @@
     var host = document.getElementById('unit-grid');
     if (!host) return;
     host.innerHTML = '';
-    CLASS_ORDER.forEach(function (cls) {
-      var mine = UNIT_ROSTER.filter(function (t) { return unitClass(t) === cls; })
-        .sort(function (a, b) {
-          return E.DATA.units[a].iStrength - E.DATA.units[b].iStrength ||
-                 a.localeCompare(b);
-        });
-      if (!mine.length) return;
+
+    function makeCell(t) {
+      var cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'ug-cell' + (sel.value === t ? ' on' : '');
+      cell.title = unitTip(t);
+      cell.dataset.unit = t;
+      var ic = unitIcon(t);
+      if (ic) {
+        var img = document.createElement('img');
+        img.src = ic; img.alt = '';
+        cell.appendChild(img);
+      } else {
+        cell.textContent = t.replace('UNIT_', '').slice(0, 3).toLowerCase();
+      }
+      var st = document.createElement('span');
+      st.className = 'ug-str';
+      st.textContent = E.DATA.units[t].iStrength / 10;
+      cell.appendChild(st);
+      cell.onclick = function () {
+        sel.value = t;
+        // the select is still the source of truth, so fire its change handler
+        // and everything downstream (promotion validity, editing a selected
+        // unit in place) keeps working untouched
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        renderUnitGrid();
+      };
+      return cell;
+    }
+    function section(label, types, cls) {
+      if (!types.length) return;
       var head = document.createElement('div');
-      head.className = 'ug-head';
-      head.textContent = cls;
+      head.className = cls || 'ug-head';
+      head.textContent = label;
       host.appendChild(head);
       var row = document.createElement('div');
       row.className = 'ug-row';
-      mine.forEach(function (t) {
-        var cell = document.createElement('button');
-        cell.type = 'button';
-        cell.className = 'ug-cell' + (sel.value === t ? ' on' : '');
-        cell.title = unitTip(t);
-        cell.dataset.unit = t;
-        var ic = unitIcon(t);
-        if (ic) {
-          var img = document.createElement('img');
-          img.src = ic; img.alt = '';
-          cell.appendChild(img);
-        } else {
-          cell.textContent = t.replace('UNIT_', '').slice(0, 3).toLowerCase();
-        }
-        var s = document.createElement('span');
-        s.className = 'ug-str';
-        s.textContent = E.DATA.units[t].iStrength / 10;
-        cell.appendChild(s);
-        cell.onclick = function () {
-          sel.value = t;
-          // the select is still the source of truth, so fire its change handler
-          // and everything downstream (promotion validity, editing a selected
-          // unit in place) keeps working untouched
-          sel.dispatchEvent(new Event('change', { bubbles: true }));
-          renderUnitGrid();
-        };
-        row.appendChild(cell);
-      });
+      types.forEach(function (t) { row.appendChild(makeCell(t)); });
       host.appendChild(row);
+    }
+    var byStrength = function (a, b) {
+      return E.DATA.units[a].iStrength - E.DATA.units[b].iStrength || a.localeCompare(b);
+    };
+
+    var common = UNIT_ROSTER.filter(function (t) { return !nationOf(t); });
+    CLASS_ORDER.forEach(function (cls) {
+      section(cls, common.filter(function (t) { return unitClass(t) === cls; }).sort(byStrength));
+    });
+
+    var uniques = UNIT_ROSTER.filter(nationOf).sort(byStrength);
+    if (!uniques.length) return;
+    var nations = [];
+    uniques.forEach(function (t) {
+      if (nations.indexOf(nationOf(t)) < 0) nations.push(nationOf(t));
+    });
+    nations.sort(function (a, b) { return nationLabel(a).localeCompare(nationLabel(b)); });
+    var major = document.createElement('div');
+    major.className = 'ug-head ug-head-major';
+    major.textContent = 'unique units';
+    host.appendChild(major);
+    nations.forEach(function (n) {
+      section(nationLabel(n), uniques.filter(function (t) { return nationOf(t) === n; }), 'ug-head ug-head-nation');
     });
   }
   var promoList = document.getElementById('u-promo-list');
@@ -719,14 +745,23 @@
       minY = Math.min(minY, cy(t) - SIZE); maxY = Math.max(maxY, cy(t) + SIZE);
     });
     var S = ['<svg viewBox="' + (minX - 6) + ' ' + (minY - 6) + ' ' + (maxX - minX + 12) + ' ' + (maxY - minY + 12) + '" xmlns="http://www.w3.org/2000/svg">'];
+    var clips = [];
+    S.push('');   // slot for the clip defs, filled once the tiles are walked
     list.forEach(function (t) {
       var x = cx(t), y = cy(t);
       var fill = TERRAIN_FILL[t.terrain] || 'rgb(90,90,90)';
       if (t.height === 'HEIGHT_MOUNTAIN') fill = 'rgb(150,150,153)';
       S.push('<polygon points="' + hexPoints(x, y) + '" fill="' + fill + '" stroke="' + BOARD_BG + '" stroke-width="1" data-t="' + t.q + ',' + t.r + '"/>');
+      // hills: light band over dark band, clipped to the hex — the same
+      // drawing as the player (app.js:491-497). It used to be a narrow
+      // free-floating bar here, so a hill you painted did not look like the
+      // hill you played on.
       if (t.height === 'HEIGHT_HILL') {
-        S.push('<rect x="' + (x - SIZE * 0.6) + '" y="' + (y - SIZE * 0.35) + '" width="' + SIZE * 1.2 + '" height="' + SIZE * 0.32 + '" fill="rgba(255,255,255,.16)" pointer-events="none"/>');
-        S.push('<rect x="' + (x - SIZE * 0.6) + '" y="' + (y + SIZE * 0.02) + '" width="' + SIZE * 1.2 + '" height="' + SIZE * 0.4 + '" fill="rgba(0,0,0,.30)" pointer-events="none"/>');
+        var hid = 'eclip' + t.q + '_' + t.r;
+        clips.push('<clipPath id="' + hid + '"><polygon points="' + hexPoints(x, y) + '"/></clipPath>');
+        S.push('<g clip-path="url(#' + hid + ')" pointer-events="none">' +
+          '<rect x="' + (x - SIZE) + '" y="' + (y - SIZE) + '" width="' + (2 * SIZE) + '" height="' + (SIZE * 0.85) + '" fill="rgba(255,255,255,.16)"/>' +
+          '<rect x="' + (x - SIZE) + '" y="' + (y + SIZE * 0.05) + '" width="' + (2 * SIZE) + '" height="' + SIZE + '" fill="rgba(0,0,0,.30)"/></g>');
       }
       // Same treatment as the player (app.js): vegetation tints the WHOLE hex
       // and gets an inset rim, so a wood with a unit standing in it still reads
@@ -793,6 +828,7 @@
       S.push('</g>');
     });
     S.push('</svg>');
+    if (clips.length) S[1] = '<defs>' + clips.join('') + '</defs>';
     refreshLimits();
     refreshObjectiveLine();
     var wrap = document.getElementById('board-wrap');
