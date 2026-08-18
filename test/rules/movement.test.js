@@ -81,17 +81,31 @@ test('an anchored bireme controls water out to its own radius of 3 [Unit.cs:3480
     'water within the bireme\'s control radius should be enterable, got: ' + reach.join(' '));
 });
 
-test('entering controlled water costs the whole movement allowance [Unit.cs:7578 returns movement()]', () => {
+// This is what "FAST water movement" means. getMovementCost (Unit.cs:7583)
+// returns movement() — the RAW movement value, 1 to 3 — where a land tile costs
+// terrain().miMovementCost, which is 9. movementFull() (Unit.cs:6341) is the
+// 9x-scaled figure and is a DIFFERENT method. Charging movementFull() made
+// water nine times dearer than the game charges, which is the whole of
+// "fast water movement doesn't work".
+test('controlled water is FAST: it costs movement(), not movementFull() [Unit.cs:7583 vs 6341]', () => {
   const g = setup(`
     tile 1,0 TERRAIN_WATER
     tile 2,0 TERRAIN_WATER
+    tile 3,0 TERRAIN_WATER
+    tile 4,0 TERRAIN_WATER
     blue AXEMAN 0,0
     blue BIREME 2,0 anchored
     red ARCHER -1,0 hp=5
   `);
-  const step = E.reachableTiles(g.state, g.blue(0)).filter((t) => t.q === 1 && t.r === 0)[0];
-  assert.ok(step, 'the water tile should be reachable at all');
-  assert.equal(step.steps, 1, 'it is one step, not a fraction of one');
+  const reach = E.reachableTiles(g.state, g.blue(0));
+  const at = (q) => reach.filter((t) => t.q === q && t.r === 0)[0];
+  assert.ok(at(1), 'the first water tile is reachable');
+  // an axeman has movement 2, so each water tile costs 2 of a 18-point step:
+  // it should skim several tiles inside a single step, not one per step
+  assert.ok(at(3), 'water three tiles out is reachable, got: ' +
+    reach.map((t) => t.q + ',' + t.r).join(' '));
+  assert.equal(at(1).steps, 1, 'and the whole skim is still one step');
+  assert.equal(at(3).steps, 1, 'three water tiles inside a single step');
 });
 
 test('water owned by your own territory is crossable without any ship [Tile.cs:8103 areAllied]', () => {

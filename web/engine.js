@@ -525,10 +525,14 @@
       return G.MOVEMENT_MULTIPLER;
     }
     if (isWaterTile(t)) {
-      // land units may enter water under friendly WATER CONTROL, spending a
-      // full move (Unit.cs:7578 returns movement())
+      // Land units may enter water under friendly WATER CONTROL, and it is
+      // FAST: getMovementCost (Unit.cs:7583) returns movement() — the RAW
+      // movement value, 1 to 3 — where a land tile costs its terrain's
+      // iMovementCost, which is 9. movementFull() (Unit.cs:6341) is the
+      // 9x-scaled figure and a different method; charging that made water nine
+      // times dearer than the game does, so a unit could barely get afloat.
       if (!waterControlled(state, to, u.player)) return Infinity;
-      return movementPoints(u);
+      return Math.max(1, info(u).iMovement + sumEffect(u, 'iMovementExtra'));
     }
     if (t.height === 'HEIGHT_MOUNTAIN' || t.height === 'HEIGHT_VOLCANO') return Infinity;
     // terrain iMovementCost is the full base cost (9 = one move); height and
