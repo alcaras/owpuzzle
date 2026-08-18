@@ -2,6 +2,7 @@
 'use strict';
 const Database = require('better-sqlite3');
 const path = require('path');
+const E = require(path.join(__dirname, '..', 'web', 'engine.js'));
 const fs = require('fs');
 
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'data', 'owpuzzle.db');
@@ -57,18 +58,26 @@ CREATE TABLE IF NOT EXISTS sessions (
 // Difficulty seeds the initial rating; high RD lets attempts converge it.
 //
 // An EDITED puzzle is technically a new puzzle: its old rating and everyone's
-// completion no longer apply. When the seeded json differs from the stored
-// row, the old row is retired under slug@vN (attempt history stays attached
-// to it) and a fresh row takes the canonical slug with a reseeded rating —
-// so it re-enters every player's queue, and first attempts are rated again.
+// completion no longer apply. When the seeded puzzle PLAYS differently from
+// the stored row, the old row is retired under slug@vN (attempt history stays
+// attached to it) and a fresh row takes the canonical slug with a reseeded
+// rating — so it re-enters every player's queue, and first attempts are rated
+// again.
+//
+// "Plays differently" is puzzleHash (engine.js:1204) — board, units, orders,
+// objective — NOT the raw json. Rewording a name, brief or lesson used to
+// retire the row too, which silently took the solve off everyone who had
+// beaten it: the library kept showing its tick (the client hash was unchanged)
+// while the Hall of Fame stopped counting it, so the two totals disagreed.
+// Text edits now update the row in place, keeping ratings and completions.
 //
 // FORCE_RESET: puzzles edited before this versioning existed (their new json
 // was already upserted, so the diff can't see the change). Retired once —
 // the versions>0 guard makes it idempotent.
 const FORCE_RESET = ['nestor-charge', 'the-shore-riders', 'the-wood-line',
   'the-jungle-road', 'the-crossed-lanes', 'down-the-avenue', 'cut-the-bowstring'];
-function seedCorePuzzles() {
-  const PUZZLES = require(path.join(__dirname, '..', 'web', 'puzzles.js'));
+function seedCorePuzzles(puzzles) {
+  const PUZZLES = puzzles || require(path.join(__dirname, '..', 'web', 'puzzles.js'));
   const seedRating = { 1: 900, 2: 1200, 3: 1500 };
   const sel = db.prepare('SELECT id, json, status FROM puzzles WHERE slug = ?');
   const countV = db.prepare('SELECT COUNT(*) c FROM puzzles WHERE slug LIKE ?');
@@ -76,6 +85,7 @@ function seedCorePuzzles() {
   const ins = db.prepare(`INSERT INTO puzzles (slug, json, status, rating, author_name)
     VALUES (?, ?, 'core', ?, ?)`);
   const restore = db.prepare(`UPDATE puzzles SET status = 'core' WHERE id = ?`);
+  const reword = db.prepare(`UPDATE puzzles SET json = ?, author_name = ? WHERE id = ?`);
   const tx = db.transaction(() => {
     for (const p of PUZZLES) {
       const json = JSON.stringify(p);
@@ -86,8 +96,19 @@ function seedCorePuzzles() {
       const versions = countV.get(p.id + '@v%').c;
       const force = FORCE_RESET.includes(p.id) && versions === 0;
       if (row.json !== json || force) {
-        retire.run(p.id + '@v' + (versions + 1), row.id);
-        ins.run(p.id, json, rating, author);
+        // same fight, new words: keep the row, its rating and its solves
+        let sameFight = false;
+        if (!force) {
+          try { sameFight = E.puzzleHash(JSON.parse(row.json)) === E.puzzleHash(p); }
+          catch (e) { sameFight = false; }
+        }
+        if (sameFight) {
+          reword.run(json, author, row.id);
+          if (row.status !== 'core') restore.run(row.id);
+        } else {
+          retire.run(p.id + '@v' + (versions + 1), row.id);
+          ins.run(p.id, json, rating, author);
+        }
       } else if (row.status !== 'core') {
         restore.run(row.id);
       }
@@ -186,6 +207,43 @@ function resetAchievementsOnce(sentinel) {
   return n;
 }
 
+// Repair for rows retired by the old whole-json diff: a puzzle that was only
+// REWORDED got a fresh row, stranding every solve on the retired copy. The
+// library kept its tick (the client hash never changed) while the Hall of Fame
+// stopped counting it. Move those attempts back onto the live row.
+//
+// Only ever moves attempts whose retired row is the same FIGHT as the live row
+// of the same slug, so a genuine gameplay revision is left alone. Idempotent:
+// once moved there is nothing left to move.
+function reuniteRewordedSolves() {
+  const hash = (j) => { try { return E.puzzleHash(JSON.parse(j)); } catch (e) { return null; } };
+  const liveBySlug = new Map();
+  for (const r of db.prepare(
+    `SELECT id, slug, json FROM puzzles WHERE status IN ('core','approved')`).all()) {
+    liveBySlug.set(r.slug, r);
+  }
+  const retired = db.prepare(
+    `SELECT id, slug, json FROM puzzles WHERE status = 'retired' AND slug LIKE '%@v%'`).all();
+  // a second rated attempt on the same puzzle would double-count first-try
+  // badges, so the moved one is demoted to unrated
+  const demote = db.prepare(`UPDATE attempts SET rated = 0 WHERE puzzle_id = @from AND EXISTS
+    (SELECT 1 FROM attempts b WHERE b.puzzle_id = @to AND b.user_id = attempts.user_id AND b.rated = 1)`);
+  const move = db.prepare('UPDATE attempts SET puzzle_id = @to WHERE puzzle_id = @from');
+  let moved = 0;
+  const tx = db.transaction(() => {
+    for (const r of retired) {
+      const liveRow = liveBySlug.get(r.slug.replace(/@v\d+$/, ''));
+      if (!liveRow) continue;
+      const h = hash(r.json);
+      if (!h || h !== hash(liveRow.json)) continue;
+      demote.run({ from: r.id, to: liveRow.id });
+      moved += move.run({ from: r.id, to: liveRow.id }).changes;
+    }
+  });
+  tx();
+  return moved;
+}
+
 // Replay historical attempts through the engine to fill the new columns.
 // Cheap (one pass over a few hundred short lines) and idempotent.
 function backfillAttempts(replay) {
@@ -207,4 +265,5 @@ function backfillAttempts(replay) {
   return rows.length;
 }
 
-module.exports = { db, seedCorePuzzles, backfillAttempts, linkAuthors, resetAchievementsOnce };
+module.exports = { db, seedCorePuzzles, backfillAttempts, linkAuthors, resetAchievementsOnce,
+  reuniteRewordedSolves };

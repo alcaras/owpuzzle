@@ -5,7 +5,8 @@
 const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
-const { db, seedCorePuzzles, backfillAttempts, linkAuthors, resetAchievementsOnce } = require('./db');
+const { db, seedCorePuzzles, backfillAttempts, linkAuthors, resetAchievementsOnce,
+  reuniteRewordedSolves } = require('./db');
 const { computeAchievements, LIVE } = require('./achievements');
 const glicko = require('./glicko');
 const E = require(path.join(__dirname, '..', 'web', 'engine.js'));
@@ -20,6 +21,10 @@ const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || ''; // submission
 const FAILED_REQUEUE_HOURS = 24;
 
 const seeded = seedCorePuzzles();
+// before achievements are recomputed, so a recovered solve grants its badge
+// on the same boot
+const reunited = reuniteRewordedSolves();
+if (reunited) console.log(`recovered ${reunited} attempt(s) stranded by a reworded puzzle`);
 const backfilled = backfillAttempts((puzzle, line) => replayLine(puzzle, line));
 if (backfilled) console.log(`backfilled ${backfilled} attempt rows`);
 const linked = linkAuthors();
