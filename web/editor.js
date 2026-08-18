@@ -321,8 +321,8 @@
     ).map(function (cb) { return cb.value; });
   }
 
-  sel.onchange = function () { refreshPromoList(); applyPanelToSelected(); renderUnitGrid(); };
-  setTimeout(function () { refreshPromoList(); renderUnitGrid(); }, 0);
+  sel.onchange = function () { refreshPromoList(); applyPanelToSelected(); renderUnitGrid(); refreshModeLine(); };
+  setTimeout(function () { refreshPromoList(); renderUnitGrid(); layoutPanel(false); refreshModeLine(); }, 0);
 
   // every control in the unit panel edits the selected unit as you touch it
   ['u-side', 'u-hp', 'u-general', 'u-anchored'].forEach(function (id) {
@@ -448,18 +448,98 @@
     render();   // the wrapped render() is what records undo history
   }
 
+  function niceName(type) {
+    return type.replace('UNIT_', '').toLowerCase().replace(/_/g, ' ');
+  }
+
+  // the coordinates the PLAYER sees (app.js:947): Old World display coords with
+  // the bottom-left tile of this board reading 0,0, so an author and a player
+  // discussing a tile are naming the same one
+  function dispCoord(u) {
+    var minX = Infinity, minY = Infinity;
+    Object.keys(tiles).forEach(function (k) {
+      var t = tiles[k], ty = -t.r, tx = t.q - Math.floor(ty / 2);
+      if (tx < minX) minX = tx;
+      if (ty < minY) minY = ty;
+    });
+    var y = -u.r, x = u.q - Math.floor(y / 2);
+    return (x - minX) + ',' + (y - minY);
+  }
+
+  // The panel does two jobs with one set of controls: it describes the unit you
+  // are ABOUT to place, or the one you have picked. Read and restore that
+  // description so selecting a unit does not quietly destroy the thing you had
+  // set up to place — checking a promotion and then clicking a unit used to
+  // wipe the check, which reads as the promotion not working at all.
+  function readPanel() {
+    return {
+      side: document.getElementById('u-side').value,
+      hp: document.getElementById('u-hp').value,
+      general: document.getElementById('u-general').checked,
+      anchored: document.getElementById('u-anchored').checked,
+      type: sel.value,
+      promos: checkedPromos(),
+    };
+  }
+  function writePanel(t) {
+    document.getElementById('u-side').value = t.side;
+    document.getElementById('u-hp').value = t.hp;
+    document.getElementById('u-general').checked = t.general;
+    document.getElementById('u-anchored').checked = t.anchored;
+    sel.value = t.type;
+    refreshPromoList();
+    Array.prototype.forEach.call(promoList.querySelectorAll('input'), function (cb) {
+      cb.checked = t.promos.indexOf(cb.value) >= 0;
+    });
+  }
+  var placeTemplate = null;   // what to place, parked while a unit is selected
+
+  // Editing a unit you can see, the promotions are what you came for; picking a
+  // type is what you came for when placing. Put whichever that is first so the
+  // panel does not have to be scrolled to reach it.
+  function layoutPanel(editing) {
+    var host = document.getElementById('unit-tools');
+    var typeB = document.getElementById('u-type-block');
+    var promoB = document.getElementById('u-promo-block');
+    if (!host || !typeB || !promoB) return;
+    host.insertBefore(editing ? promoB : typeB, editing ? typeB : promoB);
+  }
+
+  function refreshModeLine() {
+    var el = document.getElementById('u-mode');
+    if (!el) return;
+    if (selectedUnit >= 0 && units[selectedUnit]) {
+      var u = units[selectedUnit];
+      el.className = 'u-mode editing';
+      el.innerHTML = 'Editing <b>' + esc(niceName(u.type)) + '</b> at ' +
+        esc(dispCoord(u)) + ' — changes apply to it';
+      var done = document.createElement('button');
+      done.type = 'button';
+      done.textContent = 'Done';
+      done.onclick = function () { selectUnit(-1); };
+      el.appendChild(done);
+    } else {
+      el.className = 'u-mode placing';
+      el.innerHTML = 'Placing <b>' + esc(niceName(sel.value)) + '</b> — click empty ground';
+    }
+  }
+
   function selectUnit(idx) {
+    var was = selectedUnit;
+    if (idx >= 0 && was < 0) placeTemplate = readPanel();
     selectedUnit = idx;
     if (idx >= 0) loadPanelFrom(units[idx]);
+    else if (placeTemplate) { writePanel(placeTemplate); placeTemplate = null; }
     var del = document.getElementById('btn-unit-delete');
     if (del) del.style.display = idx >= 0 ? '' : 'none';
     var hint = document.getElementById('unit-sel-hint');
     if (hint) {
       hint.textContent = idx >= 0
-        ? 'editing the ' + units[idx].type.replace('UNIT_', '').toLowerCase().replace(/_/g, ' ') +
-          ' on the board — changes apply to it'
+        ? 'or press Esc to go back to placing'
         : 'click a unit to edit it; click empty ground to place one';
     }
+    layoutPanel(idx >= 0);
+    refreshModeLine();
     render();
   }
 
@@ -903,6 +983,12 @@
   document.getElementById('btn-undo').onclick = function () { travel(past, future); };
   document.getElementById('btn-redo').onclick = function () { travel(future, past); };
   document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && selectedUnit >= 0) {
+      if (/^(INPUT|TEXTAREA)$/.test((e.target || {}).tagName || '')) return;
+      e.preventDefault();
+      selectUnit(-1);
+      return;
+    }
     if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return;
     if (/^(INPUT|TEXTAREA|SELECT)$/.test((e.target || {}).tagName || '')) return;
     e.preventDefault();

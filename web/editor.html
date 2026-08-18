@@ -51,6 +51,15 @@
   .ug-head-major { margin-top: 12px; padding-top: 8px; color: var(--ink);
     border-top: 1px solid var(--rule, rgba(0,0,0,.18)); letter-spacing: 1.6px; }
   .ug-head-nation { margin-left: 8px; letter-spacing: .8px; text-transform: capitalize; }
+  /* Which of the two jobs the panel is doing right now. Without this the same
+     controls silently mean "the next unit I place" or "the unit I picked", and
+     checking a promotion then clicking a unit looks like nothing happened. */
+  .u-mode { font-size: 12px; padding: 6px 8px; margin: 2px 0 6px; border-radius: 5px;
+    display: flex; align-items: center; gap: 8px; }
+  .u-mode.placing { background: rgba(0,0,0,.05); color: var(--muted); }
+  .u-mode.editing { background: var(--accent); color: #fff; }
+  .u-mode b { font-weight: 600; }
+  .u-mode button { margin-left: auto; font-size: 11px; padding: 2px 8px; }
   .ug-row { display: flex; flex-wrap: wrap; gap: 4px; }
   .ug-cell { position: relative; width: 40px; height: 40px; padding: 1px;
     border: 1px solid var(--edge); border-radius: 7px; background: var(--panel);
@@ -130,23 +139,28 @@
         <div class="brush-row" id="feature-row"></div>
       </div>
       <div id="unit-tools" style="display:none">
+        <div id="u-mode" class="u-mode"></div>
         <div class="row">
           <label>Side <select id="u-side"><option value="0">Blue (you)</option><option value="1">Red (enemy)</option></select></label>
           <label>HP <input type="number" id="u-hp" value="" placeholder="full" min="1" max="20" style="width:56px"></label>
           <label><input type="checkbox" id="u-general"> general</label>
           <label><input type="checkbox" id="u-anchored"> anchored (ships)</label>
         </div>
-        <div class="row"><label class="visually-quiet">Unit <select id="u-type"></select></label>
-          <span class="limit-view" id="size-view"></span></div>
-        <div class="unit-grid" id="unit-grid"></div>
-        <div class="row"><label>Promotions</label>
-          <div id="u-promo-list" class="promo-list"></div>
-          <div class="hint">click to toggle — leave all unchecked for a plain unit</div></div>
+        <div id="u-type-block">
+          <div class="row"><label class="visually-quiet">Unit <select id="u-type"></select></label>
+            <span class="limit-view" id="size-view"></span></div>
+          <div class="unit-grid" id="unit-grid"></div>
+        </div>
+        <div id="u-promo-block">
+          <div class="row"><label>Promotions</label>
+            <div id="u-promo-list" class="promo-list"></div>
+            <div class="hint">click to toggle — leave all unchecked for a plain unit</div></div>
+        </div>
         <div class="row">
           <button type="button" id="btn-unit-delete" style="display:none">Delete this unit</button>
-          <span class="hint" id="unit-sel-hint">click a unit to edit it; click empty ground to place one</span>
+          <span class="hint" id="unit-sel-hint"></span>
         </div>
-        <div class="hint">A placed unit can be changed: click it, then edit side, HP, type, promotions or general — the change applies to it. In "mark target" objective mode, click enemies to toggle 🎯.</div>
+        <div class="hint">In "mark target" objective mode, click enemies to toggle 🎯.</div>
       </div>
       <div id="target-tools" style="display:none"><div class="hint">Click enemy units to mark/unmark them as objective targets (🎯).</div></div>
       <div id="mine-wrap" style="display:none">
