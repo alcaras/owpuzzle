@@ -129,3 +129,24 @@ test('the editor lets an author declare a par as long as the puzzle needs', () =
   const m = /id="p-orders"[^>]*max="(\d+)"/.exec(html);
   assert.ok(m && Number(m[1]) >= 40, 'par input caps at ' + (m && m[1]));
 });
+
+// "Two Points Short" and "The Crown" shipped as two puzzles with byte-identical
+// boards and different names. The cause was a rename: the id changed, the
+// tooling inserted the new entry, and nothing removed the old one — so the
+// library offered the same fight twice and a player who solved one was told
+// nothing about the other. Ids being unique is not enough; the BOARD has to be.
+test('no two puzzles are the same fight under different names', () => {
+  const seen = new Map();
+  const dupes = [];
+  for (const p of PUZZLES) {
+    // everything a player actually faces; name, brief and lesson are excluded
+    // on purpose, because retitling a board does not make it a new puzzle
+    const board = JSON.stringify({
+      units: p.units, tiles: p.tiles || [], radius: p.radius,
+      orders: p.orders, training: p.training || 0, objective: p.objective,
+    });
+    if (seen.has(board)) dupes.push(`${seen.get(board)} and ${p.id}`);
+    else seen.set(board, p.id);
+  }
+  assert.deepEqual(dupes, [], 'identical boards shipped under separate ids: ' + dupes.join('; '));
+});
