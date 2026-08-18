@@ -84,6 +84,7 @@ test('an anchored bireme controls water out to its own radius of 3 [Unit.cs:3480
 test('entering controlled water costs the whole movement allowance [Unit.cs:7578 returns movement()]', () => {
   const g = setup(`
     tile 1,0 TERRAIN_WATER
+    tile 2,0 TERRAIN_WATER
     blue AXEMAN 0,0
     blue BIREME 2,0 anchored
     red ARCHER -1,0 hp=5
@@ -112,4 +113,36 @@ test('enemy-owned water is not crossable [Tile.cs:8103 — allied only]', () => 
   `);
   const reach = E.reachableTiles(g.state, g.blue()).map((t) => t.q + ',' + t.r);
   assert.ok(!reach.includes('1,0'), 'enemy water must stay impassable');
+});
+
+// The area an anchored ship controls is not a plain circle. The game builds it
+// with getContiguous (Unit.updateWaterControlTiles, Unit.cs:4003):
+//   pFromTile.getContiguous(tile => tile.isWater() && distance <= waterControl())
+// so it is WATER only, and only water CONNECTED to the ship's own tile. Water
+// on the far side of a spit of land is inside the radius but not controlled.
+test('an anchored ship controls only water connected to it [Unit.cs:4003 getContiguous]', () => {
+  const g = setup(`
+    tile 1,0 TERRAIN_WATER
+    tile 3,0 TERRAIN_WATER
+    blue AXEMAN 0,0
+    blue BIREME 1,0 anchored
+    red ARCHER -1,0 hp=5
+  `);
+  // 2,0 is land, so 3,0 — though only two tiles from the bireme, well inside
+  // its radius of 3 — is cut off from the ship's own water and uncontrolled
+  assert.ok(!E.waterControlled(g.state, { q: 3, r: 0 }, 0),
+    'water behind a land barrier must not be controlled');
+  assert.ok(E.waterControlled(g.state, { q: 1, r: 0 }, 0),
+    "the ship's own tile is controlled");
+});
+
+test('water control does not leak onto land [Unit.cs:4003 tile.isWater()]', () => {
+  const g = setup(`
+    tile 1,0 TERRAIN_WATER
+    blue AXEMAN 0,0
+    blue BIREME 1,0 anchored
+    red ARCHER -1,0 hp=5
+  `);
+  assert.ok(!E.waterControlled(g.state, { q: 2, r: 0 }, 0),
+    'a land tile inside the radius is not "water controlled"');
 });

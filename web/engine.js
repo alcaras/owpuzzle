@@ -560,12 +560,43 @@
   // Unit.cs:3125-3160) and the range check reads isAnchored (Tile.cs:3404).
   //   * territory was never consulted at all, only adjacent friendly cities,
   //     which is a much smaller thing than owning the water.
+  // The water an anchored ship controls (Unit.updateWaterControlTiles,
+  // Unit.cs:4003):
+  //   pFromTile.getContiguous(tile => tile.isWater() && distance <= waterControl())
+  // so it is WATER only, and only water CONNECTED to the ship's own tile — a
+  // circle of the right radius is not the same shape, and counted water across
+  // a spit of land that the game never gives you.
+  function waterControlTiles(state, ship) {
+    var out = {};
+    // hp == null means "full" on an editor board, and null <= 0 is true in JS,
+    // which silently emptied the controlled area for every unplayed unit
+    if ((ship.hp != null && ship.hp <= 0) || !info(ship).bWater || !ship.anchored) return out;
+    var radius = (info(ship).iWaterControl || 0) + sumEffect(ship, 'iWaterControlExtra');
+    if (radius <= 0) return out;
+    var start = tileAt(state, ship.q, ship.r);
+    if (!start || !isWaterTile(start)) return out;
+    var stack = [start], seen = {};
+    seen[key(start.q, start.r)] = true;
+    while (stack.length) {
+      var t = stack.pop();
+      out[key(t.q, t.r)] = true;
+      for (var d = 0; d < 6; d++) {
+        var n = tileAt(state, t.q + DIRS[d].q, t.r + DIRS[d].r);
+        if (!n) continue;
+        var nk = key(n.q, n.r);
+        if (seen[nk] || !isWaterTile(n) || hexDistance(ship, n) > radius) continue;
+        seen[nk] = true;
+        stack.push(n);
+      }
+    }
+    return out;
+  }
+
   function waterControlled(state, pos, player) {
     for (var i = 0; i < state.units.length; i++) {
       var o = state.units[i];
-      if (o.hp <= 0 || o.player !== player || !info(o).bWater || !o.anchored) continue;
-      var radius = (info(o).iWaterControl || 0) + sumEffect(o, 'iWaterControlExtra');
-      if (radius > 0 && hexDistance(o, pos) <= radius) return true;
+      if (o.hp <= 0 || o.player !== player) continue;
+      if (waterControlTiles(state, o)[key(pos.q, pos.r)]) return true;
     }
     var here = tileAt(state, pos.q, pos.r);
     // owned water is your own water (Tile.cs:8103). A friendly city owns its
@@ -1472,6 +1503,7 @@
     canMarch: canMarch, doMarch: doMarch, canUnlimber: canUnlimber, doUnlimber: doUnlimber,
     canSwap: canSwap, doSwap: doSwap,
     canAnchor: canAnchor, doAnchor: doAnchor, waterControlled: waterControlled,
+    waterControlTiles: waterControlTiles,
     poolOrders: poolOrders,
     puzzleHash: puzzleHash, effectName: effectName,
     describeEffect: describeEffect, describeUnitAbilities: describeUnitAbilities, killsOf: killsOf, strKilledOf: strKilledOf,

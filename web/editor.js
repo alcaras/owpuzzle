@@ -228,6 +228,12 @@
     return bits.join(' · ');
   }
 
+  // the colour the grid draws its silhouettes in: whichever side is selected
+  function sideInk() {
+    return (document.getElementById('u-side') || {}).value === '1'
+      ? 'rgb(150,44,40)' : 'rgb(44,74,140)';
+  }
+
   function renderUnitGrid() {
     var host = document.getElementById('unit-grid');
     if (!host) return;
@@ -241,8 +247,16 @@
       cell.dataset.unit = t;
       var ic = unitIcon(t);
       if (ic) {
-        var img = document.createElement('img');
-        img.src = ic; img.alt = '';
+        // The icons are pale silhouettes and all but vanished on the cream
+        // panel. Fill the shape with the side you are placing, so the grid
+        // reads at a glance and tells you WHOSE unit you are about to put
+        // down. mask-image paints the alpha shape in a solid colour rather
+        // than tinting a washed-out picture.
+        var img = document.createElement('span');
+        img.className = 'ug-ico';
+        img.style.webkitMaskImage = 'url(' + ic + ')';
+        img.style.maskImage = 'url(' + ic + ')';
+        img.style.backgroundColor = sideInk();
         cell.appendChild(img);
       } else {
         cell.textContent = t.replace('UNIT_', '').slice(0, 3).toLowerCase();
@@ -327,7 +341,11 @@
   // every control in the unit panel edits the selected unit as you touch it
   ['u-side', 'u-hp', 'u-general', 'u-anchored'].forEach(function (id) {
     var el = document.getElementById(id);
-    if (el) el.addEventListener('change', function () { applyPanelToSelected(); });
+    if (el) el.addEventListener('change', function () {
+      applyPanelToSelected();
+      // the grid draws its silhouettes in the selected side's colour
+      if (id === 'u-side') renderUnitGrid();
+    });
   });
   if (promoList) promoList.addEventListener('change', function () { applyPanelToSelected(); });
   var delBtn = document.getElementById('btn-unit-delete');
@@ -825,6 +843,16 @@
       minY = Math.min(minY, cy(t) - SIZE); maxY = Math.max(maxY, cy(t) + SIZE);
     });
     var S = ['<svg viewBox="' + (minX - 6) + ' ' + (minY - 6) + ' ' + (maxX - minX + 12) + ' ' + (maxY - minY + 12) + '" xmlns="http://www.w3.org/2000/svg">'];
+    // which water each anchored ship controls — an author placing a ship needs
+    // to see the area it opens, and it is not the circle you would draw
+    var controlledWater = {};
+    if (E.waterControlTiles) {
+      var pseudo = { tiles: tiles, units: units };
+      units.forEach(function (u) {
+        var own = E.waterControlTiles(pseudo, u);
+        Object.keys(own).forEach(function (k) { controlledWater[k] = u.player; });
+      });
+    }
     var clips = [];
     S.push('');   // slot for the clip defs, filled once the tiles are walked
     list.forEach(function (t) {
@@ -865,6 +893,16 @@
           S.push('<rect x="' + (VX - tw * 0.16) + '" y="' + (yb - th * 0.18) + '" width="' + (tw * 0.32) + '" height="' + (th * 0.34) + '" fill="rgba(60,40,20,.9)" pointer-events="none"/>');
           S.push('<path d="M ' + VX + ' ' + (yb - th) + ' L ' + (VX - tw) + ' ' + yb + ' L ' + (VX + tw) + ' ' + yb + ' Z" fill="' + vc + '" pointer-events="none"/>');
         }
+      }
+      if (controlledWater[t.q + ',' + t.r] != null) {   // blue is player 0
+        // the water an anchored ship controls, drawn from the rule itself
+        // (E.waterControlTiles → Unit.cs:4003) rather than a second guess at
+        // the shape: water only, connected to the ship, inside its radius
+        var cw = controlledWater[t.q + ',' + t.r];
+        S.push('<polygon points="' + hexPoints(x, y, 0.99) + '" fill="' +
+          (PCOL[cw] || '#888').replace('rgb', 'rgba').replace(')', ',0.20)') + '" pointer-events="none"/>');
+        S.push('<polygon points="' + hexPoints(x, y, 0.88) + '" fill="none" stroke="' +
+          (PCOL[cw] || '#888') + '" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.75" pointer-events="none"/>');
       }
       if (t.owner != null) {
         S.push('<polygon points="' + hexPoints(x, y, 0.98) + '" fill="' + (PCOL[t.owner] || '#888').replace('rgb', 'rgba').replace(')', ',0.16)') + '" pointer-events="none"/>');
