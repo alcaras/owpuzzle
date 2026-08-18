@@ -22,6 +22,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # The suite is otherwise dependency-free, but the seeding tests drive the
+      # real server/db.js, and its sqlite driver lives in server/node_modules.
+      # Without this they would SKIP rather than fail, and the seeding gate
+      # would quietly stop being a gate.
+      - run: npm ci --prefix server
+      # fail loudly if the driver did not build: without it the seeding tests
+      # would SKIP, and a skipped gate looks exactly like a passing one
+      - run: node -e "require('./server/db.js')"
+        env:
+          DB_PATH: /tmp/ci-gate-check.db
       - run: npm test
 
   # Does this push touch anything that can change what a published puzzle's

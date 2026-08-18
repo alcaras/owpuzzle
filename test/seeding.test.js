@@ -14,8 +14,18 @@ const path = require('path');
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'owp-seed-'));
 process.env.DB_PATH = path.join(dir, 'seed.db');
-const { db, seedCorePuzzles, reuniteRewordedSolves } = require('../server/db.js');
+// The rest of the suite runs with nothing installed. These tests drive the
+// real server/db.js, whose sqlite driver lives in server/node_modules — so in
+// a bare clone they skip rather than fail the run. CI installs it (see
+// .github/workflows/test.yml) precisely so they do NOT skip there.
+let db, seedCorePuzzles, reuniteRewordedSolves, unavailable = null;
+try {
+  ({ db, seedCorePuzzles, reuniteRewordedSolves } = require('../server/db.js'));
+} catch (e) {
+  unavailable = 'server deps not installed (npm ci --prefix server): ' + e.message;
+}
 const E = require('../web/engine.js');
+const opts = unavailable ? { skip: unavailable } : {};
 
 const LIVE = `puzzle_id IN (SELECT id FROM puzzles WHERE status IN ('core','approved'))`;
 const TEMPLATE = require('../web/puzzles.js')[0];
@@ -42,7 +52,7 @@ function playerWhoSolved(base) {
   return uid;
 }
 
-test('rewording a puzzle keeps every solve [server/db.js:56-107]', () => {
+test('rewording a puzzle keeps every solve [server/db.js:56-107]', opts, () => {
   const base = puzzleFor('reword');
   const uid = playerWhoSolved(base);
   const reworded = { ...base, lesson: (base.lesson || '') + ' (reworded)' };
@@ -55,7 +65,7 @@ test('rewording a puzzle keeps every solve [server/db.js:56-107]', () => {
     reworded.lesson, 'and the new wording is what players now read');
 });
 
-test('changing how a puzzle plays retires it, solves included [server/db.js:56-107]', () => {
+test('changing how a puzzle plays retires it, solves included [server/db.js:56-107]', opts, () => {
   const base = puzzleFor('regame');
   const uid = playerWhoSolved(base);
   const harder = { ...base, orders: base.orders + 1 };
@@ -75,7 +85,7 @@ function retireTheOldWay(base, reworded) {
     .run(base.id, JSON.stringify(reworded));
 }
 
-test('solves stranded by an old text-only retire are recovered [server/db.js]', () => {
+test('solves stranded by an old text-only retire are recovered [server/db.js]', opts, () => {
   const base = puzzleFor('stranded');
   const uid = playerWhoSolved(base);
   retireTheOldWay(base, { ...base, lesson: (base.lesson || '') + ' (reworded)' });
@@ -86,7 +96,7 @@ test('solves stranded by an old text-only retire are recovered [server/db.js]', 
   assert.equal(reuniteRewordedSolves(), 0, 'and running it again does nothing');
 });
 
-test('a genuine revision keeps its solves retired [server/db.js]', () => {
+test('a genuine revision keeps its solves retired [server/db.js]', opts, () => {
   const base = puzzleFor('revised');
   const uid = playerWhoSolved(base);
   retireTheOldWay(base, { ...base, orders: base.orders + 1 });   // a different fight
