@@ -663,7 +663,30 @@
   // hostile-ZOC tile to another hostile-ZOC tile is forbidden; entering ZOC
   // does NOT stop movement.
   function reachableTiles(state, u) {
-    if (u.hp <= 0 || u.cooldown) return [];
+    return moveSearch(state, u).list;
+  }
+
+  // The route the search actually took to each tile, so the board can DRAW the
+  // crossing. Returns [{q,r}...] from the unit's tile to the destination, or []
+  // if it cannot get there. Water tiles appear in the middle of a path and
+  // never at its end (Tile.cs:10577-10605), which is exactly what makes a
+  // crossing worth showing: you go over and out the other side.
+  function movePath(state, u, q, r) {
+    var s = moveSearch(state, u);
+    var k = key(q, r), out = [];
+    if (!s.out[k]) return [];
+    var guard = 0;
+    while (k && guard++ < 999) {
+      var qr = k.split(',');
+      out.unshift({ q: +qr[0], r: +qr[1] });
+      if (k === key(u.q, u.r)) break;
+      k = s.prev[k];
+    }
+    return out;
+  }
+
+  function moveSearch(state, u) {
+    if (u.hp <= 0 || u.cooldown) return { list: [], out: {}, prev: {} };
     var full = movementPoints(u);
     var limit = fatigueLimit(u);
     var maxTotal = u.march ? limit * 2 : limit;   // march unlocks the second band
@@ -674,10 +697,11 @@
       return o;
     }
     while (stepsAvail > 0 && ordersForSteps(stepsAvail) > state.orders) stepsAvail--;
-    if (!stepsAvail) return [];
+    if (!stepsAvail) return { list: [], out: {}, prev: {} };
     var budget = stepsAvail * full;
 
     var best = {}; best[key(u.q, u.r)] = 0;
+    var prev = {};
     var frontier = [{ q: u.q, r: u.r, cost: 0 }];
     var out = {};
     while (frontier.length) {
@@ -705,6 +729,7 @@
         var k = key(nq, nr);
         if (best[k] != null && best[k] <= c) continue;
         best[k] = c;
+        prev[k] = key(cur.q, cur.r);
         // A land unit may move ACROSS controlled water but may not END its move
         // on it: Tile.canUnitTypeOccupy checks the water rules only when
         // bFinalTile (Tile.cs:10577-10605). So water stays on the frontier — you
@@ -720,7 +745,10 @@
         frontier.push({ q: nq, r: nr, cost: c });
       }
     }
-    return Object.keys(out).map(function (k2) { return out[k2]; });
+    return {
+      list: Object.keys(out).map(function (k2) { return out[k2]; }),
+      out: out, prev: prev,
+    };
   }
 
   // Order cost of the unit's NEXT move step: 1, or 1+UNIT_FATIGUE_COST when
@@ -1529,7 +1557,7 @@
     describeEffect: describeEffect, describeUnitAbilities: describeUnitAbilities, killsOf: killsOf, strKilledOf: strKilledOf,
     nextStepOrderCost: nextStepOrderCost,
     canDamage: canDamage, fatigueLimit: fatigueLimit,
-    movementPoints: movementPoints, reachableTiles: reachableTiles,
+    movementPoints: movementPoints, reachableTiles: reachableTiles, movePath: movePath,
     attackTargets: attackTargets, isShotObstructed: isShotObstructed,
     effectiveRange: effectiveRange, attackStrength: attackStrength,
     defendStrength: defendStrength, attackUnitDamage: attackUnitDamage,

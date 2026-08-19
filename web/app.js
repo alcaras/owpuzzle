@@ -741,6 +741,58 @@
     if (clips.length) S[1] = '<defs>' + clips.join('') + '</defs>';
     wrap.innerHTML = S.join('');
 
+    // ---- the route to a hovered tile -------------------------------------
+    // A crossing is the case that needs it: with water costing a fraction of a
+    // land tile, a unit can end up somewhere that looks unreachable, and the
+    // move reads as a teleport unless you can see it went over the water. The
+    // wet legs are drawn as a dashed sea-lane, the dry ones solid.
+    function clearMovePath() {
+      var old = wrap.querySelector('#move-path');
+      if (old) old.parentNode.removeChild(old);
+    }
+    function drawMovePath(q, r) {
+      clearMovePath();
+      if (selected == null) return;
+      var u = state.units[selected];
+      if (!u) return;
+      var path = E.movePath(state, u, q, r);
+      if (path.length < 2) return;
+      var svg = wrap.querySelector('svg');
+      if (!svg) return;
+      var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('id', 'move-path');
+      g.setAttribute('pointer-events', 'none');
+      function seg(a, b, stroke, width, dash) {
+        var ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        ln.setAttribute('x1', cx(a)); ln.setAttribute('y1', cy(a));
+        ln.setAttribute('x2', cx(b)); ln.setAttribute('y2', cy(b));
+        ln.setAttribute('stroke', stroke);
+        ln.setAttribute('stroke-width', width);
+        ln.setAttribute('stroke-linecap', 'round');
+        if (dash) ln.setAttribute('stroke-dasharray', dash);
+        g.appendChild(ln);
+      }
+      // a dark casing first, so the route reads on green land and blue water
+      // alike; then the leg itself — solid overland, a dashed sea-lane afloat
+      for (var pass = 0; pass < 2; pass++) {
+        for (var i = 1; i < path.length; i++) {
+          var a = path[i - 1], b = path[i];
+          var t = E.tileAt(state, b.q, b.r);
+          var wet = t && t.terrain === 'TERRAIN_WATER';
+          if (pass === 0) seg(a, b, 'rgba(0,0,0,.55)', wet ? 7 : 6, null);
+          else seg(a, b, wet ? 'rgb(125,215,255)' : 'rgba(255,246,222,.95)',
+                   wet ? 3.5 : 3, wet ? '7 5' : null);
+        }
+      }
+      var end = path[path.length - 1];
+      var dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      dot.setAttribute('cx', cx(end)); dot.setAttribute('cy', cy(end));
+      dot.setAttribute('r', 4.5);
+      dot.setAttribute('fill', 'rgba(255,246,222,.95)');
+      g.appendChild(dot);
+      svg.appendChild(g);
+    }
+
     // wire events
     Array.prototype.forEach.call(wrap.querySelectorAll('[data-move]'), function (el) {
       el.addEventListener('click', function () {
@@ -754,13 +806,16 @@
         if (selected != null) act({ type: 'swap', unit: selected, target: +el.getAttribute('data-swap') });
       });
     });
-    // hovering an empty tile shows its terrain card
+    // hovering an empty tile shows its terrain card, and — when a unit is up —
+    // the route it would actually take to get there
     Array.prototype.forEach.call(wrap.querySelectorAll('[data-t]'), function (el) {
       el.addEventListener('pointerenter', function () {
         if (!CAN_HOVER) return;
         var qr = el.getAttribute('data-t').split(',');
         if (!E.unitAt(state, +qr[0], +qr[1])) showTileInfo(+qr[0], +qr[1]);
+        if (el.hasAttribute('data-move')) drawMovePath(+qr[0], +qr[1]);
       });
+      el.addEventListener('pointerleave', clearMovePath);
     });
     Array.prototype.forEach.call(wrap.querySelectorAll('[data-unit]'), function (el) {
       var uid = +el.getAttribute('data-unit');
@@ -1170,7 +1225,11 @@
     var br = document.getElementById('btn-redo');
     if (br) br.disabled = !redoStack.length;
     var bm = document.getElementById('btn-march');
-    bm.style.display = (selU && !finished && E.canMarch(state, selU) && selU.steps >= E.fatigueLimit(selU)) ? '' : 'none';
+    // Unit.canMarch (Unit.cs:11062) has NO fatigue precondition — force march
+    // is available whenever you can pay for it, and buying it BEFORE you run
+    // out of steps is a normal thing to want. We were hiding the button until
+    // the unit was already spent, which is a UI rule the game does not have.
+    bm.style.display = (selU && !finished && E.canMarch(state, selU)) ? '' : 'none';
     var bu = document.getElementById('btn-setup');
     bu.style.display = (selU && !finished && E.canUnlimber(state, selU)) ? '' : 'none';
     var be = document.getElementById('btn-endturn');
