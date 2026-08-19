@@ -27,12 +27,55 @@ with the game:
 If a rule question comes up, read the C# or the XML and cite it. Numbers
 remembered from playing are a hypothesis; the source settles it.
 
+## Water movement — read this before touching it
+
+Five interacting rules, each a separate line of C#. It took three wrong
+implementations in one sitting to get them all, because each fix looked
+complete on its own:
+
+| rule | where |
+|---|---|
+| control radius comes off the unit — bireme 3, trireme 4, dromon 5 | `Unit.waterControl`, Unit.cs:3480 (`iWaterControl`) |
+| the ship must be ANCHORED | `setAnchoredTurns`, Unit.cs:3125-3160; `Tile.cs:3404` |
+| the controlled area is CONTIGUOUS water, not a circle | `updateWaterControlTiles`, Unit.cs:4003 (`getContiguous`) |
+| water you OWN is crossable with no ship at all | `Tile.isWaterMovement`, Tile.cs:8103 |
+| crossing is CHEAP: `movement()`, the raw 1-3 — not `movementFull()` | Unit.cs:7583 vs 6341 |
+| a land unit may CROSS water but never END on it | `canUnitTypeOccupy`, Tile.cs:10577-10605 (`if (bFinalTile)`) |
+
+The last two are the ones that bite. `movement()` and `movementFull()` are
+different methods; a land tile costs 9, so controlled water is about **nine
+times cheaper** than land — that is why it is called *fast* water movement, and
+charging the 9x figure made the whole mechanic look broken. And because water
+can never be a final tile, it belongs on the search frontier but never in the
+destination set: units path *through* it to the far bank. That is what water
+control is *for*.
+
+A land unit may also cross a friendly anchored ship's own tile: `canUnitOccupy`
+(Tile.cs:10500-10531) blocks a hostile unit on any tile but tests friendly ones
+only when `bFinalMoveTile`.
+
+One rule here rests on the owner's word rather than a citation: **a land unit
+afloat cannot attack**. The nearest C# guard (`canTargetTile`, Unit.cs:8449)
+bars *tribe* units only. It is enforced anyway, because the editor still lets an
+author place a land unit on water.
+
 ## Testing
 
 ```
 npm test              # rules + library invariants, ~100ms — run this constantly
 npm run test:ceilings # SLOW: re-prove every published maxKill ceiling
 ```
+
+### Language traps that have caused wrong diagnoses
+
+- **`applyAction` returns a NEW state; it does not mutate.** Discarding the
+  return value replays every action against the starting position, which looks
+  exactly like a corrupt recording. This produced a confident, wrong "the
+  author's line is invalid" verdict about a line that was fine.
+- **`null <= 0` is `true`.** An editor board spells "full health" as `hp: null`,
+  so `if (u.hp <= 0) return` silently skips every unplaced unit.
+- **Player 0 is falsy.** `if (map[key])` where the value is a player index drops
+  blue and keeps red. Compare against `null`.
 
 ### Why the suite exists
 
@@ -96,6 +139,21 @@ maxKill ceiling against the current engine. **Run this after any rules change**:
 a ceiling that becomes beatable is a puzzle telling players "maximum
 destruction" about a number they can exceed, which is the worst bug we ship.
 
+It only covers `web/puzzles.js` — the ~45 core puzzles. **The live library is
+bigger: approved community puzzles are equally live and are NOT in that file.**
+A water rule was once declared "inert on the published library" on the strength
+of the core boards alone; the one board it actually broke was a community
+puzzle, and a player found it. When a rules change lands, sweep
+`/api/puzzles` for the boards that can exercise it, not just the repo.
+
+Two operational notes on the slow suite:
+
+- **Never `pkill -f deploy_fight.js` while it runs** — ceilings spawns that as a
+  subprocess, and killing it reports as a failed ceiling.
+- A timeout prints a lower-bound note instead of failing. Running other
+  verifiers concurrently steals cores and *creates* those timeouts, so a board
+  that suddenly "goes slow" may just be your own load.
+
 ### Designing boards so they can be verified
 
 Verification cost scales with how many tiles the blue units might want. Few
@@ -131,7 +189,21 @@ intended line **is** the optimum (not merely *a* line that reaches it), and
 check the trick is *required* — three of five drafts died because a cheaper
 line reached the same ceiling without the idea the puzzle was built around.
 
-## In flight (2026-08-14)
+## In flight (2026-08-19)
+
+- **Seeding retires a row only when the FIGHT changes** (`puzzleHash`), not on
+  any json diff. Rewording a name/brief/lesson used to retire the row and take
+  every solve with it, so the library's tick and the Hall of Fame's count
+  disagreed forever. `reuniteRewordedSolves()` repaired the damage at boot —
+  69 stranded attempts — and is idempotent. See `test/seeding.test.js`.
+- **The test suite is otherwise dependency-free**; the seeding tests drive the
+  real `server/db.js`, so CI installs `server/`'s sqlite driver and then asserts
+  it loads. Without that assert the tests would silently *skip*, and a skipped
+  gate looks exactly like a passing one.
+- `web/data.js` now carries `nation` (unit.xml `NationPrereq`) purely so the
+  editor can group the unique units; it is acknowledged, not a combat rule.
+
+## Earlier (2026-08-14)
 
 - **`phase1-library-store` branch** carries the frontend refactor (tested on
   owpuzzle-dev.fly.dev, awaiting a manual pass against `docs/phase1-test-plan.md`
@@ -154,3 +226,24 @@ as `pending`, and are verified locally — never on the server. Any player line
 that beats a published par is logged and flagged in the admin panel with its
 replayable action line, for review rather than automatic application: it is
 either a better solution to fold in or a bug that let it through.
+
+### Two live hazards in that path
+
+**Recordings address units by ARRAY INDEX, and `puzzleHash` sorts units before
+hashing.** The fingerprint is deliberately order-insensitive (so the editor
+rebuilding its tiles from autosave does not read as an edit); the recording is
+inherently order-dependent. Delete and re-add one unit late in editing and it
+lands at the end of the array, renumbering everything after it — the recording
+now points at different units and the guard sees nothing. This shipped: an
+author's honest line replayed as "illegal attack" on action 2, and the board
+was fine. Suspect this before doubting an author.
+
+**Approving a bare `maxKill` copies the ceiling from the author's REPLAYED
+strength.** If the replay failed there is nothing to copy, so it publishes with
+no `objective.count` — and `objectiveScorable` is then false, so nobody can ever
+win it. Check the replay before approving a maxKill, and never approve one whose
+replay did not succeed.
+
+Three fixes are specced and unbuilt, in value order: record units by identity
+(`q,r`) rather than index; replay the recording at submit time and refuse it if
+it does not reproduce the claim; refuse to approve a ceiling-less `maxKill`.
