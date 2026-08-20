@@ -3353,7 +3353,7 @@ var OWPUZZLES = [
     "author": "owpuzzle",
     "brief": "Destroy all three.",
     "lesson": "Sixty hit points stand against you and your army can deliver exactly sixty \u2014 but only because Heckler turns one warrior's blow from 4 into 6 against the general. Strip it and the same seven units muster 58, which is not a harder puzzle but an impossible one.",
-    "orders": 18,
+    "orders": 16,
     "radius": 3,
     "training": 0,
     "objective": {
