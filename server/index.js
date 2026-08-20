@@ -566,11 +566,20 @@ app.get('/api/admin/stats', (req, res) => {
   const puzzles = db.prepare(`
     SELECT slug, json, status, author_name, rating, rd, attempts, solves, created_at
     FROM puzzles ${showAll ? '' : `WHERE status IN ('core','approved','pending')`}
-    ORDER BY rating DESC`).all().map(r => ({
-      slug: r.slug, name: JSON.parse(r.json).name, status: r.status,
-      author: r.author_name, rating: Math.round(r.rating), rd: Math.round(r.rd),
-      attempts: r.attempts, solves: r.solves,
-    }));
+    ORDER BY rating DESC`).all().map(r => {
+      const p = JSON.parse(r.json);
+      return {
+        slug: r.slug, name: p.name, status: r.status,
+        author: r.author_name, rating: Math.round(r.rating), rd: Math.round(r.rd),
+        attempts: r.attempts, solves: r.solves,
+        // the published answer, so a folded record is visible on the same page
+        // that folded it. A maxKill with no count has no answer yet
+        // (objectiveScorable, engine.js:1206) — nobody can win it.
+        parOrders: p.orders,
+        parCount: p.objective && p.objective.kind === 'maxKill'
+          ? (p.objective.count || null) : undefined,
+      };
+    });
   const users = db.prepare(`
     SELECT u.name, u.rating, u.rd, u.created_at,
       (SELECT COUNT(DISTINCT puzzle_id) FROM attempts a

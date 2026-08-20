@@ -91,12 +91,20 @@ fetch('/api/admin/stats' + (showAll ? '?all=1' : '')).then(r => r.json()).then(d
       ? 'showing every row including retired/rejected \u00b7 <a href="?">hide them</a>'
       : 'live + pending only \u00b7 <a href="?all=1">show retired &amp; rejected</a>') + '</p>' +
     '<table><tr>' +
-    '<th>Puzzle</th><th>Status</th><th>Author</th><th class="num">Rating</th><th class="num">±RD</th>' +
+    '<th>Puzzle</th><th>Status</th><th>Author</th><th class="num">Par STR</th>' +
+    '<th class="num">Par orders</th><th class="num">Rating</th><th class="num">±RD</th>' +
     '<th class="num">Attempts</th><th class="num">Solves</th><th class="num">Solve %</th></tr>';
   d.puzzles.forEach(function (p) {
+    // Par STR is the maxKill ceiling. A killAll and friends have no strength
+    // target (—), and a maxKill with no ceiling yet is unwinnable, not zero.
+    var parStr = p.parCount === undefined ? '—'
+      : p.parCount === null ? '<span class="pending">none</span>'
+      : (p.parCount / 10).toFixed(1);
     h += '<tr><td><a href="?p=' + esc(p.slug) + '" href="/?p=' + esc(p.slug) + '">' + esc(p.name) + '</a></td>' +
       '<td class="' + (p.status === 'pending' ? 'pending' : '') + '">' + esc(p.status) + '</td>' +
-      '<td>' + esc(p.author) + '</td><td class="num"><b>' + p.rating + '</b></td><td class="num">' + p.rd + '</td>' +
+      '<td>' + esc(p.author) + '</td><td class="num">' + parStr + '</td>' +
+      '<td class="num">' + (p.parOrders == null ? '—' : p.parOrders) + '</td>' +
+      '<td class="num"><b>' + p.rating + '</b></td><td class="num">' + p.rd + '</td>' +
       '<td class="num">' + p.attempts + '</td><td class="num">' + p.solves + '</td>' +
       '<td class="num">' + (p.attempts ? Math.round(100 * p.solves / p.attempts) + '%' : '—') + '</td></tr>';
   });
