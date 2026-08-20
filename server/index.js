@@ -578,6 +578,12 @@ app.get('/api/admin/stats', (req, res) => {
         parOrders: p.orders,
         parCount: p.objective && p.objective.kind === 'maxKill'
           ? (p.objective.count || null) : undefined,
+        // the raw kind, so it matches the json an admin is about to read, plus
+        // the one sentence players are shown (engine.js:objectiveText) rather
+        // than a second wording of the same six rules
+        objective: p.objective && p.objective.kind,
+        objectiveText: E.objectiveText(p.objective, p),
+        targets: p.objective && p.objective.targets ? p.objective.targets.length : undefined,
       };
     });
   const users = db.prepare(`
