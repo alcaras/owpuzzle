@@ -227,7 +227,7 @@ that beats a published par is logged and flagged in the admin panel with its
 replayable action line, for review rather than automatic application: it is
 either a better solution to fold in or a bug that let it through.
 
-### Two live hazards in that path
+### Three live hazards in that path
 
 **Recordings address units by ARRAY INDEX, and `puzzleHash` sorts units before
 hashing.** The fingerprint is deliberately order-insensitive (so the editor
@@ -243,6 +243,20 @@ strength.** If the replay failed there is nothing to copy, so it publishes with
 no `objective.count` — and `objectiveScorable` is then false, so nobody can ever
 win it. Check the replay before approving a maxKill, and never approve one whose
 replay did not succeed.
+
+**Folding a better par into a CORE puzzle writes the DB, and the next boot
+reseeds that row from `web/puzzles.js`.** Par and ceiling are both inside
+`puzzleHash`, so the stale repo value does not merely revert the fold — it
+reads as a different fight, retires the row and takes every solve on it. Two
+Points Short sat that way for three days (DB 16, repo 18, 9 solves at risk).
+**Any fold on a core puzzle must be mirrored into `web/puzzles.js` and
+deployed**; the admin panel now says so when you click Fold in.
+
+Folding also ANSWERS every other open record on that puzzle, and
+`retireSupersededRecords` (`server/records.js`) sweeps them: five players found
+the same 16-order line, and the queue was asking for the same verdict five
+times — plus five more for the same board under its withdrawn name. A record on
+a puzzle that is no longer live has nothing to fold into either.
 
 Three fixes are specced and unbuilt, in value order: record units by identity
 (`q,r`) rather than index; replay the recording at submit time and refuse it if

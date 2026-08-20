@@ -48,7 +48,8 @@ function renderRecords() {
         ? '<b>' + (r.strKilled / 10) + ' STR</b> in ' + r.ordersUsed + ' orders'
         : (r.strKilled != null ? (r.strKilled / 10) + ' STR in ' : 'solved in ') + '<b>' + r.ordersUsed + '</b> orders';
       var par = (r.parCount ? (r.parCount / 10) + ' STR ceiling, ' : '') + 'par ' + r.parOrders;
-      h += '<tr><td><a href="/?p=' + esc0(r.slug) + '">' + esc0(r.name) + '</a></td>' +
+      h += '<tr><td><a href="/?p=' + esc0(r.slug) + '">' + esc0(r.name) + '</a>' +
+        (r.core ? ' <span class="pending">core</span>' : '') + '</td>' +
         '<td>' + esc0(r.player) + '</td><td>' + result + '</td><td>' + par + '</td>' +
         '<td>' + esc0((r.at || '').slice(0, 16)) + '</td>' +
         '<td><button data-rec="' + r.id + '" data-v="1">Fold in</button> ' +
@@ -69,7 +70,12 @@ function renderRecords() {
         fetch('/api/admin/records/' + b.getAttribute('data-rec'), {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ accept: b.getAttribute('data-v') === '1' }),
-        }).then(function () { renderRecords(); });
+        }).then(function (r) { return r.json(); }).then(function (d) {
+          // a fold into a core puzzle lives only in the DB until web/puzzles.js
+          // catches up, and the next boot would take the row's solves with it
+          if (d && d.warning) alert(d.warning);
+          renderRecords();
+        });
       };
     });
   }).catch(function () {});

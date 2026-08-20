@@ -8,6 +8,7 @@ const path = require('path');
 const { db, seedCorePuzzles, backfillAttempts, linkAuthors, resetAchievementsOnce,
   reuniteRewordedSolves } = require('./db');
 const { computeAchievements, LIVE } = require('./achievements');
+const { beatsPublished, retireSupersededRecords } = require('./records');
 const glicko = require('./glicko');
 const E = require(path.join(__dirname, '..', 'web', 'engine.js'));
 const SOLVER = require(path.join(__dirname, '..', 'web', 'solver.js'));
@@ -269,18 +270,10 @@ app.get('/api/next', (req, res) => {
   });
 });
 
-// Did this line do better than the published answer? For a maxKill puzzle
-// that means more strength than the ceiling, or the ceiling in fewer orders;
-// for the rest it means solving inside par. Flag it, never apply it.
+// Did this line do better than the published answer? Flag it, never apply it
+// (the test is beatsPublished, server/records.js).
 function recordIfBeatsPar(row, puzzle, user, line, r) {
-  let kind = null;
-  if (puzzle.objective.kind === 'maxKill') {
-    const ceiling = puzzle.objective.count || 0;
-    if (r.strKilled > ceiling) kind = 'strength';
-    else if (r.strKilled === ceiling && ceiling > 0 && r.ordersUsed < puzzle.orders) kind = 'orders';
-  } else if (r.solved && r.ordersUsed < puzzle.orders) {
-    kind = 'orders';
-  }
+  const kind = beatsPublished(puzzle, r);
   if (!kind) return;
   db.prepare(`INSERT INTO records
       (puzzle_id, user_id, kind, str_killed, orders_used, par_orders, par_count, line)
@@ -503,13 +496,16 @@ app.post('/api/review/:slug', (req, res) => {
 app.get('/api/admin/records', (req, res) => {
   const user = userFromReq(req);
   if (!user || !user.is_admin) return res.status(403).json({ error: 'admin only' });
+  // sweep first: a record the library has already answered is not a review
+  // item, and leaving it in the queue buries the ones that are
+  retireSupersededRecords(db);
   const rows = db.prepare(`
-    SELECT r.*, u.name player, p.slug, p.json FROM records r
+    SELECT r.*, u.name player, p.slug, p.json, p.status pstatus FROM records r
     JOIN users u ON u.id = r.user_id JOIN puzzles p ON p.id = r.puzzle_id
     WHERE r.status = 'new' ORDER BY r.created_at DESC`).all();
   res.json({
     records: rows.map(r => ({
-      id: r.id, player: r.player, slug: r.slug,
+      id: r.id, player: r.player, slug: r.slug, core: r.pstatus === 'core',
       name: (() => { try { return JSON.parse(r.json).name; } catch (e) { return r.slug; } })(),
       kind: r.kind, strKilled: r.str_killed, ordersUsed: r.orders_used,
       parOrders: r.par_orders, parCount: r.par_count, at: r.created_at,
@@ -523,14 +519,14 @@ app.post('/api/admin/records/:id', (req, res) => {
   if (!user || !user.is_admin) return res.status(403).json({ error: 'admin only' });
   const verdict = req.body && req.body.accept ? 'accepted' : 'rejected';
   const rec = db.prepare('SELECT * FROM records WHERE id = ?').get(req.params.id);
-  let folded = null;
+  let folded = null, warning = null;
   if (verdict === 'accepted' && rec) {
     // 'Fold in' must actually fold: the record's line beat the published
     // answer, so the puzzle's numbers move to match it. For an orders record
     // par tightens; for a strength record the maxKill ceiling rises (and par
     // becomes that line's orders). The line was replay-verified when the
     // attempt landed — accepting is a human judgement, not a re-check.
-    const prow = db.prepare('SELECT id, json FROM puzzles WHERE id = ?').get(rec.puzzle_id);
+    const prow = db.prepare('SELECT id, json, slug, status FROM puzzles WHERE id = ?').get(rec.puzzle_id);
     if (prow) {
       const pz = JSON.parse(prow.json);
       if (rec.kind === 'orders' && rec.orders_used < pz.orders) {
@@ -543,10 +539,24 @@ app.post('/api/admin/records/:id', (req, res) => {
         pz.orders = rec.orders_used;
       }
       if (folded) db.prepare('UPDATE puzzles SET json = ? WHERE id = ?').run(JSON.stringify(pz), prow.id);
+      // A core puzzle is seeded from web/puzzles.js on every boot, and par and
+      // ceiling are both inside puzzleHash — so a fold that lives only in the
+      // DB is not just reverted at the next deploy, it retires the row and
+      // takes every solve on it with it (server/db.js:56-107). The fold is
+      // real until then; the repo has to catch up.
+      if (folded && prow.status === 'core') {
+        warning = `${prow.slug} is a CORE puzzle: mirror this into web/puzzles.js ` +
+          `(orders: ${pz.orders}${folded.ceiling ? ', objective.count: ' + pz.objective.count : ''}) ` +
+          `and deploy, or the next boot reverts it and retires the row with its solves.`;
+        console.warn('record fold on core puzzle — ' + warning);
+      }
     }
   }
   db.prepare('UPDATE records SET status = ? WHERE id = ?').run(verdict, req.params.id);
-  res.json({ ok: true, status: verdict, folded });
+  // the fold moved the numbers: whatever else was queued against the old ones
+  // has now been answered
+  const superseded = rec ? retireSupersededRecords(db, rec.puzzle_id) : 0;
+  res.json({ ok: true, status: verdict, folded, superseded, warning });
 });
 
 app.get('/api/admin/stats', (req, res) => {
