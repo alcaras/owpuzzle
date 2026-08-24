@@ -9,6 +9,8 @@
 //        PLANK=n       seats kept per unit in plan (finder) slices (default 8)
 //        FCAP=n        fight node cap (default: 2500 in plan slices, exact elsewhere)
 //        V2_NOPUSH=1   drop push-drift from the tables (diagnostics only — unsound)
+//        V2_LNS_SEED=n PRNG seed for the ALNS destroy-set draws (default 0xC0FFEE)
+//        V2_LNS_T3=n   ALNS triple budget per stall on >8-blue boards (default 40)
 //
 // Three stages, sharing one table of engine-derived OPTIMISTIC damage:
 //   1. kill-set upper bound U: enumerate red subsets by descending strength and
@@ -1103,7 +1105,7 @@ function stage3(ctx, inc, deadline, opts) {
   // persistent across calls: fights already evaluated, prune decisions made
   var mem = opts.state || { fightMemo: {}, pruneCache: {} };
   var stats = { leaves: 0, dedup: 0, illegal: 0, boundCut: 0, costCut: 0,
-    tWalk: 0, tFight: 0, tPrune: 0, fightCapped: 0 };
+    tWalk: 0, tFight: 0, tPrune: 0, fightCapped: 0, gateCut: 0 };
   // fights are exact except in plan (finder) passes, where a node cap keeps
   // the leaf rate up; a capped fight is honesty-tracked in the verdict
   var FCAP = process.env.FCAP ? parseInt(process.env.FCAP, 10)
@@ -1380,10 +1382,21 @@ function stage3(ctx, inc, deadline, opts) {
     return fres;
   }
 
-  // Hill-climbing polish: take the strongest deployments seen so far and
-  // improve them one seat at a time, refighting after each swap. Coordination
-  // has local gradients (add the missing flank partner, pull a softener into
-  // range) that a global best-first order cannot follow — local search can.
+  // LNS polish: take the strongest deployments seen so far (plus the
+  // deployment the incumbent line itself stands on) and improve them by
+  // destroying k units' seat assignments and rebuilding that subset
+  // EXACTLY — every joint reassignment from the freed units' FULL seat
+  // lists. Coordination has local gradients (add the missing flank
+  // partner, pull a softener into range) that a global best-first order
+  // cannot follow — and the misranking data (optimizer-handoff.md) says
+  // winning deployments sit 2-3 seat substitutions from reached ones with
+  // the decisive seats ranked 25-30 in the search order, beyond any fixed
+  // candidate cap. The old polish capped 1-swaps at rank 20 and pair
+  // rebuilds at rank 12, so king's rank-27 march seat and rank-29
+  // deferred seat were unreachable BY CONSTRUCTION. Exhaustive rebuild
+  // stays affordable because every candidate must survive the kill-set
+  // allocator pinned to its seats before it is fought: a refutation is an
+  // OPT-model proof the fight cannot beat the reference.
   if (opts.polishOnly) {
     var listById = {};
     ctx.BLUE.forEach(function (b, i) { listById[b.id] = lists[i]; });
@@ -1407,19 +1420,14 @@ function stage3(ctx, inc, deadline, opts) {
     }
     // Acceptance is lexicographic (strength, then fewer orders): the same
     // machinery that climbs toward a higher ceiling also grinds par down at
-    // a proven one. k=1 sweeps first; when a seed stalls, k=2 rebuild —
-    // destroy two units' seats and enumerate their joint replacement from
-    // the top of each list. Misranking data: winning deployments are often
-    // a couple of substitutions from reached ones, but NOT one (king's /20
-    // shares no seat assignment with the reached /21).
+    // a proven one. VND ladder: k=1 sweeps first; when a seed stalls, pair
+    // rebuilds; when those stall, ALNS-chosen triples. Misranking data:
+    // winning deployments are often a couple of substitutions from reached
+    // ones, but NOT one (king's /20 shares no seat assignment with the
+    // reached /21).
     function better(r, str0, ord0) {
       if (r === -1) return false;
       return r.str > str0 || (r.str === str0 && r.orders < ord0);
-    }
-    function tryPlacement(pl) {
-      var c2 = placementCost(pl);
-      if (c2 === null) return -1;
-      return evalPlacement(Object.assign({}, pl), c2);
     }
     function claimOKPl(pl, k2, uid) {
       var others = claimants(pl, k2, uid);
@@ -1430,8 +1438,219 @@ function stage3(ctx, inc, deadline, opts) {
       }
       return true;
     }
+
+    // Seeded PRNG (mulberry32) for the ALNS draws: reproducibility is the
+    // house currency — a run's numbers must replay from its command line.
+    // State lives in `mem` so successive polish rounds continue the
+    // sequence instead of replaying it.
+    if (mem.rngState === undefined) {
+      mem.rngState = ((process.env.V2_LNS_SEED ? parseInt(process.env.V2_LNS_SEED, 10) : 0xC0FFEE) >>> 0) || 1;
+    }
+    function rng() {
+      mem.rngState = (mem.rngState + 0x6D2B79F5) >>> 0;
+      var t = mem.rngState;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+
+    // Admissible improvement gate for a FULL candidate placement: pin every
+    // unit's OPT rows to its seat and ask the allocator whether ANY kill-set
+    // could beat the reference — strictly stronger, or equal strength in
+    // strictly fewer orders. A false is an OPT-model proof the fight cannot
+    // improve, so the fight is skipped; refutations are cached against the
+    // reference they were proven at (a refutation of (S,O) also refutes any
+    // stricter reference — S can only rise and O only fall at equal S).
+    var gateFalse = mem.gateFalse = mem.gateFalse || {};
+    // pinned allocator rows are pure functions of (unit, seat) — cached, or
+    // a triple rebuild would allocate ~30k row sets per call
+    var ZEROROW = new Array(ctx.NR).fill(0);
+    var pinRows = mem.pinRows = mem.pinRows || {};
+    function pinRow(b, pin) {
+      var c1 = pinRows[b.id] || (pinRows[b.id] = {});
+      var hit = c1[pin];
+      if (hit) return hit;
+      var o = ctx.OPT[b.id];
+      var row = o.tiles[pin] || ZEROROW;
+      if (o.rout && ctx.adjRed[pin]) {
+        row = row.map(function (v, i2) { return Math.max(v, o.routFire[i2]); });
+      }
+      return (c1[pin] = { id: b.id, prim: row, col: (o.col && o.col[pin]) || ZEROROW,
+        colCap: o.colCap, maxAtt: o.maxAtt, travel: ZEROROW, travelAny: 0 });
+    }
+    function gateImproves(pl, cost, refStr, refOrd) {
+      if (!masks) return true;
+      var sig = Object.keys(pl).map(function (id) { return id + '@' + pl[id]; }).sort().join(';');
+      var hit = gateFalse[sig];
+      if (hit && (refStr > hit.s || (refStr === hit.s && refOrd <= hit.o))) return false;
+      var rows = ctx.BLUE.map(function (b) {
+        return pinRow(b, pl[b.id] || key(b.q, b.r));
+      });
+      for (var k = 0; k < masks.length; k++) {
+        var m = masks[k];
+        if (m.str < refStr) break;
+        var budget = (m.str > refStr ? POOL : refOrd - 1) - cost;
+        if (budget < 0) continue;
+        if (feasibleMask(ctx, m.mask, budget, rows, 20000)) return true;
+      }
+      gateFalse[sig] = { s: refStr, o: refOrd };
+      stats.gateCut++;
+      return false;
+    }
+
+    // Destroy-and-rebuild: free `subset`, enumerate its joint reassignment
+    // from the FULL lists (list order = the search-order heuristic), first
+    // improvement wins. Freed units are lifted to null before enumeration so
+    // one freed unit may take another's old seat — a seat ROTATION inside
+    // the subset is a real move, and claim-checking against saved seats
+    // would veto it. When this returns null and the deadline did not cut it
+    // short, no reassignment of `subset` beats the reference within the
+    // OPT model — the rebuild is exact, not sampled.
+    function rebuild(cur, subset, refStr, refOrd) {
+      var saved = subset.map(function (id) { return cur[id]; });
+      subset.forEach(function (id) { cur[id] = null; });
+      var found = null;
+      (function assign(i) {
+        if (found || Date.now() > deadline) return;
+        if (i === subset.length) {
+          var same = true;
+          for (var si = 0; si < subset.length; si++) {
+            if (cur[subset[si]] !== saved[si]) { same = false; break; }
+          }
+          if (same) return;
+          var c = placementCost(cur);
+          if (c === null) return;
+          if (!gateImproves(cur, c, refStr, refOrd)) return;
+          var r = evalPlacement(Object.assign({}, cur), c);
+          if (better(r, refStr, refOrd)) found = r;
+          return;
+        }
+        var uid = subset[i], list = listById[uid];
+        for (var j = 0; j < list.length && !found; j++) {
+          if (Date.now() > deadline) break;
+          var k2 = list[j].key;
+          if (!claimOKPl(cur, k2, uid)) continue;
+          cur[uid] = k2;
+          assign(i + 1);
+        }
+        if (!found) cur[uid] = null;
+      })(0);
+      if (!found) {
+        for (var si2 = 0; si2 < subset.length; si2++) cur[subset[si2]] = saved[si2];
+      }
+      return found;
+    }
+
+    function combinations(arr, k) {
+      var out = [];
+      (function go(start, acc) {
+        if (acc.length === k) { out.push(acc.slice()); return; }
+        for (var i = start; i < arr.length; i++) { acc.push(arr[i]); go(i + 1, acc); acc.pop(); }
+      })(0, []);
+      return out;
+    }
+
+    // ALNS destroy-set operators: which units to free. Weights persist in
+    // `mem` across polish rounds and adapt toward what has produced
+    // improvements (w <- 0.85w + 0.6*reward, floored). On ≤8-blue boards
+    // the operators only ORDER the triple space and an exhaustive tail
+    // sweeps whatever the dice never rolled, so "dry" means dry.
+    function pickWeighted(k, weight) {
+      var picked = [], avail = ctx.BLUE.map(function (b, i) { return i; });
+      while (picked.length < k && avail.length) {
+        var tot = 0;
+        var w = avail.map(function (i2) { var x = weight(i2) + 0.001; tot += x; return x; });
+        var r = rng() * tot, j = 0;
+        while (j < avail.length - 1 && (r -= w[j]) > 0) j++;
+        picked.push(avail[j]); avail.splice(j, 1);
+      }
+      return picked.map(function (i) { return ctx.BLUE[i].id; });
+    }
+    var OPS = mem.alnsOps = mem.alnsOps || [
+      { name: 'rand', w: 1, hits: 0, draws: 0 },
+      { name: 'weak', w: 1, hits: 0, draws: 0 },
+      { name: 'front', w: 1, hits: 0, draws: 0 },
+      { name: 'dear', w: 1, hits: 0, draws: 0 },
+    ];
+    var PICKERS = {
+      rand: function (pl, k) { return pickWeighted(k, function () { return 1; }); },
+      // least realistic punch from its current seat — likely misplaced
+      weak: function (pl, k) {
+        return pickWeighted(k, function (i) {
+          var b = ctx.BLUE[i], row = ctx.OPT[b.id].tiles0[pl[b.id]];
+          var v = 0;
+          if (row) for (var j = 0; j < ctx.NR; j++) { if (row[j] > v) v = row[j]; }
+          return 20 / (1 + v);
+        });
+      },
+      // the units best able to hit one red: a front, freed together
+      front: function (pl, k) {
+        var r = Math.floor(rng() * ctx.NR);
+        return pickWeighted(k, function (i) {
+          return (ctx.OPT[ctx.BLUE[i].id].stat[r] || 0) + 0.5;
+        });
+      },
+      // the most expensive seats — where par grinding pays
+      dear: function (pl, k) {
+        return pickWeighted(k, function (i) {
+          var b = ctx.BLUE[i], s = seatEntry(b.id, pl[b.id]);
+          return (s ? s.orders : 0) + 0.5;
+        });
+      },
+    };
+    function drawOp() {
+      var tot = 0;
+      OPS.forEach(function (o) { tot += o.w; });
+      var r = rng() * tot;
+      for (var i = 0; i < OPS.length; i++) { if ((r -= OPS[i].w) <= 0) return OPS[i]; }
+      return OPS[OPS.length - 1];
+    }
+    function rewardOp(op, hit) {
+      op.draws++;
+      if (hit) op.hits++;
+      op.w = Math.max(0.1, 0.85 * op.w + 0.6 * (hit ? 1 : 0));
+    }
+
+    // The deployment the incumbent line stands on joins the seed pool: a
+    // stage2-found incumbent never went through evalLeaf, so topLeaves may
+    // not hold the very deployment the proof rests on. Seats are the
+    // pre-attack tiles; units that never attack sit on their start tile.
+    function lineSeed() {
+      if (!inc.line) return null;
+      var s, seat = {};
+      try {
+        s = E.loadPuzzle(ctx.base);
+        for (var i = 0; i < inc.line.length; i++) {
+          var a = inc.line[i];
+          if (a.type === 'attack' && seat[a.unit] === undefined) {
+            var u = E.unitById(s, a.unit);
+            if (u) seat[a.unit] = key(u.q, u.r);
+          }
+          s = E.applyAction(s, a);
+        }
+      } catch (e) { return null; }
+      var pl = {};
+      for (var bi = 0; bi < ctx.BLUE.length; bi++) {
+        var b = ctx.BLUE[bi];
+        var k2 = seat[b.id] !== undefined ? seat[b.id] : key(b.q, b.r);
+        if (!seatEntry(b.id, k2)) return null;             // outside the seat model
+        pl[b.id] = k2;
+      }
+      return pl;
+    }
+
     var seeds = (mem.topLeaves || []).slice()
       .sort(function (a, b) { return b.str - a.str || a.orders - b.orders; });
+    var pls = lineSeed();
+    if (pls) {
+      var lc = placementCost(pls);
+      if (lc !== null) {
+        var lr = evalPlacement(Object.assign({}, pls), lc);
+        seeds.unshift(lr !== -1
+          ? { placement: pls, str: lr.str, orders: lr.orders }
+          : { placement: pls, str: inc.str, orders: inc.orders });
+      }
+    }
     // V2_SEED_DEBUG: is the seed set one basin or several? Mean pairwise
     // distance over the unit->tile assignments answers it in one number.
     // This instrument exists because it KILLED a plausible theory: the top-16
@@ -1462,58 +1681,64 @@ function stage3(ctx, inc, deadline, opts) {
         ' meanPairwiseDist=' + (pairs ? (sum / pairs).toFixed(3) : 'n/a') +
         ' strRange=' + (seeds[seeds.length - 1].str / 10) + '..' + (seeds[0].str / 10));
     }
+    var allIds = ctx.BLUE.map(function (b) { return b.id; });
+    var TRIPLES = ctx.BLUE.length >= 3 ? combinations(allIds, 3) : [];
+    // ALNS triple budget per stall: exhaustive on small boards (a dry
+    // verdict must mean DRY), sampled with honest logging on big ones
+    var T3 = ctx.BLUE.length <= 8 ? TRIPLES.length
+      : Math.min(TRIPLES.length, process.env.V2_LNS_T3 ? parseInt(process.env.V2_LNS_T3, 10) : 40);
+    var t3Sampled = false;
     for (var sd = 0; sd < seeds.length; sd++) {
       if (Date.now() > deadline) break;
       var cur = Object.assign({}, seeds[sd].placement);
       var curStr = seeds[sd].str, curOrd = seeds[sd].orders;
-      var improved = true;
-      while (improved && Date.now() < deadline) {
-        improved = false;
-        // k=1: single-seat swaps
-        for (var bi = 0; bi < ctx.BLUE.length && !improved; bi++) {
-          var uid = ctx.BLUE[bi].id;
-          var origK = cur[uid];
-          var cand = listById[uid];
-          for (var ci = 0; ci < cand.length && ci < 20; ci++) {
+      for (;;) {                      // VND: k=1 -> pairs -> triples; restart on any improvement
+        if (Date.now() > deadline) break;
+        var r = null, i1;
+        for (i1 = 0; i1 < allIds.length && !r; i1++) {
+          r = rebuild(cur, [allIds[i1]], curStr, curOrd);
+        }
+        if (!r && Date.now() < deadline) {
+          var pairs = combinations(allIds, 2);
+          for (i1 = 0; i1 < pairs.length && !r; i1++) {
             if (Date.now() > deadline) break;
-            var k2 = cand[ci].key;
-            if (k2 === origK || !claimOKPl(cur, k2, uid)) continue;
-            cur[uid] = k2;
-            var r = tryPlacement(cur);
-            if (better(r, curStr, curOrd)) { curStr = r.str; curOrd = r.orders; improved = true; break; }
-            cur[uid] = origK;
+            r = rebuild(cur, pairs[i1], curStr, curOrd);
           }
         }
-        if (improved || Date.now() > deadline) continue;
-        // k=2: joint rebuild of every unit pair from the top of their lists
-        for (var i1 = 0; i1 < ctx.BLUE.length && !improved; i1++) {
-          for (var i2 = i1 + 1; i2 < ctx.BLUE.length && !improved; i2++) {
-            var idA = ctx.BLUE[i1].id, idB = ctx.BLUE[i2].id;
-            var oA = cur[idA], oB = cur[idB];
-            var lA = listById[idA], lB = listById[idB];
-            for (var ai = 0; ai < lA.length && ai < 12 && !improved; ai++) {
+        if (!r && Date.now() < deadline && TRIPLES.length) {
+          var tried = {}, triedN = 0, drawsLeft = T3 * 3;
+          while (!r && Date.now() < deadline && triedN < T3 && drawsLeft-- > 0) {
+            var op = drawOp();
+            var sub = PICKERS[op.name](cur, 3).sort(function (a, b) { return a - b; });
+            var sg = sub.join('+');
+            if (tried[sg]) continue;
+            tried[sg] = 1; triedN++;
+            r = rebuild(cur, sub, curStr, curOrd);
+            rewardOp(op, !!r);
+          }
+          // exhaustive tail on small boards: sweep the triples the dice
+          // never rolled, so "no improvement" is a statement about the
+          // neighbourhood, not about the sampling
+          if (!r && ctx.BLUE.length <= 8) {
+            for (i1 = 0; i1 < TRIPLES.length && !r; i1++) {
               if (Date.now() > deadline) break;
-              var kA = lA[ai].key;
-              if (!claimOKPl(cur, kA, idA) && kA !== oA) continue;
-              cur[idA] = kA;
-              for (var bi2 = 0; bi2 < lB.length && bi2 < 12; bi2++) {
-                var kB = lB[bi2].key;
-                if (kA === kB) continue;
-                if (!claimOKPl(cur, kB, idB) && kB !== oB) continue;
-                cur[idB] = kB;
-                var r2 = tryPlacement(cur);
-                if (better(r2, curStr, curOrd)) {
-                  curStr = r2.str; curOrd = r2.orders; improved = true; break;
-                }
-                cur[idB] = oB;
-              }
-              if (!improved) cur[idA] = oA;
+              var sg2 = TRIPLES[i1].join('+');
+              if (tried[sg2]) continue;
+              r = rebuild(cur, TRIPLES[i1], curStr, curOrd);
             }
+          } else if (!r && triedN >= T3 && TRIPLES.length > T3) {
+            t3Sampled = true;
           }
         }
+        if (!r) break;
+        curStr = r.str; curOrd = r.orders;
       }
     }
-    console.log('  stage3 polish done · leaves ' + stats.leaves + ' · best ' + (inc.str / 10));
+    console.log('  stage3 LNS polish done · leaves ' + stats.leaves +
+      ' · gateCut ' + stats.gateCut +
+      ' · ops ' + OPS.map(function (o) { return o.name + ' ' + o.hits + '/' + o.draws; }).join(', ') +
+      (t3Sampled ? ' · triples SAMPLED (' + T3 + ' of ' + TRIPLES.length + ' per stall)' : '') +
+      ' · best ' + (inc.str / 10));
     stats.exhausted = false;
     stats.expressive = true;
     return stats;
