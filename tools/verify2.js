@@ -9,6 +9,9 @@
 //        PLANK=n       seats kept per unit in plan (finder) slices (default 8)
 //        FCAP=n        fight node cap (default: 2500 in plan slices, exact elsewhere)
 //        V2_NOPUSH=1   drop push-drift from the tables (diagnostics only — unsound)
+//        V2_LNS_SEED=n PRNG seed for the ALNS destroy-set draws (default 0xC0FFEE)
+//        V2_LNS_T3=n   ALNS triple budget per stall on >8-blue boards (default 40)
+//        V2_LNS_CAP=n  candidates per LNS rebuild on >8-blue boards (default 600)
 //
 // Three stages, sharing one table of engine-derived OPTIMISTIC damage:
 //   1. kill-set upper bound U: enumerate red subsets by descending strength and
@@ -493,7 +496,7 @@ function feasibleMask(ctx, mask, budget, rows, nodeCap, out) {
   for (var ri = 0; ri < reds.length; ri++) {
     var r = reds[ri], cap = 0;
     blues.forEach(function (b) {
-      var lim = r.zealot ? r.hp - 1 : r.hp;
+      var lim = r.zealot && r.hp > 1 ? r.hp - 1 : r.hp;   // at 1 hp any blow kills (engine.js:428)
       if (b.prim[r.i] > 0) cap += Math.min(b.prim[r.i], lim);        // one primary per (b,red)
       if (b.col[r.i] > 0) cap += Math.min(b.col[r.i], lim) * b.colCap * b.maxAtt;
     });
@@ -543,7 +546,7 @@ function feasibleMask(ctx, mask, budget, rows, nodeCap, out) {
       return true;
     }
     var r = reds[idx];
-    var lim = r.zealot ? r.hp - 1 : r.hp;
+    var lim = r.zealot && r.hp > 1 ? r.hp - 1 : r.hp;   // at 1 hp any blow kills (engine.js:428)
     // candidate blows, descending
     var opts = [];
     blues.forEach(function (b, bi) {
@@ -696,7 +699,7 @@ function stateBound(ctx, s, mayMove) {
       if (s.units[j].id === ctx.REDS[i].id) { R = s.units[j]; break; }
     }
     if (!R || R.hp <= 0) continue;
-    var lim = hasFlag(ctx.REDS[i], 'bLastStand') ? R.hp - 1 : R.hp;
+    var lim = hasFlag(ctx.REDS[i], 'bLastStand') && R.hp > 1 ? R.hp - 1 : R.hp; // at 1 hp any blow kills (engine.js:428)
     var blows = [];
     for (var b = 0; b < nb; b++) {
       var v = bRow[b][i];
@@ -746,15 +749,21 @@ function checkBlow(ctx, s, ns, attId, defId) {
 }
 
 // ------------------------------------------------ stage 2: in-state DFS ----
-// MOVES=n widens the move model: each unit may take up to n move ACTIONS
-// (each action is already a full multi-step walk). n=1 is the deploy_fight
-// model; lines that reposition a unit twice — walk, let the board change,
-// walk again — need n≥2. Bottleneck's real 35-STR line is one of those.
-function stage2(ctx, inc, deadline, lateLevels) {
+// The move model is explicit and reported: up to `moves` move ACTIONS per
+// unit (each action is already a full multi-step walk), destinations to seat
+// tiles or any tile, swaps on or off. Bottleneck's real 35-STR line needs
+// 3 move actions per unit, ~7 mid-fight moves, AND pure waiting tiles that
+// hit nothing — a model narrower than that "completes" at 30 and proves
+// nothing about the game. `improveOnly` prunes equal-value branches: right
+// for hunting a higher ceiling, wrong for minimising par.
+function stage2(ctx, inc, deadline, lateLevels, m) {
+  m = m || {};
   var POOL = ctx.POOL;
-  var MOVES = process.env.MOVES ? parseInt(process.env.MOVES, 10) : 1;
-  var SWAPS = process.env.SWAPS === '1';
-  var ALLTILES = process.env.ALLTILES === '1';
+  var MOVES = m.moves !== undefined ? m.moves : (process.env.MOVES ? parseInt(process.env.MOVES, 10) : 1);
+  var SWAPS = m.swaps !== undefined ? m.swaps : process.env.SWAPS === '1';
+  var ALLTILES = m.alltiles !== undefined ? m.alltiles : process.env.ALLTILES === '1';
+  var IMPROVE = !!m.improveOnly;
+  var ATTFIRST = !!m.attackFirst;
   var nodes = 0, allComplete = true;
   var marchable = {};
   ctx.BLUE.forEach(function (b) {
@@ -770,7 +779,8 @@ function stage2(ctx, inc, deadline, lateLevels) {
       nodes++;
       noteBest(inc, E.strKilledOf(s), POOL - s.orders, line.length ? line.slice() : null, 'node ' + nodes);
       function mayMove(u) { return (moved[u.id] || 0) < MOVES && !(fought && lateUsed >= L); }
-      if (stateBound(ctx, s, mayMove) < inc.str) return;
+      var b2 = stateBound(ctx, s, mayMove);
+      if (IMPROVE ? b2 <= curBest(inc) : b2 < curBest(inc)) return;
 
       var attacks = [], moves = [];
       s.units.forEach(function (u) {
@@ -825,7 +835,10 @@ function stage2(ctx, inc, deadline, lateLevels) {
       });
       attacks.sort(function (a, b) { return b.rank - a.rank; });
       moves.sort(function (a, b) { return b.rank - a.rank; });
-      var opts = fought ? attacks.concat(moves) : moves.concat(attacks);
+      // wide passes engage first and reposition second: their move lists are
+      // dominated by zero-punch waiting tiles, and walking those first buries
+      // the fight thousands of plies deep
+      var opts = (fought || ATTFIRST) ? attacks.concat(moves) : moves.concat(attacks);
 
       opts.forEach(function (o) {
         if (Date.now() > deadline) { complete = false; return; }
@@ -868,21 +881,59 @@ function stage2(ctx, inc, deadline, lateLevels) {
   return { complete: allComplete, nodes: nodes, model: model };
 }
 
-// --------------------------------- stage 3: assignment search (deploy) ----
-function stage3(ctx, inc, deadline, opts) {
-  opts = opts || {};
+// ----------------------------- stage 2u: TRUE full-play in-state search ----
+// The engine's own legalActions, no synthetic move rations, no seat filter,
+// swaps and lazy march included — transpositions merge on the board state
+// alone, which is why this searches FEWER states than a "widened" rationed
+// model whose budget counters fragment the space. Completing this IS a
+// full-play proof of the ceiling (fortify is skipped: it costs an order,
+// ends the unit's turn, and only changes how hard BLUES are to kill — reds
+// never attack during the puzzle turn, so it cannot affect red deaths).
+// Improvement-only: it hunts a higher ceiling, not a cheaper line.
+function stage2u(ctx, inc, deadline) {
   var POOL = ctx.POOL;
-  var LAMBDA = process.env.LAMBDA ? parseFloat(process.env.LAMBDA) : 6;
-  var masks = opts.masks;                 // sorted by strength desc
-  // persistent across calls: fights already evaluated, prune decisions made
-  var mem = opts.state || { fightMemo: {}, pruneCache: {} };
-  var stats = { leaves: 0, dedup: 0, illegal: 0, boundCut: 0, costCut: 0,
-    tWalk: 0, tFight: 0, tPrune: 0, fightCapped: 0 };
-  // fights are exact except in plan (finder) passes, where a node cap keeps
-  // the leaf rate up; a capped fight is honesty-tracked in the verdict
-  var FCAP = process.env.FCAP ? parseInt(process.env.FCAP, 10)
-    : (opts.plan ? 2500 : Infinity);
+  var nodes = 0, complete = true;
+  var seen = new Map();
+  function mayMoveAlways() { return true; }
+  (function rec(s, line) {
+    if (Date.now() > deadline) { complete = false; return; }
+    nodes++;
+    noteBest(inc, E.strKilledOf(s), POOL - s.orders, line.length ? line.slice() : null,
+      'full-play node ' + nodes);
+    if (stateBound(ctx, s, mayMoveAlways) <= curBest(inc)) return;
+    var acts = E.legalActions(s);
+    for (var i = 0; i < acts.length; i++) {
+      if (Date.now() > deadline) { complete = false; return; }
+      var a = acts[i];
+      if (a.type === 'fortify') continue;
+      var ns;
+      try { ns = E.applyAction(s, a); } catch (e) { continue; }
+      if (a.type === 'attack') checkBlow(ctx, s, ns, a.unit, a.target);
+      var h = ns.units.map(function (x) {
+        return x.q + ',' + x.r + ',' + Math.max(0, x.hp) + ',' + (x.cooldown || 0) + ',' +
+          x.steps + ',' + (x.march ? 1 : 0) + ',' + ((x.applied || []).join('+')) + ',' +
+          (x.anchored ? 1 : 0) + ',' + (x.unlimbered ? 1 : 0) + ',' + (x.fortifyTurns || 0);
+      }).join(';') + '|' + ns.training;
+      var used = POOL - ns.orders;
+      var prev = seen.get(h);
+      if (prev !== undefined && prev <= used) continue;
+      if (seen.size < 30000000) seen.set(h, used);
+      rec(ns, line.concat([a]));
+    }
+  })(E.loadPuzzle(ctx.base), []);
+  console.log('  stage2u (full play) ' + (complete ? 'COMPLETE' : 'TIMED OUT') +
+    ' · nodes ' + nodes + ' · best ' + (inc.str / 10));
+  return { complete: complete, nodes: nodes, fullPlay: true,
+    model: 'full legal play — engine legalActions, fortify excluded (provably irrelevant to maxKill)' };
+}
 
+// ------------------------------------------- seat lists (search order) ----
+// The exact per-unit seat lists and unit processing order stage3 searches.
+// Extracted so V2_TRACE_LINE can report the REAL rank of a human line's
+// seats in the current ordering — misranking data drives heuristic work.
+function buildSeatLists(ctx, opts) {
+  opts = opts || {};
+  var LAMBDA = process.env.LAMBDA ? parseFloat(process.env.LAMBDA) : 6;
   // symmetry classes: identical type+promotions+hp fight identically
   var classOf = {}, classes = {};
   ctx.BLUE.forEach(function (b) {
@@ -901,14 +952,57 @@ function stage3(ctx, inc, deadline, opts) {
   //    kill-set's witness allocation, and truncate hard. A finder, not a
   //    coverage pass — the incumbent it finds makes the coverage pass cheap.
   var plan = opts.plan || null;
+  // expressive mode admits the speculative seats (deferred walk-ins, rout-
+  // shared tiles). Plain mode is the exact old tree — the arrival order that
+  // finds real lines on live-seat boards. Plans are always expressive: the
+  // seats a witness allocation needs are often exactly the deferred ones.
+  var EXPR = !!(opts.expressive || plan);
   var PLANK = process.env.PLANK ? parseInt(process.env.PLANK, 10) : 8;
+  var DEFPEN = process.env.DEFPEN ? parseFloat(process.env.DEFPEN) : (plan ? 0 : 10);
+  // A unit's seats are its live-reach tiles (walk in before the fight) PLUS
+  // the cleared-reach-only tiles — ground that opens when reds die: their own
+  // tiles, tiles behind their ZOC. Those are DEFERRED: claimed in the tree,
+  // walked into DURING the fight when the engine says the walk is legal.
+  // Their cost is the cleared-board cost — a lower bound; the real cost is
+  // whatever the engine charges at execution.
+  function seatEntry(uid, k) {
+    var s3 = ctx.SEAT3[uid][k];
+    if (s3) return { orders: s3.orders, march: s3.march, deferred: false };
+    var s = ctx.SEAT[uid][k];
+    if (s) return { orders: s.orders, march: s.march, deferred: true };
+    return null;
+  }
   var lists = ctx.BLUE.map(function (b) {
     var o = ctx.OPT[b.id];
     var assigned = plan && plan.assign[b.id] ? plan.assign[b.id].primOn : 0;
     var inMask = plan ? plan.mask : (1 << ctx.NR) - 1;
-    var list = Object.keys(ctx.SEAT3[b.id]).map(function (k) {
-      var seat = ctx.SEAT3[b.id][k];
+    var keys = Object.keys(EXPR ? ctx.SEAT[b.id] : ctx.SEAT3[b.id]);
+    if (EXPR) {
+      Object.keys(ctx.SEAT3[b.id]).forEach(function (k) {
+        if (keys.indexOf(k) < 0) keys.push(k);
+      });
+    }
+    // which reds can this unit hit from any IMMEDIATE seat? A deferred seat
+    // that reaches a red the unit cannot otherwise touch is not speculative —
+    // it is the unit's only door (Closing In: the axeman's target is walled
+    // off by rivers until the first kill vacates the tile between them), and
+    // burying it behind every immediate seat hides the only winning lines.
+    var hasImm = new Array(ctx.NR).fill(false);
+    Object.keys(ctx.SEAT3[b.id]).forEach(function (k) {
+      var row = o.tiles[k];
+      if (!row) return;
+      for (var i = 0; i < ctx.NR; i++) if (row[i] > 0) hasImm[i] = true;
+    });
+    var list = keys.map(function (k) {
+      var seat = seatEntry(b.id, k);
       var t = k.split(','), tile = { q: +t[0], r: +t[1] };
+      var essential = false;
+      if (seat.deferred) {
+        var row0 = o.tiles[k];
+        for (var ei = 0; ei < ctx.NR; ei++) {
+          if (row0 && row0[ei] > 0 && !hasImm[ei]) { essential = true; break; }
+        }
+      }
       var own = 0;
       ctx.REDS.forEach(function (R, i) {
         if (!(inMask & (1 << i))) return;
@@ -932,20 +1026,62 @@ function stage3(ctx, inc, deadline, opts) {
       // may not be the cheap one, so descent charges the cheapest of the class
       var minCost = seat.orders;
       classes[classOf[b.id]].forEach(function (uid) {
-        var s2 = ctx.SEAT3[uid][k];
+        var s2 = seatEntry(uid, k);
         if (s2 && s2.orders < minCost) minCost = s2.orders;
       });
+      // a deferred seat is speculative — it only exists after the right kill —
+      // so it must not outrank the immediate seats that make those kills.
+      // UNLESS it is essential (the unit's only access to some red): then it
+      // ranks with the immediates on merit.
+      var defPen = seat.deferred && !essential ? DEFPEN : 0;
+      // in plan mode the witness has already certified affordability, so
+      // travel is a tiebreak, not a tax — a heavy LAMBDA buries the marched
+      // or far seat whose BLOW the allocation is counting on (Closing In:
+      // the 7-damage march seat lost to cheap 5-damage seats and the fight
+      // came up one point short on a 20-hp axeman)
+      var LAM = plan ? 1 : LAMBDA;
       return { key: k, q: tile.q, r: tile.r, orders: seat.orders, march: seat.march,
-        classMin: minCost, score: own + ally - LAMBDA * seat.orders };
-    }).sort(function (a, b) { return b.score - a.score || a.orders - b.orders; });
+        deferred: seat.deferred, essential: essential, rout: ctx.OPT[b.id].rout,
+        classMin: minCost, score: own + ally - LAM * seat.orders - defPen };
+    }).sort(plan
+      // plans rank purely by contribution — the witness's seats may all be deferred
+      ? function (a, b) { return b.score - a.score || a.orders - b.orders; }
+      // otherwise immediates (and essential deferred) first, luxuries behind
+      : function (a, b) {
+        var da = a.deferred && !a.essential ? 1 : 0;
+        var db = b.deferred && !b.essential ? 1 : 0;
+        return da - db || b.score - a.score || a.orders - b.orders;
+      });
     if (plan) {
-      // keep the start seat reachable so a unit can sit out of a plan
-      var startKey = key(b.q, b.r);
+      // truncation exists for the 11-unit board's sake; on small boards it
+      // is pure loss — the human lines use collision-driven SUBOPTIMAL seats
+      // (king's 13-damage march seat over its 15-damage collidng one) that
+      // no per-red retention heuristic anticipates. Full lists, plan-scored.
+      if (ctx.BLUE.length <= 8) return list;
       var kept = list.slice(0, PLANK);
-      if (!kept.some(function (s) { return s.key === startKey; })) {
-        var st = list.filter(function (s) { return s.key === startKey; })[0];
-        if (st) kept.push(st);
+      function retain(k2) {
+        if (!kept.some(function (s) { return s.key === k2; })) {
+          var extra = list.filter(function (s) { return s.key === k2; })[0];
+          if (extra) kept.push(extra);
+        }
       }
+      // PLANK truncation must never cut the seats that any allocation of
+      // this MASK could depend on: for each red in the mask, retain the
+      // unit's strongest seat against that red. The witness is one arbitrary
+      // allocation — keying retention on it alone left king's marched
+      // 13-damage seat off the list because the witness happened to assign
+      // that unit elsewhere, and the human /20 deployment was unreachable.
+      ctx.REDS.forEach(function (R, i) {
+        if (!(inMask & (1 << i))) return;
+        var bestK = null, bestV = 0;
+        list.forEach(function (s) {
+          var v = o.tiles[s.key][i] || 0;
+          if (v > bestV) { bestV = v; bestK = s.key; }
+        });
+        if (bestK) retain(bestK);
+      });
+      // and the start seat, so a unit can sit out of a plan
+      retain(key(b.q, b.r));
       return kept;
     }
     return list;
@@ -957,6 +1093,30 @@ function stage3(ctx, inc, deadline, opts) {
     var sb = lists[b].length ? lists[b][0].score : 0;
     return sb - sa;
   });
+  return { classOf: classOf, classes: classes, seatEntry: seatEntry,
+    lists: lists, order: order };
+}
+
+// --------------------------------- stage 3: assignment search (deploy) ----
+function stage3(ctx, inc, deadline, opts) {
+  opts = opts || {};
+  var POOL = ctx.POOL;
+  var LAMBDA = process.env.LAMBDA ? parseFloat(process.env.LAMBDA) : 6;
+  var masks = opts.masks;                 // sorted by strength desc
+  // persistent across calls: fights already evaluated, prune decisions made
+  var mem = opts.state || { fightMemo: {}, pruneCache: {} };
+  var stats = { leaves: 0, dedup: 0, illegal: 0, boundCut: 0, costCut: 0,
+    tWalk: 0, tFight: 0, tPrune: 0, fightCapped: 0, gateCut: 0 };
+  // fights are exact except in plan (finder) passes, where a node cap keeps
+  // the leaf rate up; a capped fight is honesty-tracked in the verdict
+  var FCAP = process.env.FCAP ? parseInt(process.env.FCAP, 10)
+    : (opts.plan ? 2500 : Infinity);
+
+  var built = buildSeatLists(ctx, { plan: opts.plan, expressive: opts.expressive });
+  var classOf = built.classOf, classes = built.classes, seatEntry = built.seatEntry;
+  var lists = built.lists, order = built.order;
+  var plan = opts.plan || null;
+  var EXPR = !!(opts.expressive || plan);
   var suffixMin = new Array(order.length + 1).fill(0);
   for (var i = order.length - 1; i >= 0; i--) {
     var cheapest = Infinity;
@@ -1029,17 +1189,26 @@ function stage3(ctx, inc, deadline, opts) {
     }
     return h;
   }
-  function fightOut(st, startLine, maxNodes) {
+  // `pending`: units whose assigned seat was not walkable before the fight —
+  // deferred seats (ground that opens when reds die) and second claimants of
+  // a rout-shared tile. The fight offers each its ONE deployment walk as an
+  // action whenever the engine says the walk is now legal.
+  function fightOut(st, startLine, maxNodes, pending) {
+    pending = pending || [];
     var seen = {}, fnodes = 0;
     var localBest = { str: E.strKilledOf(st), orders: POOL - st.orders, line: null };
-    (function rec(s, line) {
+    (function rec(s, line, pend) {
       if (Date.now() > deadline) return;
       if (fnodes++ > maxNodes) { stats.fightCapped++; return; }
       var str = E.strKilledOf(s), used = POOL - s.orders;
       if (str > localBest.str || (str === localBest.str && used < localBest.orders)) {
         localBest.str = str; localBest.orders = used; localBest.line = line.slice();
       }
-      if (stateBound(ctx, s, function () { return false; }) < Math.max(localBest.str, curBest(inc))) return;
+      var pendSet = {};
+      for (var pi = 0; pi < pend.length; pi++) pendSet[pend[pi].id] = 1;
+      // a still-pending unit may yet reposition: give the bound its full row
+      if (stateBound(ctx, s, function (u) { return !!pendSet[u.id]; }) <
+          Math.max(localBest.str, curBest(inc))) return;
       var opts2 = [];
       s.units.forEach(function (u) {
         if (u.player !== 0 || u.hp <= 0 || !E.canAttack(s, u)) return;
@@ -1051,26 +1220,47 @@ function stage3(ctx, inc, deadline, opts) {
           var ri = ctx.ridx[t.id];
           var v = ri === undefined ? 0 : row[ri];
           if (o.rout && ri !== undefined && o.routFire0[ri] > v) v = o.routFire0[ri];
-          opts2.push({ unit: u.id, target: t.id, rank: (v >= t.hp ? 1000 : 0) + v });
+          opts2.push({ attack: true, unit: u.id, target: t.id, rank: (v >= t.hp ? 1000 : 0) + v });
         });
+      });
+      pend.forEach(function (p) {
+        var u = E.unitById(s, p.id);
+        if (!u || u.hp <= 0 || u.cooldown) return;
+        if (p.march && !u.march && s.training < GLOB.UNIT_MARCH_COST) return;
+        var o = ctx.OPT[p.id];
+        var row = o.tiles0[p.key];
+        var v = row ? Math.max.apply(null, row) : 0;
+        opts2.push({ attack: false, unit: p.id, p: p, rank: v });
       });
       opts2.sort(function (a, b) { return b.rank - a.rank; });
       opts2.forEach(function (o) {
-        var ns;
-        try { ns = E.applyAction(s, { type: 'attack', unit: o.unit, target: o.target }); }
-        catch (e) { return; }
-        checkBlow(ctx, s, ns, o.unit, o.target);
-        var h = fightHash(ns);
+        var ns, acts, npend = pend;
+        if (o.attack) {
+          acts = [{ type: 'attack', unit: o.unit, target: o.target }];
+        } else {
+          acts = [];
+          var u2 = E.unitById(s, o.unit);
+          if (o.p.march && !u2.march) acts.push({ type: 'march', unit: o.unit });
+          acts.push({ type: 'move', unit: o.unit, q: o.p.q, r: o.p.r });
+          npend = pend.filter(function (x) { return x.id !== o.unit; });
+        }
+        ns = s;
+        try {
+          for (var ai = 0; ai < acts.length; ai++) ns = E.applyAction(ns, acts[ai]);
+        } catch (e) { return; }
+        if (o.attack) checkBlow(ctx, s, ns, o.unit, o.target);
+        var h = fightHash(ns) + (npend.length ? '|' + npend.map(function (x) { return x.id; }).join(',') : '');
         var uu = POOL - ns.orders;
         if (seen[h] !== undefined && seen[h] <= uu) return;
         seen[h] = uu;
-        rec(ns, line.concat([{ type: 'attack', unit: o.unit, target: o.target }]));
+        rec(ns, line.concat(acts), npend);
       });
-    })(st, []);
+    })(st, [], pending);
     if (localBest.line) {
       noteBest(inc, localBest.str, localBest.orders, startLine.concat(localBest.line),
         'deployment ' + stats.leaves);
     }
+    return { str: localBest.str, orders: localBest.orders };
   }
 
   function evalLeaf(assignment) {
@@ -1095,7 +1285,7 @@ function stage3(ctx, inc, deadline, opts) {
         if (!rem.length) {
           var c = 0, t2 = 0, legal = true;
           chosen.forEach(function (p) {
-            var s = ctx.SEAT3[p.id][p.tile];
+            var s = seatEntry(p.id, p.tile);
             if (!s) { legal = false; return; }
             c += s.orders;
             if (s.march) t2 += GLOB.UNIT_MARCH_COST;
@@ -1113,23 +1303,53 @@ function stage3(ctx, inc, deadline, opts) {
       best.pairs.forEach(function (p) { placement[p.id] = p.tile; });
     });
     if (!ok || cost > POOL || training > ctx.INIT.training) { stats.illegal++; return; }
+    evalPlacement(placement, cost);
+  }
 
+  // evaluate a concrete unit->tile placement (used by the tree's leaves and
+  // by the hill-climbing polish pass); returns the fight's best strength,
+  // or -1 when the placement was already fought or could not be executed
+  function evalPlacement(placement, cost) {
     var sig2 = Object.keys(placement).map(function (id) {
       return classOf[id] + '@' + placement[id];
     }).sort().join(';') + '|' + Math.min(POOL - cost, 63);
-    if (mem.fightMemo[sig2]) { stats.dedup++; return; }
+    if (mem.fightMemo[sig2]) { stats.dedup++; return -1; }
     mem.fightMemo[sig2] = 1;
 
-    // walk in: cheapest first, 3 passes for ally-blocked destinations
+    // Split the placement: pre-fight walkers vs deferred/pending. A deferred
+    // seat pends by definition; on a rout-shared tile the router walks and
+    // the other claimant pends. Blocked walkers fall back to pending too —
+    // the fight may open their path.
     var tW0 = Date.now();
     var st = E.cloneState(ctx.INIT);
-    var startLine = [];
-    var todo = Object.keys(placement).map(function (id) {
-      var s = ctx.SEAT3[id][placement[id]];
-      var t = placement[id].split(',');
-      return { id: +id, q: +t[0], r: +t[1], orders: s.orders, march: s.march };
-    }).filter(function (x) { return x.orders > 0; })
-      .sort(function (a, b) { return a.orders - b.orders; });
+    var startLine = [], pending = [];
+    var byTile = {};
+    Object.keys(placement).forEach(function (id) {
+      (byTile[placement[id]] = byTile[placement[id]] || []).push(+id);
+    });
+    // on a shared tile, only a ROUTER may take it pre-fight (it can vacate);
+    // if no immediately-walkable router claims it, everyone pends and the
+    // fight orders the walks out
+    var walkerOf = {};
+    Object.keys(byTile).forEach(function (k) {
+      var sh = byTile[k];
+      if (sh.length === 1) { walkerOf[k] = sh[0]; return; }
+      var routersNow = sh.filter(function (id) {
+        return ctx.OPT[id].rout && !seatEntry(id, k).deferred;
+      });
+      walkerOf[k] = routersNow.length ? routersNow[0] : -1;
+    });
+    var todo = [];
+    Object.keys(placement).forEach(function (id) {
+      id = +id;
+      var k = placement[id];
+      var s = seatEntry(id, k);
+      var t = k.split(',');
+      var entry = { id: id, q: +t[0], r: +t[1], key: k, orders: s.orders, march: s.march };
+      if (s.deferred || walkerOf[k] !== id) pending.push(entry);
+      else if (s.orders > 0) todo.push(entry);
+    });
+    todo.sort(function (a, b) { return a.orders - b.orders; });
     for (var pass = 0; pass < 3 && todo.length; pass++) {
       var again = [];
       todo.forEach(function (x) {
@@ -1144,15 +1364,397 @@ function stage3(ctx, inc, deadline, opts) {
       });
       todo = again;
     }
-    if (todo.length) { stats.illegal++; return; }
+    todo.forEach(function (x) { pending.push(x); });   // fight may open the path
     stats.leaves++;
     stats.tWalk += Date.now() - tW0;
     var tF0 = Date.now();
-    fightOut(st, startLine, FCAP);
+    var fres = fightOut(st, startLine, FCAP, pending);
     stats.tFight += Date.now() - tF0;
+    // remember the best deployments seen — seeds for the polish pass
+    var tl = mem.topLeaves = mem.topLeaves || [];
+    if (tl.length < 16 || fres.str > tl[tl.length - 1].str) {
+      tl.push({ placement: Object.assign({}, placement), str: fres.str, orders: fres.orders });
+      tl.sort(function (a, b) { return b.str - a.str || a.orders - b.orders; });
+      if (tl.length > 16) tl.pop();
+    }
     if (stats.leaves % 20000 === 0) {
       console.log('  … ' + stats.leaves + ' deployments fought, best ' + (inc.str / 10) + ' STR');
     }
+    return fres;
+  }
+
+  // LNS polish: take the strongest deployments seen so far (plus the
+  // deployment the incumbent line itself stands on) and improve them by
+  // destroying k units' seat assignments and rebuilding that subset
+  // EXACTLY — every joint reassignment from the freed units' FULL seat
+  // lists. Coordination has local gradients (add the missing flank
+  // partner, pull a softener into range) that a global best-first order
+  // cannot follow — and the misranking data (optimizer-handoff.md) says
+  // winning deployments sit 2-3 seat substitutions from reached ones with
+  // the decisive seats ranked 25-30 in the search order, beyond any fixed
+  // candidate cap. The old polish capped 1-swaps at rank 20 and pair
+  // rebuilds at rank 12, so king's rank-27 march seat and rank-29
+  // deferred seat were unreachable BY CONSTRUCTION. Exhaustive rebuild
+  // stays affordable because every candidate must survive the kill-set
+  // allocator pinned to its seats before it is fought: a refutation is an
+  // OPT-model proof the fight cannot beat the reference.
+  if (opts.polishOnly) {
+    var listById = {};
+    ctx.BLUE.forEach(function (b, i) { listById[b.id] = lists[i]; });
+    function claimants(pl, k, exceptId) {
+      var out = [];
+      Object.keys(pl).forEach(function (id) {
+        if (+id !== exceptId && pl[id] === k) out.push(+id);
+      });
+      return out;
+    }
+    function placementCost(pl) {
+      var c = 0, t = 0;
+      var ids = Object.keys(pl);
+      for (var i = 0; i < ids.length; i++) {
+        var s = seatEntry(+ids[i], pl[ids[i]]);
+        if (!s) return null;
+        c += s.orders;
+        if (s.march) t += GLOB.UNIT_MARCH_COST;
+      }
+      return c <= POOL && t <= ctx.INIT.training ? c : null;
+    }
+    // Acceptance is lexicographic (strength, then fewer orders): the same
+    // machinery that climbs toward a higher ceiling also grinds par down at
+    // a proven one. VND ladder: k=1 sweeps first; when a seed stalls, pair
+    // rebuilds; when those stall, ALNS-chosen triples. Misranking data:
+    // winning deployments are often a couple of substitutions from reached
+    // ones, but NOT one (king's /20 shares no seat assignment with the
+    // reached /21).
+    function better(r, str0, ord0) {
+      if (r === -1) return false;
+      return r.str > str0 || (r.str === str0 && r.orders < ord0);
+    }
+    function claimOKPl(pl, k2, uid) {
+      var others = claimants(pl, k2, uid);
+      if (others.length >= 2) return false;
+      if (others.length === 1) {
+        var mine = listById[uid].filter(function (x) { return x.key === k2; })[0];
+        if (!(mine && mine.rout) && !ctx.OPT[others[0]].rout) return false;
+      }
+      return true;
+    }
+
+    // Seeded PRNG (mulberry32) for the ALNS draws: reproducibility is the
+    // house currency — a run's numbers must replay from its command line.
+    // State lives in `mem` so successive polish rounds continue the
+    // sequence instead of replaying it.
+    if (mem.rngState === undefined) {
+      mem.rngState = ((process.env.V2_LNS_SEED ? parseInt(process.env.V2_LNS_SEED, 10) : 0xC0FFEE) >>> 0) || 1;
+    }
+    function rng() {
+      mem.rngState = (mem.rngState + 0x6D2B79F5) >>> 0;
+      var t = mem.rngState;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+
+    // Admissible improvement gate for a FULL candidate placement: pin every
+    // unit's OPT rows to its seat and ask the allocator whether ANY kill-set
+    // could beat the reference — strictly stronger, or equal strength in
+    // strictly fewer orders. A false is an OPT-model proof the fight cannot
+    // improve, so the fight is skipped; refutations are cached against the
+    // reference they were proven at (a refutation of (S,O) also refutes any
+    // stricter reference — S can only rise and O only fall at equal S).
+    var gateFalse = mem.gateFalse = mem.gateFalse || {};
+    // pinned allocator rows are pure functions of (unit, seat) — cached, or
+    // a triple rebuild would allocate ~30k row sets per call
+    var ZEROROW = new Array(ctx.NR).fill(0);
+    var pinRows = mem.pinRows = mem.pinRows || {};
+    function pinRow(b, pin) {
+      var c1 = pinRows[b.id] || (pinRows[b.id] = {});
+      var hit = c1[pin];
+      if (hit) return hit;
+      var o = ctx.OPT[b.id];
+      var row = o.tiles[pin] || ZEROROW;
+      if (o.rout && ctx.adjRed[pin]) {
+        row = row.map(function (v, i2) { return Math.max(v, o.routFire[i2]); });
+      }
+      return (c1[pin] = { id: b.id, prim: row, col: (o.col && o.col[pin]) || ZEROROW,
+        colCap: o.colCap, maxAtt: o.maxAtt, travel: ZEROROW, travelAny: 0 });
+    }
+    function gateImproves(pl, cost, refStr, refOrd) {
+      if (!masks) return true;
+      var sig = Object.keys(pl).map(function (id) { return id + '@' + pl[id]; }).sort().join(';');
+      var hit = gateFalse[sig];
+      if (hit && (refStr > hit.s || (refStr === hit.s && refOrd <= hit.o))) return false;
+      var rows = ctx.BLUE.map(function (b) {
+        return pinRow(b, pl[b.id] || key(b.q, b.r));
+      });
+      for (var k = 0; k < masks.length; k++) {
+        var m = masks[k];
+        if (m.str < refStr) break;
+        var budget = (m.str > refStr ? POOL : refOrd - 1) - cost;
+        if (budget < 0) continue;
+        if (feasibleMask(ctx, m.mask, budget, rows, 20000)) return true;
+      }
+      gateFalse[sig] = { s: refStr, o: refOrd };
+      stats.gateCut++;
+      return false;
+    }
+
+    // Destroy-and-rebuild: free `subset`, enumerate its joint reassignment
+    // from the FULL lists (list order = the search-order heuristic), first
+    // improvement wins. Freed units are lifted to null before enumeration so
+    // one freed unit may take another's old seat — a seat ROTATION inside
+    // the subset is a real move, and claim-checking against saved seats
+    // would veto it. When this returns null and the deadline did not cut it
+    // short, no reassignment of `subset` beats the reference within the
+    // OPT model — the rebuild is exact, not sampled.
+    //
+    // On >8-blue boards the rebuild is CAPPED (and says so in the log): the
+    // gate earns exhaustiveness only where the allocator can refute — on
+    // f6ff55 it refutes almost nothing (the design doc's stage-1 finding),
+    // so an uncapped pair rebuild fights thousands of low-value candidates
+    // and one neighbourhood eats the whole polish slice. The cap trades
+    // depth in one pair for breadth across pairs and seeds; ≤8-blue boards
+    // stay exact, which is what the king gate stands on.
+    var LNSCAP = process.env.V2_LNS_CAP ? parseInt(process.env.V2_LNS_CAP, 10) : 600;
+    function rebuild(cur, subset, refStr, refOrd) {
+      var saved = subset.map(function (id) { return cur[id]; });
+      subset.forEach(function (id) { cur[id] = null; });
+      var found = null, capped = false;
+      var capLeft = ctx.BLUE.length <= 8 ? Infinity : LNSCAP;
+      (function assign(i) {
+        if (found || capped || Date.now() > deadline) return;
+        if (i === subset.length) {
+          if (capLeft-- <= 0) { capped = true; stats.lnsCapped = (stats.lnsCapped || 0) + 1; return; }
+          var same = true;
+          for (var si = 0; si < subset.length; si++) {
+            if (cur[subset[si]] !== saved[si]) { same = false; break; }
+          }
+          if (same) return;
+          var c = placementCost(cur);
+          if (c === null) return;
+          if (!gateImproves(cur, c, refStr, refOrd)) return;
+          var r = evalPlacement(Object.assign({}, cur), c);
+          if (better(r, refStr, refOrd)) found = r;
+          return;
+        }
+        var uid = subset[i], list = listById[uid];
+        for (var j = 0; j < list.length && !found && !capped; j++) {
+          if (Date.now() > deadline) break;
+          var k2 = list[j].key;
+          if (!claimOKPl(cur, k2, uid)) continue;
+          cur[uid] = k2;
+          assign(i + 1);
+        }
+        if (!found) cur[uid] = null;
+      })(0);
+      if (!found) {
+        for (var si2 = 0; si2 < subset.length; si2++) cur[subset[si2]] = saved[si2];
+      }
+      return found;
+    }
+
+    function combinations(arr, k) {
+      var out = [];
+      (function go(start, acc) {
+        if (acc.length === k) { out.push(acc.slice()); return; }
+        for (var i = start; i < arr.length; i++) { acc.push(arr[i]); go(i + 1, acc); acc.pop(); }
+      })(0, []);
+      return out;
+    }
+
+    // ALNS destroy-set operators: which units to free. Weights persist in
+    // `mem` across polish rounds and adapt toward what has produced
+    // improvements (w <- 0.85w + 0.6*reward, floored). On ≤8-blue boards
+    // the operators only ORDER the triple space and an exhaustive tail
+    // sweeps whatever the dice never rolled, so "dry" means dry.
+    function pickWeighted(k, weight) {
+      var picked = [], avail = ctx.BLUE.map(function (b, i) { return i; });
+      while (picked.length < k && avail.length) {
+        var tot = 0;
+        var w = avail.map(function (i2) { var x = weight(i2) + 0.001; tot += x; return x; });
+        var r = rng() * tot, j = 0;
+        while (j < avail.length - 1 && (r -= w[j]) > 0) j++;
+        picked.push(avail[j]); avail.splice(j, 1);
+      }
+      return picked.map(function (i) { return ctx.BLUE[i].id; });
+    }
+    var OPS = mem.alnsOps = mem.alnsOps || [
+      { name: 'rand', w: 1, hits: 0, draws: 0 },
+      { name: 'weak', w: 1, hits: 0, draws: 0 },
+      { name: 'front', w: 1, hits: 0, draws: 0 },
+      { name: 'dear', w: 1, hits: 0, draws: 0 },
+    ];
+    var PICKERS = {
+      rand: function (pl, k) { return pickWeighted(k, function () { return 1; }); },
+      // least realistic punch from its current seat — likely misplaced
+      weak: function (pl, k) {
+        return pickWeighted(k, function (i) {
+          var b = ctx.BLUE[i], row = ctx.OPT[b.id].tiles0[pl[b.id]];
+          var v = 0;
+          if (row) for (var j = 0; j < ctx.NR; j++) { if (row[j] > v) v = row[j]; }
+          return 20 / (1 + v);
+        });
+      },
+      // the units best able to hit one red: a front, freed together
+      front: function (pl, k) {
+        var r = Math.floor(rng() * ctx.NR);
+        return pickWeighted(k, function (i) {
+          return (ctx.OPT[ctx.BLUE[i].id].stat[r] || 0) + 0.5;
+        });
+      },
+      // the most expensive seats — where par grinding pays
+      dear: function (pl, k) {
+        return pickWeighted(k, function (i) {
+          var b = ctx.BLUE[i], s = seatEntry(b.id, pl[b.id]);
+          return (s ? s.orders : 0) + 0.5;
+        });
+      },
+    };
+    function drawOp() {
+      var tot = 0;
+      OPS.forEach(function (o) { tot += o.w; });
+      var r = rng() * tot;
+      for (var i = 0; i < OPS.length; i++) { if ((r -= OPS[i].w) <= 0) return OPS[i]; }
+      return OPS[OPS.length - 1];
+    }
+    function rewardOp(op, hit) {
+      op.draws++;
+      if (hit) op.hits++;
+      op.w = Math.max(0.1, 0.85 * op.w + 0.6 * (hit ? 1 : 0));
+    }
+
+    // The deployment the incumbent line stands on joins the seed pool: a
+    // stage2-found incumbent never went through evalLeaf, so topLeaves may
+    // not hold the very deployment the proof rests on. Seats are the
+    // pre-attack tiles; units that never attack sit on their start tile.
+    function lineSeed() {
+      if (!inc.line) return null;
+      var s, seat = {};
+      try {
+        s = E.loadPuzzle(ctx.base);
+        for (var i = 0; i < inc.line.length; i++) {
+          var a = inc.line[i];
+          if (a.type === 'attack' && seat[a.unit] === undefined) {
+            var u = E.unitById(s, a.unit);
+            if (u) seat[a.unit] = key(u.q, u.r);
+          }
+          s = E.applyAction(s, a);
+        }
+      } catch (e) { return null; }
+      var pl = {};
+      for (var bi = 0; bi < ctx.BLUE.length; bi++) {
+        var b = ctx.BLUE[bi];
+        var k2 = seat[b.id] !== undefined ? seat[b.id] : key(b.q, b.r);
+        if (!seatEntry(b.id, k2)) return null;             // outside the seat model
+        pl[b.id] = k2;
+      }
+      return pl;
+    }
+
+    var seeds = (mem.topLeaves || []).slice()
+      .sort(function (a, b) { return b.str - a.str || a.orders - b.orders; });
+    var pls = lineSeed();
+    if (pls) {
+      var lc = placementCost(pls);
+      if (lc !== null) {
+        var lr = evalPlacement(Object.assign({}, pls), lc);
+        seeds.unshift(lr !== -1
+          ? { placement: pls, str: lr.str, orders: lr.orders }
+          : { placement: pls, str: inc.str, orders: inc.orders });
+      }
+    }
+    // V2_SEED_DEBUG: is the seed set one basin or several? Mean pairwise
+    // distance over the unit->tile assignments answers it in one number.
+    // This instrument exists because it KILLED a plausible theory: the top-16
+    // seeds looked like elitism collapsing into a single basin, so they were
+    // replaced with a quality-diversity archive. Measured on king-of-the-hill,
+    // mean pairwise distance was 0.729 either way and the diversity branch
+    // fired zero times — the seeds were already spread (sharing ~27% of their
+    // seats), and the change was a no-op. See optimizer-handoff.md.
+    if (process.env.V2_SEED_DEBUG && seeds.length) {
+      var sum = 0, pairs = 0;
+      function sdesc(x) {
+        return Object.keys(x.placement).map(function (id) {
+          return id + '@' + x.placement[id];
+        }).sort();
+      }
+      function sdist(a, b) {
+        var A = {}, n = 0, i;
+        for (i = 0; i < a.length; i++) A[a[i]] = true;
+        for (i = 0; i < b.length; i++) if (A[b[i]]) n++;
+        var u = a.length + b.length - n;
+        return u === 0 ? 0 : 1 - n / u;
+      }
+      var descs = seeds.map(sdesc);
+      for (var da = 0; da < descs.length; da++) {
+        for (var db = da + 1; db < descs.length; db++) { sum += sdist(descs[da], descs[db]); pairs++; }
+      }
+      console.log('  [seeds] n=' + seeds.length +
+        ' meanPairwiseDist=' + (pairs ? (sum / pairs).toFixed(3) : 'n/a') +
+        ' strRange=' + (seeds[seeds.length - 1].str / 10) + '..' + (seeds[0].str / 10));
+    }
+    var allIds = ctx.BLUE.map(function (b) { return b.id; });
+    var TRIPLES = ctx.BLUE.length >= 3 ? combinations(allIds, 3) : [];
+    // ALNS triple budget per stall: exhaustive on small boards (a dry
+    // verdict must mean DRY), sampled with honest logging on big ones
+    var T3 = ctx.BLUE.length <= 8 ? TRIPLES.length
+      : Math.min(TRIPLES.length, process.env.V2_LNS_T3 ? parseInt(process.env.V2_LNS_T3, 10) : 40);
+    var t3Sampled = false;
+    for (var sd = 0; sd < seeds.length; sd++) {
+      if (Date.now() > deadline) break;
+      var cur = Object.assign({}, seeds[sd].placement);
+      var curStr = seeds[sd].str, curOrd = seeds[sd].orders;
+      for (;;) {                      // VND: k=1 -> pairs -> triples; restart on any improvement
+        if (Date.now() > deadline) break;
+        var r = null, i1;
+        for (i1 = 0; i1 < allIds.length && !r; i1++) {
+          r = rebuild(cur, [allIds[i1]], curStr, curOrd);
+        }
+        if (!r && Date.now() < deadline) {
+          var pairs = combinations(allIds, 2);
+          for (i1 = 0; i1 < pairs.length && !r; i1++) {
+            if (Date.now() > deadline) break;
+            r = rebuild(cur, pairs[i1], curStr, curOrd);
+          }
+        }
+        if (!r && Date.now() < deadline && TRIPLES.length) {
+          var tried = {}, triedN = 0, drawsLeft = T3 * 3;
+          while (!r && Date.now() < deadline && triedN < T3 && drawsLeft-- > 0) {
+            var op = drawOp();
+            var sub = PICKERS[op.name](cur, 3).sort(function (a, b) { return a - b; });
+            var sg = sub.join('+');
+            if (tried[sg]) continue;
+            tried[sg] = 1; triedN++;
+            r = rebuild(cur, sub, curStr, curOrd);
+            rewardOp(op, !!r);
+          }
+          // exhaustive tail on small boards: sweep the triples the dice
+          // never rolled, so "no improvement" is a statement about the
+          // neighbourhood, not about the sampling
+          if (!r && ctx.BLUE.length <= 8) {
+            for (i1 = 0; i1 < TRIPLES.length && !r; i1++) {
+              if (Date.now() > deadline) break;
+              var sg2 = TRIPLES[i1].join('+');
+              if (tried[sg2]) continue;
+              r = rebuild(cur, TRIPLES[i1], curStr, curOrd);
+            }
+          } else if (!r && triedN >= T3 && TRIPLES.length > T3) {
+            t3Sampled = true;
+          }
+        }
+        if (!r) break;
+        curStr = r.str; curOrd = r.orders;
+      }
+    }
+    console.log('  stage3 LNS polish done · leaves ' + stats.leaves +
+      ' · gateCut ' + stats.gateCut +
+      ' · ops ' + OPS.map(function (o) { return o.name + ' ' + o.hits + '/' + o.draws; }).join(', ') +
+      (t3Sampled ? ' · triples SAMPLED (' + T3 + ' of ' + TRIPLES.length + ' per stall)' : '') +
+      (stats.lnsCapped ? ' · ' + stats.lnsCapped + ' rebuilds CAPPED at ' + LNSCAP + ' candidates' : '') +
+      ' · best ' + (inc.str / 10));
+    stats.exhausted = false;
+    stats.expressive = true;
+    return stats;
   }
 
   // Best-first over the assignment TREE: nodes are partial assignments,
@@ -1205,28 +1807,55 @@ function stage3(ctx, inc, deadline, opts) {
   // rank, g: score sum through this seat, cost, f}
   var W = process.env.W ? parseFloat(process.env.W) : 1;
   function nodeSeat(n) { return lists[order[n.d]][n.si]; }
-  function clashes(chainTop, seatKey) {
-    for (var w = chainTop; w; w = w.p) if (nodeSeat(w).key === seatKey) return true;
-    return false;
-  }
   // root partition for worker parallelism: worker w of K owns the root seats
   // with rank ≡ w (mod K); the union over workers is the whole tree
   var partW = opts.partW || 0, partK = opts.partK || 1;
+  // Seat sharing: one tile may serve TWO units in a turn when a router takes
+  // it first and routs away (tile reuse — the pattern that decides real
+  // puzzles). The tree allows a second claim iff a router is involved; the
+  // fight executor orders the walks with the real engine and simply never
+  // realises combinations the game forbids.
+  function claimState(chainTop, seat) {
+    // 0 = blocked, 1 = free, 2 = shareable (a router is involved)
+    var count = 0, anyRout = seat.rout;
+    for (var w = chainTop; w; w = w.p) {
+      var s = nodeSeat(w);
+      if (s.key === seat.key) {
+        count++;
+        if (s.rout) anyRout = true;
+      }
+    }
+    if (count === 0) return 1;
+    return EXPR && count === 1 && anyRout ? 2 : 0;
+  }
+  // sharing a seat is speculative (it only works if the router's fight
+  // actually vacates it) — deprioritised the same way deferred seats are,
+  // so the plain assignments the old searches found first still come first
+  var SHAREPEN = process.env.SHAREPEN ? parseFloat(process.env.SHAREPEN) : 15;
   // first valid seat rank >= si for depth d under ancestor chain `p`
-  function firstValid(p, d, si, gBase, costBase) {
+  // marches draw on the SHARED training pool: floor(training/UNIT_MARCH_COST)
+  // of them, army-wide. Without this the tree happily assigns every unit a
+  // march seat — king-of-the-hill's budget funds exactly two, and the human
+  // line uses exactly two, so every over-marched subtree is pure waste.
+  var TRAIN = ctx.INIT.training;
+  function firstValid(p, d, si, gBase, costBase, trainBase) {
     var list = lists[order[d]];
     for (; si < list.length; si++) {
       if (d === 0 && partK > 1 && si % partK !== partW) continue;
       var seat = list[si];
-      if (clashes(p, seat.key)) continue;
+      var claim = claimState(p, seat);
+      if (!claim) continue;
+      var t2 = trainBase + (seat.march ? GLOB.UNIT_MARCH_COST : 0);
+      if (t2 > TRAIN) { stats.costCut++; continue; }
+      var pen = claim === 2 ? SHAREPEN : 0;
       var c2 = costBase + seat.classMin;
       if (c2 + suffixMin[d + 1] > POOL) { stats.costCut++; continue; }
-      return { p: p, d: d, si: si, g: gBase + seat.score, cost: c2,
-        f: gBase + W * (seat.score + suffixBest[d + 1]) };
+      return { p: p, d: d, si: si, g: gBase + seat.score - pen, cost: c2, tr: t2,
+        f: gBase + W * (seat.score - pen + suffixBest[d + 1]) };
     }
     return null;
   }
-  var root = firstValid(null, 0, 0, 0, 0);
+  var root = firstValid(null, 0, 0, 0, 0, 0);
   if (root) hpush(root);
   var HEAPCAP = 2000000;
   var exhausted = true;
@@ -1236,7 +1865,7 @@ function stage3(ctx, inc, deadline, opts) {
     var node = hpop();
     // sibling first: the tail this node stood in for lives on
     var sib = firstValid(node.p, node.d, node.si + 1,
-      node.p ? node.p.g : 0, node.p ? node.p.cost : 0);
+      node.p ? node.p.g : 0, node.p ? node.p.cost : 0, node.p ? node.p.tr : 0);
     if (sib) hpush(sib);
     // materialise the assignment chain once
     var assignment = [], pfx = [];
@@ -1252,10 +1881,11 @@ function stage3(ctx, inc, deadline, opts) {
     stats.tPrune += Date.now() - tP0;
     if (cut) { stats.boundCut++; continue; }
     if (node.d === order.length - 1) { evalLeaf(assignment); continue; }
-    var child = firstValid(node, node.d + 1, 0, node.g, node.cost);
+    var child = firstValid(node, node.d + 1, 0, node.g, node.cost, node.tr);
     if (child) hpush(child);
   }
   stats.exhausted = exhausted && !heap.length && !plan;   // plan lists are truncated
+  stats.expressive = EXPR;
   console.log('  stage3' + (plan ? '[plan ' + (plan.str / 10) + ']' : '') +
     ' ' + (stats.exhausted ? 'EXHAUSTED the deployment tree' :
       !heap.length ? 'plan tree done' :
@@ -1271,32 +1901,74 @@ function stage3(ctx, inc, deadline, opts) {
 // ---------------------------------------------------- big-board schedule ----
 // Plan slices over the top kill-sets, then the full coverage search. Shared
 // verbatim by the single-threaded path and each worker (with its root slice).
-function scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, partW, partK) {
+// Plan slices: for each top kill-set, a short search restricted to the seats
+// its witness allocation wants. Kill-set-directed deployment assembly — the
+// one order of search that composes a COORDINATED deployment directly. Used
+// by both the big-board schedule and (briefly) small boards, where a
+// must-use deferred seat can otherwise hide behind thousands of plain
+// deployments (Closing In).
+function planSlices(ctx, inc, budgetMs, hardEnd, masks, s3state, partW, partK, plansMax, includeEqual) {
   var POOL = ctx.POOL;
   var walkRows = fullRows(ctx, 'walk');
+  // Sweep DEEP down the kill-set list, not just the summit: the strongest
+  // masks are usually over-stretched fantasies whose deployments spread the
+  // army thin; the masks just above what's actually playable are where a
+  // plan's fight cashes in — and every realized plan raises the incumbent,
+  // which silently skips everything weaker.
+  var PLANS = process.env.PLANS ? parseInt(process.env.PLANS, 10) : (plansMax || 48);
   var plans = [];
-  for (var mi = 0; mi < masks.length && plans.length < 10; mi++) {
-    var outw = {};
-    if (feasibleMask(ctx, masks[mi].mask, POOL, walkRows, 300000, outw) && outw.assign) {
-      plans.push({ mask: masks[mi].mask, str: masks[mi].str, assign: outw.assign });
+  for (var mi = 0; mi < masks.length && plans.length < PLANS; mi++) {
+    // WITNESS DIVERSIFICATION: one mask has many allocations, and the plan
+    // ordering follows the allocation — king's human /20 assigns roles the
+    // first-found witness does not, so its seats rank mid-list under that
+    // witness and near the top under the right one. Rotating the allocator's
+    // unit order yields structurally different witnesses cheaply.
+    var seen = {};
+    for (var rot = 0; rot < 3 && plans.length < PLANS; rot++) {
+      var rows2 = walkRows.slice(rot * Math.ceil(walkRows.length / 3))
+        .concat(walkRows.slice(0, rot * Math.ceil(walkRows.length / 3)));
+      var outw = {};
+      if (feasibleMask(ctx, masks[mi].mask, POOL, rows2, 300000, outw) && outw.assign) {
+        var sig = JSON.stringify(outw.assign);
+        if (seen[sig]) continue;
+        seen[sig] = 1;
+        plans.push({ mask: masks[mi].mask, str: masks[mi].str, assign: outw.assign });
+      } else break;                                    // infeasible: no more rotations
     }
   }
-  var planBudget = Math.max(20, SECONDS * 0.35) * 1000;
-  var perPlan = Math.max(15000, planBudget / Math.max(1, plans.length));
+  var perPlan = Math.max(12000, budgetMs / Math.max(1, plans.length));
+  var planEnd = Date.now() + budgetMs;
   console.log('--- stage3 (plan slices: ' + plans.length + ' kill-sets)' +
     (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
   var s3 = null;
   for (var pi = 0; pi < plans.length; pi++) {
-    if (Date.now() + 5000 > DEADLINE) break;
-    if (plans[pi].str <= curBest(inc)) continue;          // already beaten
-    var pEnd = Math.min(DEADLINE, Date.now() + perPlan);
+    if (Date.now() + 5000 > hardEnd || Date.now() > planEnd) break;
+    // par refinement wants EQUAL-strength kill-sets (cheaper lines to the
+    // same ceiling); the strength hunt wants only better ones
+    if (includeEqual ? plans[pi].str < curBest(inc) : plans[pi].str <= curBest(inc)) continue;
+    var pEnd = Math.min(hardEnd, Date.now() + perPlan);
     s3 = stage3(ctx, inc, pEnd, { masks: masks, state: s3state, plan: plans[pi],
       partW: partW, partK: partK });
   }
+  return s3;
+}
+
+function scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, partW, partK) {
+  var s3 = planSlices(ctx, inc, Math.max(20, SECONDS * 0.45) * 1000, DEADLINE,
+    masks, s3state, partW, partK);
   if (Date.now() < DEADLINE) {
-    console.log('--- stage3 (full)' + (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
-    s3 = stage3(ctx, inc, DEADLINE, { masks: masks, state: s3state,
-      partW: partW, partK: partK });
+    // alternate coverage and polish: the tree finds fresh material, the
+    // climb turns the best of it into coordinated deployments
+    for (var round = 0; round < 6 && Date.now() < DEADLINE; round++) {
+      var covEnd = Math.min(DEADLINE, Date.now() + Math.max(30000, (DEADLINE - Date.now()) * 0.25));
+      console.log('--- stage3 (full, expressive)' + (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
+      s3 = stage3(ctx, inc, covEnd, { masks: masks, state: s3state,
+        partW: partW, partK: partK, expressive: true });
+      if (Date.now() >= DEADLINE || s3.exhausted) break;
+      var polEnd = Math.min(DEADLINE, Date.now() + Math.max(20000, (DEADLINE - Date.now()) * 0.2));
+      console.log('--- stage3 (polish)' + (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
+      stage3(ctx, inc, polEnd, { masks: masks, state: s3state, polishOnly: true, expressive: true });
+    }
   }
   return s3;
 }
@@ -1362,6 +2034,120 @@ function workerMain(wd) {
     tainted: TAINted });
 }
 
+// ------------------------------------------------------- line trace mode ----
+// V2_TRACE_LINE=<file.json>: replay a (human) action line through the engine,
+// then interrogate the solver's own machinery about it — is each attack seat
+// in the live/deferred seat sets, would the deployment survive the kill-set
+// bound, does the fight model even contain the line's shape? This is the
+// diagnostic that separates "ordering problem" from "expressiveness problem"
+// without an afternoon of bisection.
+function traceLine(ctx, line) {
+  var E2 = E, POOL = ctx.POOL;
+  var s = E.loadPuzzle(ctx.base);
+  var fought = false;
+  var info = {};   // unit id -> {seat, marched, moveActions, midFightMoves}
+  var okAll = true;
+  line.forEach(function (a, i) {
+    var u = E.unitById(s, a.unit);
+    // capture the tile the unit attacks FROM before the engine applies the
+    // action — a routing kill advances the attacker, and the post-apply
+    // position is the victim's tile, not the seat the tree must assign
+    var preAt = u ? key(u.q, u.r) : null;
+    var rec = info[a.unit] = info[a.unit] || { moveActions: 0, midFightMoves: 0, marched: false, seat: null, attacks: 0 };
+    try { s = E.applyAction(s, a); } catch (e) {
+      console.log('  trace: action ' + (i + 1) + ' ' + JSON.stringify(a) + ' ILLEGAL under current engine: ' + e.message);
+      okAll = false;
+      return;
+    }
+    if (a.type === 'move') { rec.moveActions++; if (fought) rec.midFightMoves++; }
+    if (a.type === 'march') rec.marched = true;
+    if (a.type === 'swap') { rec.moveActions++; console.log('  trace: line uses SWAP — outside every stage3 model'); }
+    if (a.type === 'attack') {
+      fought = true;
+      rec.attacks++;
+      if (rec.seat === null) rec.seat = preAt;
+    }
+  });
+  var str = E.strKilledOf(s), used = POOL - s.orders;
+  console.log('trace: line replays to ' + (str / 10) + ' STR in ' + used + ' orders' + (okAll ? '' : ' (WITH ILLEGAL ACTIONS)'));
+  var mask = 0;
+  s.units.forEach(function (u) { if (u.player === 1 && u.hp <= 0) mask |= (1 << ctx.ridx[u.id]); });
+  console.log('trace: kill-set mask str ' + (str / 10));
+  // the REAL search orders: rank of each traced seat in the plain tree, the
+  // expressive tree, and the plan tree for this line's own kill-set witness
+  var plainB = buildSeatLists(ctx, {});
+  var exprB = buildSeatLists(ctx, { expressive: true });
+  var planB = null;
+  var outw = {};
+  if (ctx.NR <= 20 &&
+      feasibleMask(ctx, mask, POOL, fullRows(ctx, 'walk'), 300000, outw) && outw.assign) {
+    planB = buildSeatLists(ctx, { plan: { mask: mask, str: str, assign: outw.assign } });
+  }
+  function rankIn(built, id, seatKey) {
+    var bi = ctx.BLUE.findIndex(function (b) { return b.id === +id; });
+    if (bi < 0) return '-';
+    var idx = built.lists[bi].findIndex(function (s) { return s.key === seatKey; });
+    return idx < 0 ? 'ABSENT/' + built.lists[bi].length : idx + '/' + built.lists[bi].length;
+  }
+  Object.keys(info).forEach(function (id) {
+    var r = info[id];
+    if (r.seat === null) { console.log('  unit ' + id + ': never attacks'); return; }
+    var s3 = ctx.SEAT3[id] && ctx.SEAT3[id][r.seat];
+    var sc = ctx.SEAT[id] && ctx.SEAT[id][r.seat];
+    var row = ctx.OPT[id] && ctx.OPT[id].tiles[r.seat];
+    console.log('  unit ' + id + ': attack seat ' + r.seat +
+      (s3 ? ' [live, ' + s3.orders + ' orders' + (s3.march ? ', march' : '') + ']'
+          : sc ? ' [DEFERRED, floor ' + sc.orders + (sc.march ? ', march' : '') + ']'
+               : ' [NOT A SEAT — outside the seat model!]') +
+      ' · ' + r.moveActions + ' move action(s), ' + r.midFightMoves + ' mid-fight' +
+      (r.marched ? ', marched' : '') + ' · ' + r.attacks + ' attack(s)' +
+      (row ? ' · OPT row ' + row.join(',') : '') +
+      ' · rank plain ' + rankIn(plainB, id, r.seat) +
+      ', expr ' + rankIn(exprB, id, r.seat) +
+      (planB ? ', plan ' + rankIn(planB, id, r.seat) : ''));
+  });
+  // the tree's arrival cost for the whole deployment: sum of expressive ranks
+  var sumExpr = 0, sumPlan = 0, worst = null;
+  Object.keys(info).forEach(function (id) {
+    var r = info[id];
+    if (r.seat === null) return;
+    var bi = ctx.BLUE.findIndex(function (b) { return b.id === +id; });
+    var ei = exprB.lists[bi].findIndex(function (s) { return s.key === r.seat; });
+    if (ei >= 0) { sumExpr += ei; if (worst === null || ei > worst.rank) worst = { id: id, rank: ei }; }
+    if (planB) {
+      var pi2 = planB.lists[bi].findIndex(function (s) { return s.key === r.seat; });
+      if (pi2 >= 0) sumPlan += pi2;
+    }
+  });
+  console.log('trace: rank-sum expressive ' + sumExpr +
+    (planB ? ', plan ' + sumPlan : '') +
+    (worst ? ' · worst-ranked: unit ' + worst.id + ' at expr rank ' + worst.rank : ''));
+  // would the pinned deployment survive the kill-set bound?
+  var pins = {};
+  Object.keys(info).forEach(function (id) { if (info[id].seat) pins[id] = info[id].seat; });
+  var rows = ctx.BLUE.map(function (b) {
+    var o = ctx.OPT[b.id];
+    var pin = pins[b.id];
+    if (!pin) {
+      return { id: b.id, prim: o.stat, col: o.cstat, colCap: o.colCap, maxAtt: o.maxAtt,
+        travel: o.travel, travelAny: 0 };
+    }
+    var row = o.tiles[pin] || new Array(ctx.NR).fill(0);
+    if (o.rout && ctx.adjRed[pin]) {
+      row = row.map(function (v, i2) { return Math.max(v, o.routFire[i2]); });
+    }
+    return { id: b.id, prim: row, col: (o.col && o.col[pin]) || new Array(ctx.NR).fill(0),
+      colCap: o.colCap, maxAtt: o.maxAtt, travel: new Array(ctx.NR).fill(0), travelAny: 0 };
+  });
+  var cost = 0;
+  Object.keys(pins).forEach(function (id) {
+    var e3 = ctx.SEAT3[id][pins[id]] || ctx.SEAT[id][pins[id]];
+    cost += e3 ? e3.orders : 0;
+  });
+  console.log('trace: pinned kill-set feasible under the bound: ' +
+    feasibleMask(ctx, mask, POOL - cost, rows, 300000) + ' (assigned cost floor ' + cost + ')');
+}
+
 // ----------------------------------------------------------------- main ----
 function replay(ctx, line) {
   var s = E.loadPuzzle(ctx.base);
@@ -1385,9 +2171,18 @@ function main() {
     console.error('usage: node tools/verify2.js <puzzle.json|def.js> [pool] [seconds] [seedStrX10]');
     process.exit(1);
   }
-  var P = /\.json$/.test(SRC)
-    ? (function () { var j = JSON.parse(require('fs').readFileSync(SRC, 'utf8')); return j.puzzle || j; })()
-    : require(path.resolve(SRC));
+  var P;
+  if (/\.json$/.test(SRC)) {
+    var j = JSON.parse(require('fs').readFileSync(SRC, 'utf8'));
+    P = j.puzzle || j;
+  } else if (/\.js$/.test(SRC)) {
+    P = require(path.resolve(SRC));
+  } else {
+    // bare id: look it up in the shipped library, for reproducible commands
+    P = require(path.join(__dirname, '..', 'web', 'puzzles.js'))
+      .filter(function (x) { return x.id === SRC; })[0];
+    if (!P) { console.error('no puzzle with id "' + SRC + '" in web/puzzles.js'); process.exit(1); }
+  }
   var POOL = parseInt(process.argv[3], 10) || E.poolOrders(P);
   var SECONDS = parseInt(process.argv[4], 10) || 600;
   var SEED = parseInt(process.argv[5], 10) || 0;
@@ -1403,6 +2198,12 @@ function main() {
       Object.keys(ctx.SEAT[u.id]).length + ' seats');
   });
   console.log('tables built in ' + ((Date.now() - t0) / 1000).toFixed(1) + 's');
+
+  if (process.env.V2_TRACE_LINE) {
+    var traced = JSON.parse(require('fs').readFileSync(process.env.V2_TRACE_LINE, 'utf8'));
+    traceLine(ctx, traced.line || traced);
+    return;
+  }
 
   // ---- stage 1: kill-set upper bounds
   var masks = null, U = null, U0 = null;
@@ -1437,9 +2238,38 @@ function main() {
     }
     s3 = scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, 0, 1);
   } else {
-    var sliceEnd = Math.min(DEADLINE, Date.now() + Math.max(20, SECONDS * 0.2) * 1000);
-    console.log('--- stage3 (finder slice)');
-    s3 = stage3(ctx, inc, sliceEnd, { masks: masks, state: s3state });
+    // small boards: brief kill-set-directed plan slices, but ONLY when the
+    // ceiling actually depends on deferred (kill-opened) seats — measured by
+    // recomputing the upper bound with blows restricted to live-reach seats.
+    // If immediate seats already support U0, plans are a luxury that eats
+    // the plain pass's budget (left-flank's winning leaf sits ~2,800 fights
+    // in); if they don't (Closing In: the axeman's real blow only exists on
+    // the tile a kill vacates), plans are the only fast route.
+    if (masks) {
+      // primary blows only: the allocator's collateral model is decoupled-
+      // generous, and on Closing In the cleave pseudo-blows paper over the
+      // one missing point that makes the deferred seat load-bearing. A
+      // primaries-only selector errs toward running plans, which costs 30s
+      // on boards that did not need them — the right direction to be wrong.
+      var immRows = fullRows(ctx, 'walk').map(function (r) {
+        var o = ctx.OPT[r.id];
+        var prim = new Array(ctx.NR).fill(0);
+        Object.keys(ctx.SEAT3[r.id]).forEach(function (k) {
+          for (var i = 0; i < ctx.NR; i++) {
+            if (o.tiles[k] && o.tiles[k][i] > prim[i]) prim[i] = o.tiles[k][i];
+          }
+        });
+        return { id: r.id, prim: prim, col: new Array(ctx.NR).fill(0), colCap: 0,
+          maxAtt: r.maxAtt, travel: r.travel, travelAny: r.travelAny };
+      });
+      var Uimm = upperBound(ctx, masks, immRows, POOL, []).U;
+      if (Uimm < U0) {
+        console.log('immediate-seat ceiling ' + (Uimm / 10) + ' < U0 ' + (U0 / 10) +
+          ' — deferred seats are load-bearing, running plan slices');
+        s3 = planSlices(ctx, inc, Math.max(15, SECONDS * 0.1) * 1000, DEADLINE,
+          masks, s3state, 0, 1, 8);
+      }
+    }
   }
 
   // ---- stage 2: exhaustive in-state search on small boards. It gets a
@@ -1448,21 +2278,81 @@ function main() {
   var s2 = null;
   if (ctx.BLUE.length <= S2MAX && !(U !== null && inc.str >= U)) {
     var lateLevels = process.env.LATE !== undefined ? [parseInt(process.env.LATE, 10)] : [0, 1, 2, 3];
-    var s2end = Math.min(DEADLINE, Date.now() + Math.max(30, (DEADLINE - Date.now()) * 0.4 / 1000) * 1000);
+    var s2end = Math.min(DEADLINE, Date.now() + Math.max(30, (DEADLINE - Date.now()) * 0.2 / 1000) * 1000);
     console.log('--- stage2 (exact in-state search)');
     s2 = stage2(ctx, inc, s2end, lateLevels);
+    // then TRUE full play: Bottleneck's 35 lives in waiting-tile choreography
+    // the rationed model cannot express, and its budget counters fragment
+    // transpositions so badly that widening the ration searches MORE states
+    // than searching the real game. If this completes, the ceiling is proven
+    // outright. When the rationed pass timed out the state space is large —
+    // stage2u then waits its turn BEHIND the stage-3 passes (see below), so
+    // the deployment search keeps the budget that finds real lines.
+    if (s2.complete && Date.now() < DEADLINE && !(U !== null && inc.str >= U)) {
+      console.log('--- stage2u (full legal play)');
+      var before = inc.str;
+      var s2u = stage2u(ctx, inc, DEADLINE);
+      if (s2u.complete) s2 = s2u;
+      else if (inc.str > before) s2 = null;                // narrow completion is now moot
+    }
   }
 
-  // ---- stage 3 full run with the remaining time
+  // ---- stage 3 full runs with the remaining time: plain first (the arrival
+  // order that finds real lines on live-seat boards), expressive after, and
+  // a deferred stage2u slice last when the rationed pass could not finish
   if (!(s2 && s2.complete) && !(U !== null && inc.str >= U) && Date.now() < DEADLINE) {
     console.log('--- stage3 (full)');
-    s3 = stage3(ctx, inc, DEADLINE, { masks: masks, state: s3state });
-    // a completed stage2 slice may still be pending; give it the tail end
-    if (s3.exhausted && s2 && !s2.complete && Date.now() < DEADLINE && ctx.BLUE.length <= S2MAX) {
-      console.log('--- stage2 (resumed)');
-      s2 = stage2(ctx, inc, DEADLINE,
-        process.env.LATE !== undefined ? [parseInt(process.env.LATE, 10)] : [0, 1, 2, 3]);
+    var s3end = Math.min(DEADLINE, Date.now() + (DEADLINE - Date.now()) * 0.55);
+    s3 = stage3(ctx, inc, s3end, { masks: masks, state: s3state });
+    if (Date.now() < DEADLINE && !(U !== null && inc.str >= U)) {
+      console.log('--- stage3 (full, expressive)');
+      var s3xend = Math.min(DEADLINE, Date.now() + (DEADLINE - Date.now()) * 0.6);
+      var s3x = stage3(ctx, inc, s3xend, { masks: masks, state: s3state, expressive: true });
+      if (s3x.exhausted) s3 = s3x;
     }
+    if (ctx.BLUE.length <= S2MAX && Date.now() < DEADLINE && !(U !== null && inc.str >= U)) {
+      console.log('--- stage2u (full legal play, tail slice)');
+      stage2u(ctx, inc, DEADLINE);
+    }
+  }
+
+  // A bound-match proof ends the strength hunt the moment the ceiling is
+  // found — usually NOT on the cheapest line. Par matters (it is the
+  // published number players chase), so spend part of the leftover budget
+  // minimising orders at the proven strength: with the incumbent at the
+  // ceiling, the bound prunes everything that cannot at least equal it, and
+  // the rationed search runs fast.
+  if (!TAINted && inc.line && Date.now() + 10000 < DEADLINE &&
+      ((U0 !== null && inc.str >= U0) || (U !== null && inc.str >= U)) &&
+      ctx.BLUE.length <= S2MAX) {
+    var before = inc.orders;
+    console.log('--- par refinement (ceiling proven, minimising orders)');
+    // equal-strength plan slices first: the witness for the PROVEN kill-set
+    // assembles cheaper deployments of the same kills directly (king's 18/20
+    // is an 18/21-proof plus a better-ordered deployment of the same mask)
+    if (masks) {
+      planSlices(ctx, inc, Math.max(20, (DEADLINE - Date.now()) * 0.25 / 1000) * 1000,
+        DEADLINE, masks, s3state, 0, 1, 8, true);
+    }
+    // LNS polish over the best deployments seen — lexicographic acceptance
+    // means it grinds orders down at the proven strength
+    if (Date.now() + 5000 < DEADLINE) {
+      stage3(ctx, inc, Math.min(DEADLINE, Date.now() + (DEADLINE - Date.now()) * 0.3),
+        { masks: masks, state: s3state, polishOnly: true, expressive: true });
+    }
+    stage2(ctx, inc, Math.min(DEADLINE, Date.now() +
+      Math.max(30, (DEADLINE - Date.now()) * 0.3 / 1000) * 1000),
+      process.env.LATE !== undefined ? [parseInt(process.env.LATE, 10)] : [0, 1, 2, 3]);
+    // the deployment tree keeps equal-strength kill-sets alive, so its
+    // coverage passes also refine par — often past the rationed model
+    if (Date.now() + 5000 < DEADLINE) {
+      stage3(ctx, inc, Math.min(DEADLINE, Date.now() + (DEADLINE - Date.now()) * 0.6),
+        { masks: masks, state: s3state });
+    }
+    if (Date.now() + 5000 < DEADLINE) {
+      stage3(ctx, inc, DEADLINE, { masks: masks, state: s3state, expressive: true });
+    }
+    if (inc.orders < before) console.log('  par tightened: ' + before + ' -> ' + inc.orders + ' orders');
   }
 
   verdict(ctx, inc, U, U0, s2, s3);
@@ -1480,6 +2370,14 @@ function verdict(ctx, inc, U, U0, s2, s3) {
     var rep = replay(ctx, inc.line);
     console.log('verified: ' + (rep.str / 10) + ' STR in ' + rep.orders + ' orders' +
       (rep.str === inc.str && rep.orders === inc.orders ? '  ✓ matches' : '  ✗ MISMATCH'));
+    // V2_DUMP_LINE=<path>: persist the replay-verified best line as the same
+    // plain action-array JSON the trace mode consumes — lines are how results
+    // travel between tools, reviews and future traces
+    if (process.env.V2_DUMP_LINE) {
+      require('fs').writeFileSync(process.env.V2_DUMP_LINE, JSON.stringify({
+        strength: rep.str, orders: rep.orders, line: inc.line }, null, 1));
+      console.log('line dumped to ' + process.env.V2_DUMP_LINE);
+    }
   } else if (inc.str > 0) {
     console.log('  (best value came from the seed; no line to replay)');
   }
@@ -1492,12 +2390,18 @@ function verdict(ctx, inc, U, U0, s2, s3) {
       proven = true;
       why.push('matches U (kill-set bound; assumes no swap travel shortcuts)');
     }
-    if (s2 && s2.complete) {
+    if (s2 && s2.complete && s2.fullPlay) {
+      proven = true;
+      why.push('full-play search complete (' + s2.model + ')');
+    } else if (s2 && s2.complete) {
       why.push('search complete within a RESTRICTED move model (' + (s2.model || 'stage2') +
         ') — not a full-play proof; cross-check with compute_ceilings before publishing');
     }
     if (s3 && s3.exhausted) {
-      why.push('stage3 exhausted the deployment space (model: walk-then-fight, no mid-fight moves' +
+      why.push('stage3 exhausted the deployment space (model: ' +
+        (s3.expressive
+          ? 'walk-then-fight + deferred walk-ins onto kill-opened tiles and rout-shared seats; no free mid-fight repositioning'
+          : 'walk-then-fight over live-reach seats only') +
         (s3.fightCapped ? '; ' + s3.fightCapped + ' fights hit the node cap' : '') + ')');
     }
   }
@@ -1515,7 +2419,7 @@ function verdict(ctx, inc, U, U0, s2, s3) {
 
 module.exports = { build: build, feasibleMask: feasibleMask, fullRows: fullRows,
   sortedMasks: sortedMasks, upperBound: upperBound, stateBound: stateBound, gAD: gAD,
-  verdict: verdict };
+  verdict: verdict, stage2: stage2, mkIncumbent: mkIncumbent };
 
 if (!WT.isMainThread && WT.workerData && WT.workerData.v2worker) workerMain(WT.workerData);
 else if (require.main === module) main();

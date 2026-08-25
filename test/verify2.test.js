@@ -129,6 +129,32 @@ test('search completeness in a restricted move model must NOT print PROVEN', () 
   const inc2 = { str: 460, orders: 15, line: null, fromSeed: false, sab: null };
   const said2 = V.verdict(ctx, inc2, 460, 460, null, null);
   assert.ok(/PROVEN/.test(said2), `bound match should be PROVEN: ${said2}`);
+
+  // ... and so is completing the FULL-play search (engine legalActions)
+  const s2full = { complete: true, fullPlay: true, model: 'full legal play' };
+  const said3 = V.verdict(ctx, inc, 460, 460, s2full, null);
+  assert.ok(/PROVEN/.test(said3), `full-play completeness should be PROVEN: ${said3}`);
+});
+
+test('a 1-hp zealot is killable in the bound (Last-Stand cap gates on hp>1)', () => {
+  // Regression: the-man-beside-him. stateBound capped every blow against a
+  // Last-Stand unit at hp-1 — at hp 1 that is 0, declaring it unkillable and
+  // pruning every line that whittles a zealot to its last point before the
+  // finishing blow. The engine kills a 1-hp zealot with ANY blow
+  // (attackUnitDamage, engine.js:428: the cap requires def.hp > 1).
+  const ZB = {
+    name: 'zealot-mini', orders: 5, radius: 2, training: 0,
+    objective: { kind: 'maxKill' },
+    units: [
+      { player: 0, type: 'UNIT_SWORDSMAN', q: -1, r: 0 },
+      { player: 1, type: 'UNIT_SWORDSMAN', q: 1, r: 0, hp: 1,
+        promotions: ['EFFECTUNIT_ZEALOT'] },
+    ],
+  };
+  const ctx = V.build(ZB, 5);
+  const s = E.loadPuzzle({ ...ZB, orders: 5 });
+  const bound = V.stateBound(ctx, s, () => true);
+  assert.ok(bound >= 80, `1-hp zealot (80 STR) judged unkillable: bound ${bound}`);
 });
 
 test('getAttackDamage replica matches the engine on a real attack', () => {
