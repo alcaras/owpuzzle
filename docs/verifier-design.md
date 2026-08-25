@@ -287,7 +287,7 @@ became 35/19 contended).
 | horsing-around | 260/11 | 260/11, 300s | PASS (anchor) |
 | king-of-the-hill | 180/**18** | **PROVEN 180/18** @900s (LNS, 2026-08-24; was /21, then /19) | **PASS** — matches the live par |
 | bottleneck-v2 | 350/16 | 350/17 @1200s, **350/16 @2400s** | strength ✓; /16 needs ~5.5M stage2u nodes (~24 min) — over the row's 1200s budget on current code |
-| with-a-little-help | 370/37 | 120/15 @2400s default knobs (2026-08-24; the recorded 170-220 does not reproduce — pre-LNS A/B gets 120/14 on the identical command) | OPEN — re-derive the baseline before believing any delta |
+| with-a-little-help | 370/37 | **270/30** best @2400s default knobs (2026-08-25, LNS polish; 12–27 across runs — worker-seed luck; the recorded 170-220 never reproduced at defaults, pre-LNS A/B 120/14) | OPEN — line tracked at bench/lines/, reproducibility is the next lever (see optimizer-handoff.md) |
 
 Bottleneck-v2 bookkeeping, settled: the "35/16 at node 1,908,608" figure
 belongs to the RETIRED board (f5de22); the bench board (aded0b) is a

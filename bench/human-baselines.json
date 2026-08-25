@@ -16,7 +16,7 @@
     {
       "id": "with-a-little-help", "file": "submissions/with-a-little-help-from-my-friends-f6ff55.json", "pool": 45,
       "target": { "strength": 370, "orders": 37 }, "budgetSeconds": 2400,
-      "source": "Aran, replay-verified. Solver unaided best: 170-220 depending on schedule knobs (post zealot-cap fix, 2026-08-14) — no tuning trend toward 370. CAVEAT 2026-08-24: that band does not reproduce at 2400s default knobs on current code (120/15 with LNS, 120/14 pre-LNS on the identical command, an A/B — not an LNS regression); re-derive a reproducible baseline before believing any delta on this row",
+      "source": "Aran, replay-verified. Solver unaided best: 170-220 depending on schedule knobs (post zealot-cap fix, 2026-08-14) — no tuning trend toward 370. SETTLED 2026-08-24: the band does not reproduce at default knobs even at its home commit (4f23cbe with its own 1500s repro command: 110/12; pre-LNS be5e353 @2400s: 120/14; LNS @2400s: 120/15 — all solo, 8 workers, Apple M5). The row's real default-knob baseline is ~110-120; beat that with a stated command before claiming progress. THEN 2026-08-25: one default-knob 2400s run reached 270/30 (replay-verified, past the recorded best-ever 22) via the LNS polish; a same-command repeat got 120/15 — spread 12-27 STR, decided by worker polish seeding. The 270/30 line is TRACKED at bench/lines/with-a-little-help-f6ff55-line270.json (recovered from the log by tools/reconstruct_line.js); its plan rank-sum is 14, so witness-directed assembly is the reproducibility lever",
       "class": "11-unit deep coordination; THE open problem"
     },
     {
