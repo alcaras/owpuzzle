@@ -11,6 +11,7 @@
 //        V2_NOPUSH=1   drop push-drift from the tables (diagnostics only — unsound)
 //        V2_LNS_SEED=n PRNG seed for the ALNS destroy-set draws (default 0xC0FFEE)
 //        V2_LNS_T3=n   ALNS triple budget per stall on >8-blue boards (default 40)
+//        V2_LNS_CAP=n  candidates per LNS rebuild on >8-blue boards (default 600)
 //
 // Three stages, sharing one table of engine-derived OPTIMISTIC damage:
 //   1. kill-set upper bound U: enumerate red subsets by descending strength and
@@ -1506,13 +1507,24 @@ function stage3(ctx, inc, deadline, opts) {
     // would veto it. When this returns null and the deadline did not cut it
     // short, no reassignment of `subset` beats the reference within the
     // OPT model — the rebuild is exact, not sampled.
+    //
+    // On >8-blue boards the rebuild is CAPPED (and says so in the log): the
+    // gate earns exhaustiveness only where the allocator can refute — on
+    // f6ff55 it refutes almost nothing (the design doc's stage-1 finding),
+    // so an uncapped pair rebuild fights thousands of low-value candidates
+    // and one neighbourhood eats the whole polish slice. The cap trades
+    // depth in one pair for breadth across pairs and seeds; ≤8-blue boards
+    // stay exact, which is what the king gate stands on.
+    var LNSCAP = process.env.V2_LNS_CAP ? parseInt(process.env.V2_LNS_CAP, 10) : 600;
     function rebuild(cur, subset, refStr, refOrd) {
       var saved = subset.map(function (id) { return cur[id]; });
       subset.forEach(function (id) { cur[id] = null; });
-      var found = null;
+      var found = null, capped = false;
+      var capLeft = ctx.BLUE.length <= 8 ? Infinity : LNSCAP;
       (function assign(i) {
-        if (found || Date.now() > deadline) return;
+        if (found || capped || Date.now() > deadline) return;
         if (i === subset.length) {
+          if (capLeft-- <= 0) { capped = true; stats.lnsCapped = (stats.lnsCapped || 0) + 1; return; }
           var same = true;
           for (var si = 0; si < subset.length; si++) {
             if (cur[subset[si]] !== saved[si]) { same = false; break; }
@@ -1526,7 +1538,7 @@ function stage3(ctx, inc, deadline, opts) {
           return;
         }
         var uid = subset[i], list = listById[uid];
-        for (var j = 0; j < list.length && !found; j++) {
+        for (var j = 0; j < list.length && !found && !capped; j++) {
           if (Date.now() > deadline) break;
           var k2 = list[j].key;
           if (!claimOKPl(cur, k2, uid)) continue;
@@ -1738,6 +1750,7 @@ function stage3(ctx, inc, deadline, opts) {
       ' · gateCut ' + stats.gateCut +
       ' · ops ' + OPS.map(function (o) { return o.name + ' ' + o.hits + '/' + o.draws; }).join(', ') +
       (t3Sampled ? ' · triples SAMPLED (' + T3 + ' of ' + TRIPLES.length + ' per stall)' : '') +
+      (stats.lnsCapped ? ' · ' + stats.lnsCapped + ' rebuilds CAPPED at ' + LNSCAP + ' candidates' : '') +
       ' · best ' + (inc.str / 10));
     stats.exhausted = false;
     stats.expressive = true;

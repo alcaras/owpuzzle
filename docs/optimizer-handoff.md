@@ -1,10 +1,38 @@
-# Optimizer program — handoff (paused 2026-08-14)
+# Optimizer program — handoff (LNS built 2026-08-24; previous pause 2026-08-14)
 
-Work paused mid-block when the Fable budget ran out. This file is the
-resume point: what the program is, what got built, what the numbers are,
-and what the next session should do first. The *technical* state of the
-verifier lives in [verifier-design.md](verifier-design.md) — this file
-does not duplicate it, it points at it and adds the plan.
+This file is the resume point: what the program is, what got built, what
+the numbers are, and what the next session should do first. The
+*technical* state of the verifier lives in
+[verifier-design.md](verifier-design.md) — this file does not duplicate
+it, it points at it and adds the plan.
+
+## Scoreboard after the LNS campaign (2026-08-24)
+
+The LNS specced below is built (see "What was built"), and its first
+gate PASSED. All runs solo, default knobs, this machine:
+
+| board | target | unaided result | verdict |
+|---|---|---|---|
+| king-of-the-hill | 180 / 18 | **PROVEN 180 / 18** @900s | **PASS** (was /19; the LNS find) |
+| horsing-around | 260 / 11 | 260 / 11 @300s | PASS (anchor holds) |
+| closing-in | 100 / 22 | **PROVEN** 100 / 22 @600s | PASS |
+| left-flank | 190 / 22 | 190 / 22 @600s | PASS |
+| bottleneck-v2 | 350 / 16 | 350 / 16 @2400s | PASS |
+| with-a-little-help | 370 / 37 | 120 / 15 | OPEN — see the caveat below |
+
+Note the king target here is **/18** (Aran's live folded-in par), not
+the /20 the 08-14 scoreboard used — the 20-order line in submissions/
+is problemgambler's authored line; the bench row was already 18.
+
+**f6ff55 caveat, measured honestly:** the "170–220 unaided" band in the
+old scoreboard does not reproduce at 2400s default knobs on current
+code — and that is NOT the LNS's doing. A/B on identical commands:
+pre-LNS be5e353 gets 12 STR/14, the LNS build 12 STR/15 (noise-level
+identical; worker slicing is wall-clock-dependent). Something between
+the 08-14 measurements and current HEAD moved the default schedule on
+this board, or the 17–22 figures carried knob settings that were not
+recorded with them. Whoever next works that board should first re-derive
+a reproducible baseline command before believing any delta.
 
 ## The goal (the owner's words)
 
@@ -15,7 +43,7 @@ Operationalised as `bench/human-baselines.json`: six boards, each with a
 replay-verified target line and a time budget. The bar is **match-or-beat
 every target unaided** (no seeding, from a cold start) within budget.
 
-## Scoreboard at pause
+## Scoreboard at pause (2026-08-14, historical)
 
 | board | target | unaided result | verdict |
 |---|---|---|---|
@@ -123,33 +151,59 @@ re-ranking what it already has. Any future ordering heuristic should be
 measured against `V2_SEED_DEBUG` first — if the seeds are already spread, the
 heuristic is solving a problem the solver does not have.
 
-## What to do first next session
+## The LNS, as built (2026-08-24)
 
-**Build large-neighborhood search** over reached deployments: generalise
-the existing polish pass from 1-swap hill-climbing to *destroy k units'
-assignments and rebuild that subset exactly* (k=2–3), seeded from the top
-reached deployments and from the proof line. It reuses the whole existing
-`evalPlacement`/fight machinery. Population/crossover and annealing are
-**deferred on evidence** — the gaps are local, which is LNS's home ground.
+The plan below was executed and its gates ran in order. What shipped, in
+`tools/verify2.js` (`opts.polishOnly` is now the LNS):
 
-Agreed gates, in this order:
+- **Exact k-subset rebuild.** Destroy k units' seats (k=1, all pairs,
+  then triples) and enumerate the subset's joint reassignment from the
+  units' FULL seat lists — the old polish capped candidates at rank 20
+  (1-swaps) / rank 12 (pairs), and king's decisive seats sit at
+  expressive ranks 27 and 29, so the old pass could never propose them
+  *by construction*. Freed units are lifted before enumeration so seat
+  rotations inside the subset are reachable.
+- **The allocator gate is what makes exhaustive affordable.** Every
+  candidate placement is pinned into the kill-set allocator first;
+  refutation (no mask can beat the reference — strictly stronger, or
+  equal strength in strictly fewer orders) skips the fight. On king it
+  gated 8,411 of ~10k candidates and the /18 landed 58 fights in.
+- **ALNS operators** (rand / weak / front / dear) with adaptive weights
+  on a seeded PRNG (`V2_LNS_SEED`) order the triple space; on ≤8-blue
+  boards an exhaustive tail sweeps whatever the dice never rolled, so a
+  dry verdict means dry. On >8-blue boards rebuilds are CAPPED
+  (`V2_LNS_CAP`, default 600 candidates, logged when it trips): where
+  the allocator cannot refute (f6ff55 — the stage-1 finding), an
+  uncapped pair rebuild fights thousands of low-value candidates and one
+  neighbourhood eats the whole polish slice.
+- **Proof-line seeding.** The incumbent line's own deployment joins the
+  seed pool — a stage2-found proof never passes through evalLeaf, so
+  topLeaves can lack the very deployment the proof stands on.
 
-1. **king /20 unaided within its 900s row budget** — first, because its
-   target is provably 2–3 substitutions from a deployment the tree
-   already reaches. This is the cheapest possible test of the thesis.
-2. **Full six-board solo regression** — especially left-flank, which is
-   historically the board that ordering changes silently bury, and whose
-   420s budget has no slack.
-3. **Verdict semantics untouched.** LNS finds lines; replay verifies
-   them; PROVEN still comes only from the three sources. An LNS-found /20
-   at proven-180 strength is *best-known* /20 — we have no
-   order-optimality proof source. If one can be built out of par
-   refinement's bound, spec it separately before claiming it.
-4. `npm test` 99/0.
+Gate results: (1) king 180/**18** unaided @900s, PROVEN strength —
+PASS, one better than the /19 the code did before and equal to the live
+par; (2) six-board solo regression clean (scoreboard above, left-flank
+included); (3) verdict semantics untouched — the /18 is *best-known*
+orders at PROVEN strength, exactly as specced; (4) `npm test` green.
 
-Then point LNS at f6ff55 (370/37), with spanning-unit front conditioning
-as the follow-on if LNS alone stalls. On that board 8 of 11 blue units
-reach only 3 red units, so it nearly decomposes.
+## What to do next session
+
+Point the machinery at **f6ff55 (370/37)** — but the first step there is
+metrology, not search: re-derive a reproducible baseline command (see
+the caveat under the scoreboard; the recorded 17–22 does not reproduce
+at default knobs, pre-LNS or post-). Then spanning-unit front
+conditioning as the follow-on if LNS alone stalls: 8 of 11 blue units
+reach only 3 red units, so the board nearly decomposes — use fronts as
+LNS destroy-neighbourhoods (destroy one front, rebuild it exactly),
+which sidesteps the independence-soundness objection that killed
+explicit decomposition.
+
+Also on the table, from the owner's 2026-08-24 direction: a **learned
+seat-ranking prior** to replace the hand-tuned ordering penalties
+(DEFPEN, LAMBDA) — offline-evaluable against `V2_TRACE_LINE` rank-sums
+on the known human lines before it touches a single search budget;
+training data from PROVEN small boards the verifier can generate. Keep
+it ordering-only; bounds stay hand-proven.
 
 ## Also scoped but not built
 

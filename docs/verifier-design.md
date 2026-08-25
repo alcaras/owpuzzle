@@ -244,11 +244,21 @@ the gap:
   no shares: the exact old arrival order) runs first, and the expressive
   pass extends it. Plan slices are always expressive (a witness's seats
   are often exactly the deferred ones).
-- **polish**: hill-climbing repair of the best deployments seen — swap
-  one unit's seat, refight, keep improvements. Coordination has local
+- **polish (now LNS, 2026-08-24)**: large-neighbourhood repair of the
+  best deployments seen — destroy k units' seats (k=1, all pairs,
+  ALNS-chosen triples) and rebuild the subset exactly from the FULL
+  seat lists, every candidate gated through the kill-set allocator
+  pinned to its seats before any fight. Coordination has local
   gradients (add the missing flank partner, pull a softener into range)
-  that global best-first cannot follow. Coverage rounds and polish rounds
-  alternate on big boards.
+  that global best-first cannot follow — and the decisive seats can sit
+  at rank 25–30, beyond any fixed candidate cap, which is why the lists
+  are not truncated (>8-blue boards cap per-rebuild candidates at
+  `V2_LNS_CAP`, logged, because where the allocator cannot refute, an
+  uncapped rebuild fights thousands of low-value candidates). Seeds:
+  topLeaves plus the incumbent line's own deployment. Coverage rounds
+  and polish rounds alternate on big boards. This is what took king
+  from 18/19 to PROVEN 18 STR in 18 orders — the /18 landed 58 fights
+  into the first LNS pass, with 8,411 of ~10k candidates gated.
 
 Honest status on the unaided-find gate (f6ff55 pool 45, no seed): the
 model now CONTAINS the author's 37-line — all nine seats claimable,
@@ -275,9 +285,9 @@ became 35/19 contended).
 | closing-in | 100/22 | **PROVEN 100/22**, 300s | PASS |
 | left-flank | 190/22 | 190/22, 420s | PASS |
 | horsing-around | 260/11 | 260/11, 300s | PASS (anchor) |
-| king-of-the-hill | 180/20 | **PROVEN 180**/21 | strength ✓ (from 130), one order short |
+| king-of-the-hill | 180/**18** | **PROVEN 180/18** @900s (LNS, 2026-08-24; was /21, then /19) | **PASS** — matches the live par |
 | bottleneck-v2 | 350/16 | 350/17 @1200s, **350/16 @2400s** | strength ✓; /16 needs ~5.5M stage2u nodes (~24 min) — over the row's 1200s budget on current code |
-| with-a-little-help | 370/37 | 170-220 | OPEN — the moonshot |
+| with-a-little-help | 370/37 | 120/15 @2400s default knobs (2026-08-24; the recorded 170-220 does not reproduce — pre-LNS A/B gets 120/14 on the identical command) | OPEN — re-derive the baseline before believing any delta |
 
 Bottleneck-v2 bookkeeping, settled: the "35/16 at node 1,908,608" figure
 belongs to the RETIRED board (f5de22); the bench board (aded0b) is a
@@ -302,7 +312,11 @@ King's missing order is diagnosed, not mysterious: the human 18/20 line
 V2_TRACE_LINE shows it fully expressive — one deferred seat (the red
 general's own tile), two marched seats, pinned-bound feasible at cost
 floor 14. Equal-strength plan slices (added for par refinement) still do
-not assemble it within 900s. Ordering, again. Same story for
+not assemble it within 900s. Ordering, again. (CLOSED 2026-08-24: the
+LNS polish assembles an 18-order line unaided @900s — full-list rebuild
+can propose the rank-27/29 seats the capped polish never could. The /18
+is best-known orders at PROVEN 18 STR; there is still no
+order-optimality proof source.) Same story for
 bottleneck-v2's 16th order (stage2u refinement depth). f6ff55 remains
 dominated by schedule noise (17-22 across knob settings) — no tuning
 trend points at 370; it needs the funded ordering research (population /

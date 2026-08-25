@@ -16,7 +16,7 @@
     {
       "id": "with-a-little-help", "file": "submissions/with-a-little-help-from-my-friends-f6ff55.json", "pool": 45,
       "target": { "strength": 370, "orders": 37 }, "budgetSeconds": 2400,
-      "source": "Aran, replay-verified. Solver unaided best: 170-220 depending on schedule knobs (post zealot-cap fix, 2026-08-14) — no tuning trend toward 370",
+      "source": "Aran, replay-verified. Solver unaided best: 170-220 depending on schedule knobs (post zealot-cap fix, 2026-08-14) — no tuning trend toward 370. CAVEAT 2026-08-24: that band does not reproduce at 2400s default knobs on current code (120/15 with LNS, 120/14 pre-LNS on the identical command, an A/B — not an LNS regression); re-derive a reproducible baseline before believing any delta on this row",
       "class": "11-unit deep coordination; THE open problem"
     },
     {
@@ -29,7 +29,7 @@
       "id": "king-of-the-hill", "file": "submissions/king-of-the-hill-41e478.json", "pool": 25,
       "target": { "strength": 180, "orders": 18 }, "budgetSeconds": 900,
       "source": "Aran, 18 orders — the LIVE par on owpuzzle.fly.dev (folded in from a better-than-par record). problemgambler's authored 20-order line is in submissions/king-of-the-hill-41e478-line.json; the local submission file still carries its stale par of 20, so read the live puzzle, not the file",
-      "class": "fortified hill assault; solver unaided: 21 orders before the heckler fix, 19 after — still two short of the human 18"
+      "class": "fortified hill assault; solver unaided: 21 orders, then 19, and PROVEN 180/18 @900s since the LNS polish (2026-08-24) — the row PASSES; the /18 line is submissions/king-of-the-hill-41e478-line18.json (V2_DUMP_LINE)"
     },
     {
       "id": "horsing-around", "file": "submissions/horsing-around-e7a297.json", "pool": 20,
