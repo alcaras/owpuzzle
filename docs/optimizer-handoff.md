@@ -18,21 +18,50 @@ gate PASSED. All runs solo, default knobs, this machine:
 | closing-in | 100 / 22 | **PROVEN** 100 / 22 @600s | PASS |
 | left-flank | 190 / 22 | 190 / 22 @600s | PASS |
 | bottleneck-v2 | 350 / 16 | 350 / 16 @2400s | PASS |
-| with-a-little-help | 370 / 37 | 120 / 15 | OPEN — see the caveat below |
+| with-a-little-help | 370 / 37 | **270 / 30** best (12–27 across runs) | OPEN — big LNS jump, see below |
 
 Note the king target here is **/18** (Aran's live folded-in par), not
 the /20 the 08-14 scoreboard used — the 20-order line in submissions/
 is problemgambler's authored line; the bench row was already 18.
 
-**f6ff55 caveat, measured honestly:** the "170–220 unaided" band in the
-old scoreboard does not reproduce at 2400s default knobs on current
-code — and that is NOT the LNS's doing. A/B on identical commands:
-pre-LNS be5e353 gets 12 STR/14, the LNS build 12 STR/15 (noise-level
-identical; worker slicing is wall-clock-dependent). Something between
-the 08-14 measurements and current HEAD moved the default schedule on
-this board, or the 17–22 figures carried knob settings that were not
-recorded with them. Whoever next works that board should first re-derive
-a reproducible baseline command before believing any delta.
+**f6ff55 metrology, SETTLED 2026-08-24 (evening):** the "170–220
+unaided" band does not reproduce at default knobs — and no commit
+broke it, because it does not even reproduce at its home commit.
+Three solo measurements on this machine (Apple M5, 10 cpus → the same
+8 workers the notes recorded):
+
+| code | command | result |
+|---|---|---|
+| 4f23cbe (the commit whose doc asserts "expect 17-22") | its own repro command, 1500s | 110/12 |
+| be5e353 (pre-LNS) | 2400s | 120/14 |
+| LNS build | 2400s | 120/15 |
+
+Conclusion: the 17–22 figures carried unrecorded knob settings or
+another machine's wall-clock slicing, not a reproducible default. The
+row's REAL baseline is **~110–120 at default knobs**, and any claimed
+improvement on this board must beat that with a stated command —
+knob-archaeology for the old 22 is not worth the runs.
+
+**Then the LNS hit 270/30 on this board (2026-08-25, 00:00-ish).** One
+2400s default-knob run: worker 3's LNS polish slice climbed
+11 → 17 → 22 → **27 STR** through capped full-list k=1/pair rebuilds
+(deployments 76/267/314/378 of the slice; frontK was never even drawn —
+the VND ladder kept improving at k≤2), then a later slice trimmed
+27/31 → 27/30. Replay-verified; past the old recorded best-ever 22. A
+same-command repeat got 12/15 — the spread at default knobs is
+**12–27, decided by which worker's polish slice gets the right seeds**
+(workers share only incumbent strength, not deployments). The line was
+recovered from the lucky run's log with the new
+`tools/reconstruct_line.js` (log-string-matched DFS) and lives TRACKED
+at `bench/lines/with-a-little-help-f6ff55-line270.json` — it is a lucky
+find, not regenerable on demand.
+
+The diagnostic that names the next lever: V2_TRACE_LINE on the 270/30
+line reports expressive rank-sum **90** (worst seat rank 40) but plan
+rank-sum **14** — under the right kill-set witness, the winning seats
+are nearly top-of-list. The line is cheap to ASSEMBLE once the right
+witness gets a slice; the search's problem is getting it one, and
+getting polish its seeds.
 
 ## The goal (the owner's words)
 
@@ -188,15 +217,25 @@ orders at PROVEN strength, exactly as specced; (4) `npm test` green.
 
 ## What to do next session
 
-Point the machinery at **f6ff55 (370/37)** — but the first step there is
-metrology, not search: re-derive a reproducible baseline command (see
-the caveat under the scoreboard; the recorded 17–22 does not reproduce
-at default knobs, pre-LNS or post-). Then spanning-unit front
-conditioning as the follow-on if LNS alone stalls: 8 of 11 blue units
-reach only 3 red units, so the board nearly decomposes — use fronts as
-LNS destroy-neighbourhoods (destroy one front, rebuild it exactly),
-which sidesteps the independence-soundness objection that killed
-explicit decomposition.
+Make the f6ff55 27-class **reproducible** instead of lucky. Two levers,
+both named by this session's data, in value order:
+
+1. **Share topLeaves across workers.** The 27 happened in the one worker
+   whose own polish seeds contained the gradient; workers currently
+   share only incumbent STRENGTH (the SharedArrayBuffer), so seven
+   polish passes ran on worse material. Post top deployments over
+   postMessage, merge into each worker's seed pool. Cheap, mechanical,
+   and it directly attacks the 12-vs-27 variance.
+2. **Get the right witness a plan slice.** The 270/30 line's plan
+   rank-sum is 14 — near-top under its own kill-set witness — so
+   assembly is cheap once the right (mask, witness) pair gets budget.
+   Witness rotation exists (3 rotations/mask); consider more rotations
+   on the masks just above the incumbent, and plan slices re-run after
+   the incumbent moves (the current schedule runs them once, up front).
+
+frontK (destroy a whole front, sampled rebuild for k>=4) is built and
+inert so far — the VND never went dry enough to draw it in the lucky
+run. Leave it in; it costs nothing until drawn.
 
 Also on the table, from the owner's 2026-08-24 direction: a **learned
 seat-ranking prior** to replace the hand-tuned ordering penalties

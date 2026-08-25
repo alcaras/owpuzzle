@@ -1521,6 +1521,35 @@ function stage3(ctx, inc, deadline, opts) {
       subset.forEach(function (id) { cur[id] = null; });
       var found = null, capped = false;
       var capLeft = ctx.BLUE.length <= 8 ? Infinity : LNSCAP;
+      // k>=4 (front rebuilds): exact enumeration under a cap visits only the
+      // lexicographic top corner of |L|^k, which is no diversity at all —
+      // sample instead: LNSCAP score-biased draws (geometric over list rank,
+      // so the top seats dominate but the tail stays reachable)
+      if (subset.length >= 4) {
+        for (var d = 0; d < LNSCAP && !found && Date.now() < deadline; d++) {
+          var okDraw = true;
+          for (var di = 0; di < subset.length; di++) {
+            var uid2 = subset[di], l2 = listById[uid2];
+            var pickI = 0;
+            while (pickI < l2.length - 1 && rng() < 0.72) pickI++;
+            var kk = l2[pickI].key;
+            if (!claimOKPl(cur, kk, uid2)) { okDraw = false; break; }
+            cur[uid2] = kk;
+          }
+          if (okDraw) {
+            var cD = placementCost(cur);
+            if (cD !== null && gateImproves(cur, cD, refStr, refOrd)) {
+              var rD = evalPlacement(Object.assign({}, cur), cD);
+              if (better(rD, refStr, refOrd)) { found = rD; break; }
+            }
+          }
+          for (var dj = 0; dj < subset.length; dj++) cur[subset[dj]] = null;
+        }
+        if (!found) {
+          for (var dk = 0; dk < subset.length; dk++) cur[subset[dk]] = saved[dk];
+        }
+        return found;
+      }
       (function assign(i) {
         if (found || capped || Date.now() > deadline) return;
         if (i === subset.length) {
@@ -1583,7 +1612,12 @@ function stage3(ctx, inc, deadline, opts) {
       { name: 'weak', w: 1, hits: 0, draws: 0 },
       { name: 'front', w: 1, hits: 0, draws: 0 },
       { name: 'dear', w: 1, hits: 0, draws: 0 },
-    ];
+    ].concat(ctx.BLUE.length > 8
+      // big boards only: destroy a whole FRONT (every unit able to hit one
+      // red, up to 5) and rebuild it jointly — f6ff55's structure (8 of 11
+      // blues reach only 3 reds) says the coordination that matters is
+      // within-front, and k<=3 rebuilds cannot re-coordinate one
+      ? [{ name: 'frontK', w: 1, hits: 0, draws: 0 }] : []);
     var PICKERS = {
       rand: function (pl, k) { return pickWeighted(k, function () { return 1; }); },
       // least realistic punch from its current seat — likely misplaced
@@ -1608,6 +1642,30 @@ function stage3(ctx, inc, deadline, opts) {
           var b = ctx.BLUE[i], s = seatEntry(b.id, pl[b.id]);
           return (s ? s.orders : 0) + 0.5;
         });
+      },
+      // a whole front: up to 5 units able to hit one red, sampled by punch.
+      // k>=4 subsets take the SAMPLED rebuild path in rebuild().
+      frontK: function (pl, k) {
+        var r = Math.floor(rng() * ctx.NR);
+        var able = [];
+        ctx.BLUE.forEach(function (b, i) {
+          if ((ctx.OPT[b.id].stat[r] || 0) > 0) able.push(i);
+        });
+        var want = Math.min(5, Math.max(4, able.length));
+        if (able.length <= want) {
+          return able.map(function (i) { return ctx.BLUE[i].id; });
+        }
+        var picked = [];
+        while (picked.length < want && able.length) {
+          var tot = 0;
+          var w = able.map(function (i2) {
+            var x = (ctx.OPT[ctx.BLUE[i2].id].stat[r] || 0) + 0.5; tot += x; return x;
+          });
+          var rr = rng() * tot, j = 0;
+          while (j < able.length - 1 && (rr -= w[j]) > 0) j++;
+          picked.push(able[j]); able.splice(j, 1);
+        }
+        return picked.map(function (i) { return ctx.BLUE[i].id; });
       },
     };
     function drawOp() {

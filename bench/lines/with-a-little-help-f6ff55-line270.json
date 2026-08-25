@@ -1,0 +1,102 @@
+{
+ "strength": 270,
+ "orders": 30,
+ "line": [
+  {
+   "type": "move",
+   "unit": 15,
+   "q": 2,
+   "r": -2
+  },
+  {
+   "type": "move",
+   "unit": 13,
+   "q": 2,
+   "r": 0
+  },
+  {
+   "type": "move",
+   "unit": 8,
+   "q": 0,
+   "r": 1
+  },
+  {
+   "type": "move",
+   "unit": 11,
+   "q": 2,
+   "r": -1
+  },
+  {
+   "type": "attack",
+   "unit": 13,
+   "target": 12
+  },
+  {
+   "type": "attack",
+   "unit": 11,
+   "target": 12
+  },
+  {
+   "type": "move",
+   "unit": 7,
+   "q": 3,
+   "r": -1
+  },
+  {
+   "type": "attack",
+   "unit": 15,
+   "target": 14
+  },
+  {
+   "type": "attack",
+   "unit": 7,
+   "target": 14
+  },
+  {
+   "type": "move",
+   "unit": 2,
+   "q": 3,
+   "r": -1
+  },
+  {
+   "type": "attack",
+   "unit": 2,
+   "target": 19
+  },
+  {
+   "type": "attack",
+   "unit": 7,
+   "target": 19
+  },
+  {
+   "type": "march",
+   "unit": 16
+  },
+  {
+   "type": "move",
+   "unit": 16,
+   "q": 4,
+   "r": -2
+  },
+  {
+   "type": "attack",
+   "unit": 16,
+   "target": 0
+  },
+  {
+   "type": "attack",
+   "unit": 7,
+   "target": 0
+  },
+  {
+   "type": "attack",
+   "unit": 7,
+   "target": 5
+  },
+  {
+   "type": "attack",
+   "unit": 8,
+   "target": 1
+  }
+ ]
+}
