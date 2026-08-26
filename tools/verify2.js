@@ -1163,7 +1163,7 @@ function stage3(ctx, inc, deadline, opts) {
           pl[ctx.BLUE[i2].id] = mem.tileList[ti];
         }
         if (Atomics.load(share.arr, base2) !== v1) continue;   // torn: retry
-        if (ok) out.push({ placement: pl, str: str2, orders: ord2 });
+        if (ok) out.push({ placement: pl, str: str2, orders: ord2, src: 'w' + (s / 6 | 0) });
         break;
       }
     }
@@ -1237,6 +1237,11 @@ function stage3(ctx, inc, deadline, opts) {
     return true;
   }
 
+  // Provenance for incumbent jumps: which stage/seed/subset produced each
+  // noteBest. Three instrumented runs beat ten blind ones — the f6ff55
+  // first-climb question ("what finds the 17-basin?") is answered by
+  // reading these tags off the log, not by knob roulette.
+  var PROV = { cur: '' };
   function fightHash(s) {
     var h = '';
     for (var i = 0; i < s.units.length; i++) {
@@ -1316,12 +1321,13 @@ function stage3(ctx, inc, deadline, opts) {
     })(st, [], pending);
     if (localBest.line) {
       noteBest(inc, localBest.str, localBest.orders, startLine.concat(localBest.line),
-        'deployment ' + stats.leaves);
+        'deployment ' + stats.leaves + (PROV.cur ? ' · ' + PROV.cur : ''));
     }
     return { str: localBest.str, orders: localBest.orders };
   }
 
   function evalLeaf(assignment) {
+    PROV.cur = opts.plan ? 'plan:' + (opts.plan.str / 10) : (EXPR ? 'tree-expr' : 'tree');
     // assignment: array of {unitIdx, seat} in `order` order. Resolve symmetry:
     // choose the min-cost member<->tile pairing within each class.
     var byClass = {};
@@ -1583,6 +1589,7 @@ function stage3(ctx, inc, deadline, opts) {
     var LNSF = process.env.V2_LNS_FIGHTS ? parseInt(process.env.V2_LNS_FIGHTS, 10) : 24;
     var PB = { left: Infinity };            // per-seed fight budget, set by the loop
     function rebuild(cur, subset, refStr, refOrd) {
+      PROV.cur = 'LNS' + (PROV.seed || '') + ' k' + subset.length + ' [' + subset.join('+') + ']';
       var saved = subset.map(function (id) { return cur[id]; });
       subset.forEach(function (id) { cur[id] = null; });
       var found = null, capped = false;
@@ -1786,14 +1793,16 @@ function stage3(ctx, inc, deadline, opts) {
 
     var seeds = (mem.topLeaves || []).slice()
       .sort(function (a, b) { return b.str - a.str || a.orders - b.orders; });
+    seeds.forEach(function (x) { x.src = x.src || 'local'; });
     var pls = lineSeed();
     if (pls) {
       var lc = placementCost(pls);
       if (lc !== null) {
+        PROV.cur = 'lineSeed';
         var lr = evalPlacement(Object.assign({}, pls), lc);
         seeds.unshift(lr !== -1
-          ? { placement: pls, str: lr.str, orders: lr.orders }
-          : { placement: pls, str: inc.str, orders: inc.orders });
+          ? { placement: pls, str: lr.str, orders: lr.orders, src: 'line' }
+          : { placement: pls, str: inc.str, orders: inc.orders, src: 'line' });
       }
     }
     // foreign workers' best deployments join the pool, best first — the
@@ -1860,7 +1869,8 @@ function stage3(ctx, inc, deadline, opts) {
     var SEEDF = process.env.V2_LNS_SEEDF ? parseInt(process.env.V2_LNS_SEEDF, 10) : 150;
     var small = ctx.BLUE.length <= 8;
     var cursors = seeds.map(function (x) {
-      return { cur: Object.assign({}, x.placement), str: x.str, ord: x.orders };
+      return { cur: Object.assign({}, x.placement), str: x.str, ord: x.orders,
+        src: x.src || 'local' };
     });
     var passImp = true;
     while (passImp && Date.now() < deadline) {
@@ -1868,6 +1878,7 @@ function stage3(ctx, inc, deadline, opts) {
       for (var sd = 0; sd < cursors.length; sd++) {
         if (Date.now() > deadline) break;
         var C = cursors[sd];
+        PROV.seed = ' seed#' + sd + ':' + C.src;
         PB.left = small ? Infinity : SEEDF;
         for (;;) {                    // VND: k=1 -> pairs -> triples; restart on any improvement
           if (Date.now() > deadline || PB.left <= 0) break;
