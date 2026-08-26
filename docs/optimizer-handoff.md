@@ -287,9 +287,25 @@ bound or verdict). The stack, all dependency-free:
   budget, keep ONLY PROVEN variants — labels are bound-matched facts.
   Not yet run at scale (solo discipline: it spawns verify2).
 
-Next: run gen_boards for a few hundred PROVEN variants, retrain, and
-graduate the scorer into buildSeatLists ordering ONLY if the held-out
-rank-sums beat the hand heuristic across the board.
+**Ranker v1 measured (2026-08-26, 01:20).** gen_boards produced
+336/480 PROVEN variants (~2h, seed 1, regenerable — the dataset itself
+is NOT committed); 9,126 feature rows, 485 positives. Trained on
+generated data ONLY, evaluated on the six real lines it never saw:
+rank-sums 41/52/40/17/85/121 vs the hand order's 49/61/35/13/83/146 —
+net −31, and −25 on the author's unreached 370/37. Wins the three
+hardest rows, loses two easy ones slightly, so by the agreed bar
+(across-the-board) it does NOT graduate into buildSeatLists yet.
+
+Why, and the fix path: the generated boards prove too easily (most in
+seconds), so deferred/march-dependent positives are rare and the model
+even learned `deferred` NEGATIVE — the opposite of what king and
+closing-in teach. In order: (a) generate HARDER variants — keep only
+boards whose proof needed plan slices or whose line uses a
+deferred/march seat, or perturb the bench boards themselves; (b) add
+the features the linear model lacks (per-red damage share, flank
+geometry, witness membership); (c) then a small GBDT if linear stalls.
+Weights live untracked at bench/ranker-weights.json (regenerate:
+gen_boards → rank_eval --dump-features → train_ranker).
 
 ## Also scoped but not built
 
