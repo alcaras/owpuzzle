@@ -1,0 +1,8 @@
+[
+  { "name": "closing-in (human 10/22)", "puzzle": "submissions/closing-in-8f4afe.json", "pool": 30, "line": "submissions/closing-in-8f4afe-line.json" },
+  { "name": "king (human 18/20)", "puzzle": "submissions/king-of-the-hill-41e478.json", "pool": 25, "line": "submissions/king-of-the-hill-41e478-line.json" },
+  { "name": "king (solver 18/18)", "puzzle": "submissions/king-of-the-hill-41e478.json", "pool": 25, "line": "submissions/king-of-the-hill-41e478-line18.json" },
+  { "name": "bottleneck-v2 (solver 35/16)", "puzzle": "submissions/bottleneck-aded0b.json", "pool": 20, "line": "submissions/bottleneck-aded0b-line.json" },
+  { "name": "f6ff55 (solver 27/30)", "puzzle": "submissions/with-a-little-help-from-my-friends-f6ff55.json", "pool": 45, "line": "bench/lines/with-a-little-help-f6ff55-line270.json" },
+  { "name": "f6ff55 (author 37/37)", "puzzle": "submissions/with-a-little-help-from-my-friends-f6ff55.json", "pool": 45, "line": "authorSolution" }
+]
