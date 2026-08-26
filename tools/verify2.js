@@ -12,6 +12,8 @@
 //        V2_LNS_SEED=n PRNG seed for the ALNS destroy-set draws (default 0xC0FFEE)
 //        V2_LNS_T3=n   ALNS triple budget per stall on >8-blue boards (default 40)
 //        V2_LNS_CAP=n  candidates per LNS rebuild on >8-blue boards (default 600)
+//        V2_LNS_FIGHTS=n  fights per LNS rebuild on >8-blue boards (default 24)
+//        V2_LNS_SEEDF=n   fights per seed per polish visit, >8 blue (default 150)
 //
 // Three stages, sharing one table of engine-derived OPTIMISTIC damage:
 //   1. kill-set upper bound U: enumerate red subsets by descending strength and
@@ -1112,6 +1114,62 @@ function stage3(ctx, inc, deadline, opts) {
   var FCAP = process.env.FCAP ? parseInt(process.env.FCAP, 10)
     : (opts.plan ? 2500 : Infinity);
 
+  // Cross-worker deployment sharing (see runParallel). Slots hold
+  // (version, str, orders, one tile index per blue unit); a seqlock per
+  // slot (odd = writing) keeps torn reads out, and every worker writes
+  // only its own 3 slots so writers never contend. publishShare runs at
+  // every stage exit; readShare feeds the polish seed pool.
+  var share = mem.share || null;
+  if (share && !mem.tileList) {
+    // tiles is a dict keyed "q,r"; sorted keys give every worker the same
+    // index space regardless of insertion order
+    mem.tileList = Object.keys(ctx.INIT.tiles).sort();
+    mem.tileIdx = {};
+    mem.tileList.forEach(function (k2, i2) { mem.tileIdx[k2] = i2; });
+  }
+  function publishShare() {
+    if (!share) return;
+    var tl = mem.topLeaves || [];
+    for (var s = 0; s < 6 && s < tl.length; s++) {
+      var e = tl[s], base2 = (share.w * 6 + s) * share.slotw;
+      var tiles2 = [], ok = true;
+      for (var i2 = 0; i2 < ctx.BLUE.length; i2++) {
+        var ti = mem.tileIdx[e.placement[ctx.BLUE[i2].id]];
+        if (ti === undefined) { ok = false; break; }
+        tiles2.push(ti);
+      }
+      if (!ok) continue;
+      Atomics.add(share.arr, base2, 1);                  // odd: writing
+      share.arr[base2 + 1] = e.str;
+      share.arr[base2 + 2] = e.orders;
+      for (var i3 = 0; i3 < tiles2.length; i3++) share.arr[base2 + 3 + i3] = tiles2[i3];
+      Atomics.add(share.arr, base2, 1);                  // even: stable
+    }
+  }
+  function readShare() {
+    if (!share) return [];
+    var out = [];
+    for (var s = 0; s < share.k * 6; s++) {
+      if ((s / 6 | 0) === share.w) continue;             // own slots
+      var base2 = s * share.slotw;
+      for (var tries = 0; tries < 3; tries++) {
+        var v1 = Atomics.load(share.arr, base2);
+        if (!v1 || (v1 & 1)) break;                      // empty or mid-write
+        var pl = {}, ok = true;
+        var str2 = share.arr[base2 + 1], ord2 = share.arr[base2 + 2];
+        for (var i2 = 0; i2 < ctx.BLUE.length; i2++) {
+          var ti = share.arr[base2 + 3 + i2];
+          if (ti < 0 || ti >= mem.tileList.length) { ok = false; break; }
+          pl[ctx.BLUE[i2].id] = mem.tileList[ti];
+        }
+        if (Atomics.load(share.arr, base2) !== v1) continue;   // torn: retry
+        if (ok) out.push({ placement: pl, str: str2, orders: ord2 });
+        break;
+      }
+    }
+    return out;
+  }
+
   var built = buildSeatLists(ctx, { plan: opts.plan, expressive: opts.expressive });
   var classOf = built.classOf, classes = built.classes, seatEntry = built.seatEntry;
   var lists = built.lists, order = built.order;
@@ -1516,11 +1574,20 @@ function stage3(ctx, inc, deadline, opts) {
     // depth in one pair for breadth across pairs and seeds; ≤8-blue boards
     // stay exact, which is what the king gate stands on.
     var LNSCAP = process.env.V2_LNS_CAP ? parseInt(process.env.V2_LNS_CAP, 10) : 600;
+    // On gate-weak boards (f6ff55: the allocator refutes almost nothing)
+    // the candidate cap alone still lets ONE rebuild fight ~600 candidates
+    // — a whole polish slice inside one neighbourhood of one seed, which
+    // is how the 270/30 stayed luck: polish never reached the seed that
+    // carried it. Fights, not candidates, are the real budget: cap them
+    // per rebuild too (>8-blue only; small boards stay exact).
+    var LNSF = process.env.V2_LNS_FIGHTS ? parseInt(process.env.V2_LNS_FIGHTS, 10) : 24;
+    var PB = { left: Infinity };            // per-seed fight budget, set by the loop
     function rebuild(cur, subset, refStr, refOrd) {
       var saved = subset.map(function (id) { return cur[id]; });
       subset.forEach(function (id) { cur[id] = null; });
       var found = null, capped = false;
       var capLeft = ctx.BLUE.length <= 8 ? Infinity : LNSCAP;
+      var fightsLeft = ctx.BLUE.length <= 8 ? Infinity : LNSF;
       // k>=4 (front rebuilds): exact enumeration under a cap visits only the
       // lexicographic top corner of |L|^k, which is no diversity at all —
       // sample instead: LNSCAP score-biased draws (geometric over list rank,
@@ -1540,6 +1607,11 @@ function stage3(ctx, inc, deadline, opts) {
             var cD = placementCost(cur);
             if (cD !== null && gateImproves(cur, cD, refStr, refOrd)) {
               var rD = evalPlacement(Object.assign({}, cur), cD);
+              if (rD !== -1 && (--fightsLeft < 0 || --PB.left < 0)) {
+                stats.lnsCapped = (stats.lnsCapped || 0) + 1;
+                if (better(rD, refStr, refOrd)) found = rD;
+                break;
+              }
               if (better(rD, refStr, refOrd)) { found = rD; break; }
             }
           }
@@ -1563,6 +1635,9 @@ function stage3(ctx, inc, deadline, opts) {
           if (c === null) return;
           if (!gateImproves(cur, c, refStr, refOrd)) return;
           var r = evalPlacement(Object.assign({}, cur), c);
+          if (r !== -1 && (--fightsLeft < 0 || --PB.left < 0)) {
+            capped = true; stats.lnsCapped = (stats.lnsCapped || 0) + 1;
+          }
           if (better(r, refStr, refOrd)) found = r;
           return;
         }
@@ -1721,6 +1796,23 @@ function stage3(ctx, inc, deadline, opts) {
           : { placement: pls, str: inc.str, orders: inc.orders });
       }
     }
+    // foreign workers' best deployments join the pool, best first — the
+    // gradient one worker found becomes every worker's polish material
+    var foreign = readShare();
+    if (foreign.length) {
+      var have = {};
+      seeds.forEach(function (x) {
+        have[Object.keys(x.placement).map(function (id) { return id + '@' + x.placement[id]; }).sort().join(';')] = 1;
+      });
+      foreign.sort(function (a, b) { return b.str - a.str || a.orders - b.orders; });
+      var fresh = foreign.filter(function (x) {
+        var sig = Object.keys(x.placement).map(function (id) { return id + '@' + x.placement[id]; }).sort().join(';');
+        if (have[sig]) return false;
+        have[sig] = 1;
+        return true;
+      });
+      seeds = fresh.concat(seeds);
+    }
     // V2_SEED_DEBUG: is the seed set one basin or several? Mean pairwise
     // distance over the unit->tile assignments answers it in one number.
     // This instrument exists because it KILLED a plausible theory: the top-16
@@ -1758,51 +1850,68 @@ function stage3(ctx, inc, deadline, opts) {
     var T3 = ctx.BLUE.length <= 8 ? TRIPLES.length
       : Math.min(TRIPLES.length, process.env.V2_LNS_T3 ? parseInt(process.env.V2_LNS_T3, 10) : 40);
     var t3Sampled = false;
-    for (var sd = 0; sd < seeds.length; sd++) {
-      if (Date.now() > deadline) break;
-      var cur = Object.assign({}, seeds[sd].placement);
-      var curStr = seeds[sd].str, curOrd = seeds[sd].orders;
-      for (;;) {                      // VND: k=1 -> pairs -> triples; restart on any improvement
+    // Round-robin the fight budget across seeds instead of drowning in
+    // seed #1: on gate-weak big boards a single seed's k=1 sweep can eat
+    // a whole polish slice, so the slice used to process ONE seed — which
+    // is why the 270/30 was luck (it lived in seed material polish never
+    // reached). Each visit gives a seed V2_LNS_SEEDF fights of VND from
+    // its persisted cursor; small boards keep the original one-pass
+    // unbounded sweep (their exactness is what the king gate stands on).
+    var SEEDF = process.env.V2_LNS_SEEDF ? parseInt(process.env.V2_LNS_SEEDF, 10) : 150;
+    var small = ctx.BLUE.length <= 8;
+    var cursors = seeds.map(function (x) {
+      return { cur: Object.assign({}, x.placement), str: x.str, ord: x.orders };
+    });
+    var passImp = true;
+    while (passImp && Date.now() < deadline) {
+      passImp = false;
+      for (var sd = 0; sd < cursors.length; sd++) {
         if (Date.now() > deadline) break;
-        var r = null, i1;
-        for (i1 = 0; i1 < allIds.length && !r; i1++) {
-          r = rebuild(cur, [allIds[i1]], curStr, curOrd);
-        }
-        if (!r && Date.now() < deadline) {
-          var pairs = combinations(allIds, 2);
-          for (i1 = 0; i1 < pairs.length && !r; i1++) {
-            if (Date.now() > deadline) break;
-            r = rebuild(cur, pairs[i1], curStr, curOrd);
+        var C = cursors[sd];
+        PB.left = small ? Infinity : SEEDF;
+        for (;;) {                    // VND: k=1 -> pairs -> triples; restart on any improvement
+          if (Date.now() > deadline || PB.left <= 0) break;
+          var r = null, i1;
+          for (i1 = 0; i1 < allIds.length && !r && PB.left > 0; i1++) {
+            r = rebuild(C.cur, [allIds[i1]], C.str, C.ord);
           }
-        }
-        if (!r && Date.now() < deadline && TRIPLES.length) {
-          var tried = {}, triedN = 0, drawsLeft = T3 * 3;
-          while (!r && Date.now() < deadline && triedN < T3 && drawsLeft-- > 0) {
-            var op = drawOp();
-            var sub = PICKERS[op.name](cur, 3).sort(function (a, b) { return a - b; });
-            var sg = sub.join('+');
-            if (tried[sg]) continue;
-            tried[sg] = 1; triedN++;
-            r = rebuild(cur, sub, curStr, curOrd);
-            rewardOp(op, !!r);
-          }
-          // exhaustive tail on small boards: sweep the triples the dice
-          // never rolled, so "no improvement" is a statement about the
-          // neighbourhood, not about the sampling
-          if (!r && ctx.BLUE.length <= 8) {
-            for (i1 = 0; i1 < TRIPLES.length && !r; i1++) {
+          if (!r && Date.now() < deadline && PB.left > 0) {
+            var pairs = combinations(allIds, 2);
+            for (i1 = 0; i1 < pairs.length && !r && PB.left > 0; i1++) {
               if (Date.now() > deadline) break;
-              var sg2 = TRIPLES[i1].join('+');
-              if (tried[sg2]) continue;
-              r = rebuild(cur, TRIPLES[i1], curStr, curOrd);
+              r = rebuild(C.cur, pairs[i1], C.str, C.ord);
             }
-          } else if (!r && triedN >= T3 && TRIPLES.length > T3) {
-            t3Sampled = true;
           }
+          if (!r && Date.now() < deadline && PB.left > 0 && TRIPLES.length) {
+            var tried = {}, triedN = 0, drawsLeft = T3 * 3;
+            while (!r && Date.now() < deadline && PB.left > 0 && triedN < T3 && drawsLeft-- > 0) {
+              var op = drawOp();
+              var sub = PICKERS[op.name](C.cur, 3).sort(function (a, b) { return a - b; });
+              var sg = sub.join('+');
+              if (tried[sg]) continue;
+              tried[sg] = 1; triedN++;
+              r = rebuild(C.cur, sub, C.str, C.ord);
+              rewardOp(op, !!r);
+            }
+            // exhaustive tail on small boards: sweep the triples the dice
+            // never rolled, so "no improvement" is a statement about the
+            // neighbourhood, not about the sampling
+            if (!r && small) {
+              for (i1 = 0; i1 < TRIPLES.length && !r; i1++) {
+                if (Date.now() > deadline) break;
+                var sg2 = TRIPLES[i1].join('+');
+                if (tried[sg2]) continue;
+                r = rebuild(C.cur, TRIPLES[i1], C.str, C.ord);
+              }
+            } else if (!r && triedN >= T3 && TRIPLES.length > T3) {
+              t3Sampled = true;
+            }
+          }
+          if (!r) break;
+          C.str = r.str; C.ord = r.orders; passImp = true;
         }
-        if (!r) break;
-        curStr = r.str; curOrd = r.orders;
       }
+      if (small) break;               // one pass, unbounded per seed — as before
     }
     console.log('  stage3 LNS polish done · leaves ' + stats.leaves +
       ' · gateCut ' + stats.gateCut +
@@ -1810,6 +1919,7 @@ function stage3(ctx, inc, deadline, opts) {
       (t3Sampled ? ' · triples SAMPLED (' + T3 + ' of ' + TRIPLES.length + ' per stall)' : '') +
       (stats.lnsCapped ? ' · ' + stats.lnsCapped + ' rebuilds CAPPED at ' + LNSCAP + ' candidates' : '') +
       ' · best ' + (inc.str / 10));
+    publishShare();
     stats.exhausted = false;
     stats.expressive = true;
     return stats;
@@ -1953,6 +2063,7 @@ function stage3(ctx, inc, deadline, opts) {
     (stats.fightCapped ? ' · fightCapped ' + stats.fightCapped : '') +
     ' · best ' + (inc.str / 10) +
     '   [walk ' + stats.tWalk + 'ms, fight ' + stats.tFight + 'ms, prune ' + stats.tPrune + 'ms]');
+  publishShare();
   return stats;
 }
 
@@ -1965,26 +2076,45 @@ function stage3(ctx, inc, deadline, opts) {
 // by both the big-board schedule and (briefly) small boards, where a
 // must-use deferred seat can otherwise hide behind thousands of plain
 // deployments (Closing In).
-function planSlices(ctx, inc, budgetMs, hardEnd, masks, s3state, partW, partK, plansMax, includeEqual) {
+function planSlices(ctx, inc, budgetMs, hardEnd, masks, s3state, partW, partK, plansMax, includeEqual, sel) {
+  sel = sel || {};
   var POOL = ctx.POOL;
   var walkRows = fullRows(ctx, 'walk');
   // Sweep DEEP down the kill-set list, not just the summit: the strongest
   // masks are usually over-stretched fantasies whose deployments spread the
   // army thin; the masks just above what's actually playable are where a
   // plan's fight cashes in — and every realized plan raises the incumbent,
-  // which silently skips everything weaker.
+  // which silently skips everything weaker. The default descending sweep
+  // takes the top-PLANS masks, which on a 9-red board never reaches the
+  // playable ones at all (the 270/30 f6ff55 line's mask sat below ~100
+  // stronger fantasies and never got a slice): sel.nearIncumbent walks the
+  // mask list ASCENDING from just above the current incumbent instead —
+  // used by the per-round bursts, whose whole point is realizing the next
+  // rung, not the summit.
   var PLANS = process.env.PLANS ? parseInt(process.env.PLANS, 10) : (plansMax || 48);
   var plans = [];
-  for (var mi = 0; mi < masks.length && plans.length < PLANS; mi++) {
+  var order = [];
+  if (sel.nearIncumbent) {
+    var floor2 = curBest(inc);
+    for (var ni = masks.length - 1; ni >= 0; ni--) {
+      if (masks[ni].str > floor2) order.push(ni);        // ascending strength
+    }
+  } else {
+    for (var di = 0; di < masks.length; di++) order.push(di);
+  }
+  for (var oi = 0; oi < order.length && plans.length < PLANS; oi++) {
+    var mi = order[oi];
     // WITNESS DIVERSIFICATION: one mask has many allocations, and the plan
     // ordering follows the allocation — king's human /20 assigns roles the
     // first-found witness does not, so its seats rank mid-list under that
     // witness and near the top under the right one. Rotating the allocator's
-    // unit order yields structurally different witnesses cheaply.
+    // unit order yields structurally different witnesses cheaply; sel.rotBase
+    // (per-round bursts) offsets the rotation so later rounds see witnesses
+    // the first pass did not.
     var seen = {};
     for (var rot = 0; rot < 3 && plans.length < PLANS; rot++) {
-      var rows2 = walkRows.slice(rot * Math.ceil(walkRows.length / 3))
-        .concat(walkRows.slice(0, rot * Math.ceil(walkRows.length / 3)));
+      var shift = ((sel.rotBase || 0) + rot * Math.ceil(walkRows.length / 3)) % walkRows.length;
+      var rows2 = walkRows.slice(shift).concat(walkRows.slice(0, shift));
       var outw = {};
       if (feasibleMask(ctx, masks[mi].mask, POOL, rows2, 300000, outw) && outw.assign) {
         var sig = JSON.stringify(outw.assign);
@@ -1996,7 +2126,8 @@ function planSlices(ctx, inc, budgetMs, hardEnd, masks, s3state, partW, partK, p
   }
   var perPlan = Math.max(12000, budgetMs / Math.max(1, plans.length));
   var planEnd = Date.now() + budgetMs;
-  console.log('--- stage3 (plan slices: ' + plans.length + ' kill-sets)' +
+  console.log('--- stage3 (plan slices: ' + plans.length + ' kill-sets' +
+    (sel.nearIncumbent ? ', near-incumbent' : '') + ')' +
     (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
   var s3 = null;
   for (var pi = 0; pi < plans.length; pi++) {
@@ -2012,11 +2143,15 @@ function planSlices(ctx, inc, budgetMs, hardEnd, masks, s3state, partW, partK, p
 }
 
 function scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, partW, partK) {
-  var s3 = planSlices(ctx, inc, Math.max(20, SECONDS * 0.45) * 1000, DEADLINE,
+  var s3 = planSlices(ctx, inc, Math.max(20, SECONDS * 0.30) * 1000, DEADLINE,
     masks, s3state, partW, partK);
   if (Date.now() < DEADLINE) {
-    // alternate coverage and polish: the tree finds fresh material, the
-    // climb turns the best of it into coordinated deployments
+    // alternate coverage, polish and near-incumbent plan bursts: the tree
+    // finds fresh material, the climb turns the best of it into coordinated
+    // deployments, and the bursts hand the masks JUST ABOVE the risen
+    // incumbent a witness-directed slice — the initial descending pass
+    // spends itself on summit fantasies and never reaches those (f6ff55's
+    // 270/30 mask never got a slice under the old schedule)
     for (var round = 0; round < 6 && Date.now() < DEADLINE; round++) {
       var covEnd = Math.min(DEADLINE, Date.now() + Math.max(30000, (DEADLINE - Date.now()) * 0.25));
       console.log('--- stage3 (full, expressive)' + (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
@@ -2026,6 +2161,10 @@ function scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, partW, partK) 
       var polEnd = Math.min(DEADLINE, Date.now() + Math.max(20000, (DEADLINE - Date.now()) * 0.2));
       console.log('--- stage3 (polish)' + (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
       stage3(ctx, inc, polEnd, { masks: masks, state: s3state, polishOnly: true, expressive: true });
+      if (Date.now() >= DEADLINE) break;
+      planSlices(ctx, inc, Math.max(15000, (DEADLINE - Date.now()) * 0.15), DEADLINE,
+        masks, s3state, partW, partK, 12, false,
+        { nearIncumbent: true, rotBase: round + 1 });
     }
   }
   return s3;
@@ -2039,6 +2178,16 @@ function scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, partW, partK) 
 function runParallel(P, POOL, SEED, DEADLINE, K, ctx, inc, masks) {
   var sab = new SharedArrayBuffer(4);
   new Int32Array(sab)[0] = SEED || 0;
+  // Cross-worker DEPLOYMENT sharing: workers run synchronously, so
+  // postMessage cannot deliver mid-stage — but Atomics on shared memory
+  // can. Each worker owns 6 slots (seqlock per slot: odd version =
+  // writing) and publishes its top deployments as tile indices; every
+  // polish pass reads all foreign slots into its seed pool. This exists
+  // because f6ff55's 270/30 happened in the ONE worker of eight whose own
+  // polish seeds contained the gradient — the other seven climbed worse
+  // material (optimizer-handoff.md, 2026-08-25).
+  var SLOTW = 3 + ctx.BLUE.length;                     // ver, str, orders, tiles…
+  var seedSab = new SharedArrayBuffer(4 * (6 * K * SLOTW));
   var best = { str: SEED || 0, orders: 0, line: null };
   var agg = { leaves: 0, dedup: 0, boundCut: 0, exhausted: true, tainted: false };
   var left = K;
@@ -2046,7 +2195,7 @@ function runParallel(P, POOL, SEED, DEADLINE, K, ctx, inc, masks) {
   for (var w = 0; w < K; w++) {
     var wk = new WT.Worker(__filename, { workerData: {
       v2worker: 1, puzzle: P, pool: POOL, seed: SEED, w: w, k: K,
-      msLeft: DEADLINE - Date.now(), sab: sab } });
+      msLeft: DEADLINE - Date.now(), sab: sab, seedSab: seedSab } });
     wk.on('message', function (m) {
       if (m.type === 'best') {
         if (m.str > best.str || (m.str === best.str && best.line && m.orders < best.orders) ||
@@ -2083,6 +2232,10 @@ function workerMain(wd) {
   };
   var DEADLINE = Date.now() + wd.msLeft;
   var s3state = { fightMemo: {}, pruneCache: {} };
+  if (wd.seedSab) {
+    s3state.share = { arr: new Int32Array(wd.seedSab), w: wd.w, k: wd.k,
+      slotw: 3 + ctx.BLUE.length };
+  }
   var s3 = masks ? scheduleBig(ctx, inc, DEADLINE, wd.msLeft / 1000, masks, s3state, wd.w, wd.k)
                  : stage3(ctx, inc, DEADLINE, { masks: null, state: s3state, partW: wd.w, partK: wd.k });
   WT.parentPort.postMessage({ type: 'done',
@@ -2477,7 +2630,8 @@ function verdict(ctx, inc, U, U0, s2, s3) {
 
 module.exports = { build: build, feasibleMask: feasibleMask, fullRows: fullRows,
   sortedMasks: sortedMasks, upperBound: upperBound, stateBound: stateBound, gAD: gAD,
-  verdict: verdict, stage2: stage2, mkIncumbent: mkIncumbent };
+  verdict: verdict, stage2: stage2, mkIncumbent: mkIncumbent,
+  buildSeatLists: buildSeatLists };
 
 if (!WT.isMainThread && WT.workerData && WT.workerData.v2worker) workerMain(WT.workerData);
 else if (require.main === module) main();
