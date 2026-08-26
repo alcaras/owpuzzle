@@ -215,34 +215,81 @@ par; (2) six-board solo regression clean (scoreboard above, left-flank
 included); (3) verdict semantics untouched — the /18 is *best-known*
 orders at PROVEN strength, exactly as specced; (4) `npm test` green.
 
-## What to do next session
+## The reproducibility campaign (2026-08-25 evening) — levers built, gate NOT met
 
-Make the f6ff55 27-class **reproducible** instead of lucky. Two levers,
-both named by this session's data, in value order:
+Both levers above were built, plus a third the first gate run exposed
+(all in `tools/verify2.js`, commit baf0da6):
 
-1. **Share topLeaves across workers.** The 27 happened in the one worker
-   whose own polish seeds contained the gradient; workers currently
-   share only incumbent STRENGTH (the SharedArrayBuffer), so seven
-   polish passes ran on worse material. Post top deployments over
-   postMessage, merge into each worker's seed pool. Cheap, mechanical,
-   and it directly attacks the 12-vs-27 variance.
-2. **Get the right witness a plan slice.** The 270/30 line's plan
-   rank-sum is 14 — near-top under its own kill-set witness — so
-   assembly is cheap once the right (mask, witness) pair gets budget.
-   Witness rotation exists (3 rotations/mask); consider more rotations
-   on the masks just above the incumbent, and plan slices re-run after
-   the incumbent moves (the current schedule runs them once, up front).
+- **Cross-worker deployment sharing**: top 6 per worker through a
+  seqlocked SharedArrayBuffer (workers are synchronous — postMessage
+  cannot deliver mid-stage, Atomics can); every polish pass merges all
+  foreign slots into its seed pool.
+- **Near-incumbent plan bursts**: each schedule round ends with plan
+  slices selected ASCENDING from just above the incumbent (the
+  descending default spends itself on summit fantasies — the 270/30
+  mask never got a slice under it), witness rotation offset per round.
+- **Fight budgets**: the gate-run-1 finding — on gate-weak boards one
+  rebuild could fight ~600 candidates, so one k=1 sweep of ONE seed ate
+  a whole polish slice and only seed #1 was ever polished. That was the
+  real reason 27 was luck. V2_LNS_FIGHTS (24/rebuild) and V2_LNS_SEEDF
+  (150/seed-visit) round-robin the slice across seeds; small boards
+  keep unbounded exact sweeps (king re-verified 180/18, 300s).
+
+Measured, three solo 2400s runs on the final build: **{12, 22, 12}**
+vs the pre-lever build's {12, 27, 12}. The RELAY works — run 2's log
+shows one worker's polish climbing a SHARED seed 17→22 at deployment 2
+of its pass and a second worker picking the result up — but the FIRST
+climb out of the 11-plateau into the 17-basin is still stochastic, and
+n=3 per build cannot even distinguish the two distributions. The
+3-of-3 ≥ 270 gate stands OPEN.
+
+What the data now says the first-rung problem needs (in order):
+
+1. **Depth-breadth alternation in polish.** The fight caps bought
+   breadth and may have cut the depth the 11→17 climb needs (if it was
+   a deep pair rebuild, 24 fights/rebuild misses it). Alternate rounds:
+   broad (24/150) and deep (600/1500 on the top 2 seeds only). One
+   instrumented run tells.
+2. **Instrument the 17-discovery.** Before more knobs: log, per
+   incumbent jump, which stage/seed/subset produced it (one line per
+   noteBest with a provenance tag). Three runs of that beats ten blind.
+3. **The learned ranker is not a side quest here.** Every 17-basin seat
+   ranked top-of-list kills the luck at the source — coverage would
+   walk in. The offline harness now exists (below); f6ff55's lines are
+   its sharpest eval rows.
 
 frontK (destroy a whole front, sampled rebuild for k>=4) is built and
-inert so far — the VND never went dry enough to draw it in the lucky
-run. Leave it in; it costs nothing until drawn.
+has yet to fire in any observed climb; it costs nothing until drawn.
 
-Also on the table, from the owner's 2026-08-24 direction: a **learned
-seat-ranking prior** to replace the hand-tuned ordering penalties
-(DEFPEN, LAMBDA) — offline-evaluable against `V2_TRACE_LINE` rank-sums
-on the known human lines before it touches a single search budget;
-training data from PROVEN small boards the verifier can generate. Keep
-it ordering-only; bounds stay hand-proven.
+## The learned-ranking programme (item 2) — offline stack built 2026-08-25
+
+Ordering-only by construction (a model may steer search, never touch a
+bound or verdict). The stack, all dependency-free:
+
+- `tools/rank_eval.js` + `bench/rank-eval-manifest.json` — THE metric:
+  rank-sums of known-good lines' seats under the real search orders.
+  Baseline (expr order): closing-in 49, king-human 61, king-solver 35,
+  bottleneck 13, f6ff55-solver 90, **f6ff55-author 143** — and the
+  author's unreached 370/37 ranks **25** under its own kill-set's first
+  witness, the same shape as every solved board. `--scorer mod.js`
+  re-ranks with a candidate scorer; `--dump-features` emits training
+  rows.
+- `tools/train_ranker.js` — logistic regression,
+  leave-one-board-out eval (tiny data must not overfit silently),
+  class-balanced; excludes heurScore from features so the learned model
+  cannot lean on the heuristic it competes with. First loop on the six
+  real lines (38 positives): learned beats hand on 4 of 6 held-out
+  boards, and it wants deferred seats ranked UP (+1.4) where the hand
+  DEFPEN pushes them down.
+- `tools/ranker_scorer.js` — the rank_eval plug for trained weights.
+- `tools/gen_boards.js` — the real dataset: perturb small core boards
+  (hp jitter, kindred type swaps, pool jitter), solve each on a short
+  budget, keep ONLY PROVEN variants — labels are bound-matched facts.
+  Not yet run at scale (solo discipline: it spawns verify2).
+
+Next: run gen_boards for a few hundred PROVEN variants, retrain, and
+graduate the scorer into buildSeatLists ordering ONLY if the held-out
+rank-sums beat the hand heuristic across the board.
 
 ## Also scoped but not built
 
