@@ -9,10 +9,17 @@
 // puzzle def for free and keeps the distribution honest — the ranker is
 // for THESE kinds of boards, not random soup.
 //
-// usage: node tools/gen_boards.js <outDir> [variantsPerBoard=8] [budgetSec=60] [seed=1]
+// usage: node tools/gen_boards.js <outDir> [variantsPerBoard=8] [budgetSec=60] [seed=1] [hardOnly=0]
 //   Writes <outDir>/<id>-vN.json, -vN-line.json, and manifest.json
 //   (rank_eval format). Solo discipline applies: this SPAWNS verify2
 //   sequentially — do not run it while a benchmark is measuring.
+//
+//   hardOnly=1 keeps only PROVEN variants whose proof shows the hard
+//   structure the v1 dataset lacked (ranker v1's autopsy: easy boards
+//   prove from immediate seats, so `deferred` trained NEGATIVE — the
+//   opposite of what king and closing-in teach). Hard means any of:
+//   verify2's load-bearing-deferred selector fired, the line marches,
+//   or the line repositions mid-fight.
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -23,6 +30,7 @@ const OUT = process.argv[2];
 const VARIANTS = parseInt(process.argv[3], 10) || 8;
 const BUDGET = parseInt(process.argv[4], 10) || 60;
 let rngState = (parseInt(process.argv[5], 10) || 1) >>> 0;
+const HARD_ONLY = process.argv[6] === '1';
 if (!OUT) { console.error('usage: node tools/gen_boards.js <outDir> [variants] [budgetSec] [seed]'); process.exit(1); }
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -93,10 +101,22 @@ for (const P of CORE) {
           timeout: (BUDGET + 60) * 1000, encoding: 'utf8' });
     } catch (e) { out = (e.stdout || '') + ''; }
     const isProven = /verdict: PROVEN/.test(out) && fs.existsSync(lFile);
-    if (isProven) {
+    let keep = isProven, why = '';
+    if (isProven && HARD_ONLY) {
+      const line = JSON.parse(fs.readFileSync(lFile, 'utf8')).line;
+      const firstAttack = line.findIndex(a => a.type === 'attack');
+      const marches = line.some(a => a.type === 'march');
+      const midFight = firstAttack >= 0 &&
+        line.slice(firstAttack).some(a => a.type === 'move' || a.type === 'swap');
+      const loadBearing = /deferred seats are load-bearing/.test(out);
+      keep = marches || midFight || loadBearing;
+      why = keep ? [loadBearing && 'deferred', marches && 'march', midFight && 'mid-fight']
+        .filter(Boolean).join('+') : '';
+    }
+    if (keep) {
       proven++;
       manifest.push({ name, puzzle: bFile, pool, line: lFile });
-      console.log(`  ${name}: PROVEN (pool ${pool})`);
+      console.log(`  ${name}: PROVEN (pool ${pool})${why ? ' [' + why + ']' : ''}`);
     } else {
       fs.rmSync(bFile, { force: true });
       fs.rmSync(lFile, { force: true });
