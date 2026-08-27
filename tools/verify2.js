@@ -2154,17 +2154,24 @@ function planSlices(ctx, inc, budgetMs, hardEnd, masks, s3state, partW, partK, p
   } else {
     for (var di = 0; di < masks.length; di++) order.push(di);
   }
+  // WITNESS DIVERSIFICATION: one mask has many allocations, and the plan
+  // ordering follows the allocation — king's human /20 assigns roles the
+  // first-found witness does not, so its seats rank mid-list under that
+  // witness and near the top under the right one. Rotating the allocator's
+  // unit order yields structurally different witnesses cheaply; sel.rotBase
+  // (per-round bursts) offsets the rotation so later rounds see witnesses
+  // the first pass did not. sel.rots widens this (bursts use 6): the
+  // 2026-08-27 provenance runs showed every f6ff55 climb starts from
+  // whatever slightly-better material coverage/plans hand to polish, so
+  // burst budget goes to witness BREADTH — and in nearIncumbent mode the
+  // plans are interleaved rotation-major, so budget truncation costs
+  // extra witnesses, never whole masks.
+  var ROTS = sel.rots || 3;
+  var perMask = order.map(function () { return []; });
   for (var oi = 0; oi < order.length && plans.length < PLANS; oi++) {
     var mi = order[oi];
-    // WITNESS DIVERSIFICATION: one mask has many allocations, and the plan
-    // ordering follows the allocation — king's human /20 assigns roles the
-    // first-found witness does not, so its seats rank mid-list under that
-    // witness and near the top under the right one. Rotating the allocator's
-    // unit order yields structurally different witnesses cheaply; sel.rotBase
-    // (per-round bursts) offsets the rotation so later rounds see witnesses
-    // the first pass did not.
     var seen = {};
-    for (var rot = 0; rot < 3 && plans.length < PLANS; rot++) {
+    for (var rot = 0; rot < ROTS && plans.length < PLANS; rot++) {
       var shift = ((sel.rotBase || 0) + rot * Math.ceil(walkRows.length / 3)) % walkRows.length;
       var rows2 = walkRows.slice(shift).concat(walkRows.slice(0, shift));
       var outw = {};
@@ -2172,9 +2179,20 @@ function planSlices(ctx, inc, budgetMs, hardEnd, masks, s3state, partW, partK, p
         var sig = JSON.stringify(outw.assign);
         if (seen[sig]) continue;
         seen[sig] = 1;
-        plans.push({ mask: masks[mi].mask, str: masks[mi].str, assign: outw.assign });
+        var p2 = { mask: masks[mi].mask, str: masks[mi].str, assign: outw.assign };
+        plans.push(p2);
+        perMask[oi].push(p2);
       } else break;                                    // infeasible: no more rotations
     }
+  }
+  if (sel.nearIncumbent) {
+    var inter = [];
+    for (var ri = 0; inter.length < plans.length; ri++) {
+      for (var oj = 0; oj < perMask.length; oj++) {
+        if (perMask[oj][ri]) inter.push(perMask[oj][ri]);
+      }
+    }
+    plans = inter;
   }
   var perPlan = Math.max(12000, budgetMs / Math.max(1, plans.length));
   var planEnd = Date.now() + budgetMs;
@@ -2215,8 +2233,8 @@ function scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, partW, partK) 
       stage3(ctx, inc, polEnd, { masks: masks, state: s3state, polishOnly: true, expressive: true });
       if (Date.now() >= DEADLINE) break;
       planSlices(ctx, inc, Math.max(15000, (DEADLINE - Date.now()) * 0.15), DEADLINE,
-        masks, s3state, partW, partK, 12, false,
-        { nearIncumbent: true, rotBase: round + 1 });
+        masks, s3state, partW, partK, 16, false,
+        { nearIncumbent: true, rotBase: round + 1, rots: 6 });
     }
   }
   return s3;
