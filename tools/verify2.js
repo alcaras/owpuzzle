@@ -933,6 +933,36 @@ function stage2u(ctx, inc, deadline) {
 // The exact per-unit seat lists and unit processing order stage3 searches.
 // Extracted so V2_TRACE_LINE can report the REAL rank of a human line's
 // seats in the current ordering — misranking data drives heuristic work.
+// V2_RANKER=<weights.json>: replace the hand seat ordering (score, DEFPEN
+// partition, LAMBDA tax) in the PLAIN/EXPRESSIVE lists with the learned
+// scorer trained by tools/train_ranker.js. Plan-mode ordering is witness-
+// driven and stays hand-built either way. ORDERING ONLY — bounds, costs,
+// claims and verdicts never touch this. Opt-in until it beats the hand
+// order across the board offline (v2, 2026-08-26: 235 vs 387 rank-sum on
+// the six real lines, 5 of 6 rows better, bottleneck +4 — not yet).
+var RANKW = null;
+if (process.env.V2_RANKER) {
+  RANKW = JSON.parse(require('fs').readFileSync(process.env.V2_RANKER, 'utf8'));
+}
+function rankerScore(ctx, b, o, entry) {
+  var row0 = o.tiles0[entry.key], row = o.tiles[entry.key];
+  var own0 = 0, ownOpt = 0;
+  for (var i = 0; i < ctx.NR; i++) {
+    if (row0 && row0[i] > own0) own0 = row0[i];
+    if (row && row[i] > ownOpt) ownOpt = row[i];
+  }
+  var feat = { orders: entry.orders, march: entry.march ? 1 : 0,
+    deferred: entry.deferred ? 1 : 0, essential: entry.essential ? 1 : 0,
+    rout: entry.rout ? 1 : 0, adjRed: ctx.adjRed[entry.key] ? 1 : 0,
+    own0: own0, ownOpt: ownOpt };
+  var z = RANKW.b;
+  for (var j = 0; j < RANKW.feats.length; j++) {
+    var f = RANKW.feats[j];
+    z += RANKW.w[j] * ((feat[f] - RANKW.mu[f]) / RANKW.sd[f]);
+  }
+  return z;
+}
+
 function buildSeatLists(ctx, opts) {
   opts = opts || {};
   var LAMBDA = process.env.LAMBDA ? parseFloat(process.env.LAMBDA) : 6;
@@ -1042,12 +1072,19 @@ function buildSeatLists(ctx, opts) {
       // the 7-damage march seat lost to cheap 5-damage seats and the fight
       // came up one point short on a 20-hp axeman)
       var LAM = plan ? 1 : LAMBDA;
-      return { key: k, q: tile.q, r: tile.r, orders: seat.orders, march: seat.march,
+      var e = { key: k, q: tile.q, r: tile.r, orders: seat.orders, march: seat.march,
         deferred: seat.deferred, essential: essential, rout: ctx.OPT[b.id].rout,
         classMin: minCost, score: own + ally - LAM * seat.orders - defPen };
+      if (RANKW && !plan) e.lscore = rankerScore(ctx, b, o, e);
+      return e;
     }).sort(plan
       // plans rank purely by contribution — the witness's seats may all be deferred
       ? function (a, b) { return b.score - a.score || a.orders - b.orders; }
+      // learned ordering (opt-in): the model owns the whole ranking — no
+      // deferred partition, no travel tax; those are the hand priors it
+      // was trained to replace
+      : RANKW
+      ? function (a, b) { return b.lscore - a.lscore || a.orders - b.orders; }
       // otherwise immediates (and essential deferred) first, luxuries behind
       : function (a, b) {
         var da = a.deferred && !a.essential ? 1 : 0;
