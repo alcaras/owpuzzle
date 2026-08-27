@@ -933,13 +933,17 @@ function stage2u(ctx, inc, deadline) {
 // The exact per-unit seat lists and unit processing order stage3 searches.
 // Extracted so V2_TRACE_LINE can report the REAL rank of a human line's
 // seats in the current ordering — misranking data drives heuristic work.
-// V2_RANKER=<weights.json>: replace the hand seat ordering (score, DEFPEN
-// partition, LAMBDA tax) in the PLAIN/EXPRESSIVE lists with the learned
-// scorer trained by tools/train_ranker.js. Plan-mode ordering is witness-
-// driven and stays hand-built either way. ORDERING ONLY — bounds, costs,
-// claims and verdicts never touch this. Opt-in until it beats the hand
-// order across the board offline (v2, 2026-08-26: 235 vs 387 rank-sum on
-// the six real lines, 5 of 6 rows better, bottleneck +4 — not yet).
+// V2_RANKER=<weights.json>: use the learned scorer from
+// tools/train_ranker.js for the EXPRESSIVE list ordering only (which the
+// LNS polish also consumes). The plain pass keeps the hand order — it is
+// the arrival order that finds real lines on live-seat boards, and the
+// first wholesale-replacement acceptance run proved it: left-flank
+// (historically the board ordering changes silently bury) fell 19 -> 14
+// under the learned sort while king and closing-in held. Plan-mode
+// ordering is witness-driven and stays hand-built either way.
+// ORDERING ONLY — bounds, costs, claims and verdicts never touch this.
+// Opt-in until it beats the hand order across the board offline
+// (v2, 2026-08-26: 235 vs 387 rank-sum on six real lines, bottleneck +4).
 var RANKW = null;
 if (process.env.V2_RANKER) {
   RANKW = JSON.parse(require('fs').readFileSync(process.env.V2_RANKER, 'utf8'));
@@ -1075,15 +1079,15 @@ function buildSeatLists(ctx, opts) {
       var e = { key: k, q: tile.q, r: tile.r, orders: seat.orders, march: seat.march,
         deferred: seat.deferred, essential: essential, rout: ctx.OPT[b.id].rout,
         classMin: minCost, score: own + ally - LAM * seat.orders - defPen };
-      if (RANKW && !plan) e.lscore = rankerScore(ctx, b, o, e);
+      if (RANKW && EXPR && !plan) e.lscore = rankerScore(ctx, b, o, e);
       return e;
     }).sort(plan
       // plans rank purely by contribution — the witness's seats may all be deferred
       ? function (a, b) { return b.score - a.score || a.orders - b.orders; }
-      // learned ordering (opt-in): the model owns the whole ranking — no
-      // deferred partition, no travel tax; those are the hand priors it
-      // was trained to replace
-      : RANKW
+      // learned ordering (opt-in, EXPRESSIVE pass only): the model owns the
+      // ranking — no deferred partition, no travel tax; those are the hand
+      // priors it was trained to replace
+      : (RANKW && EXPR)
       ? function (a, b) { return b.lscore - a.lscore || a.orders - b.orders; }
       // otherwise immediates (and essential deferred) first, luxuries behind
       : function (a, b) {
