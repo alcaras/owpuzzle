@@ -243,7 +243,27 @@ climb out of the 11-plateau into the 17-basin is still stochastic, and
 n=3 per build cannot even distinguish the two distributions. The
 3-of-3 ≥ 270 gate stands OPEN.
 
-What the data now says the first-rung problem needs (in order):
+**PROVENANCE VERDICT (2026-08-27, two instrumented 2400s runs,
+V2_RANKER expressive ordering on):** results {15, 20} vs the hand
+baseline {12, 22, 12} — both runs cleared the 12-floor; n too small to
+claim more. But the provenance tags settle the mechanism question:
+EVERY climb above 12 in both runs is `LNS seed#0:wN k1 [unit]` —
+single-unit rebuilds on the top SHARED seed. Plan slices, the coverage
+tree, pairs, triples and frontK produced none of them. So: (1) the
+depth-breadth hypothesis is DEAD — k=1 with full lists does all the
+climbing and the fight caps were never the bottleneck; (2) the
+variance lives entirely in the INITIAL MATERIAL coverage/plans hand to
+polish — once any worker produces slightly-better-than-11 material,
+the relay-plus-k=1 machinery walks it up reliably. The remaining
+research question is therefore narrow: make the first slightly-better
+deployment non-lucky. Candidates: spend the burst budget on MORE
+witness rotations per near-incumbent mask (material diversity beats
+slice depth), and the ranker path below (better expressive ordering =
+better coverage material — consistent with both learned runs beating
+the 12-floor).
+
+Superseded by the above — kept for the record. What the data
+previously suggested (before the provenance runs):
 
 1. **Depth-breadth alternation in polish.** The fight caps bought
    breadth and may have cut the depth the 11→17 climb needs (if it was
