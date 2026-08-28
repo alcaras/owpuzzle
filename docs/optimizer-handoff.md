@@ -243,6 +243,26 @@ climb out of the 11-plateau into the 17-basin is still stochastic, and
 n=3 per build cannot even distinguish the two distributions. The
 3-of-3 ≥ 270 gate stands OPEN.
 
+**THE FLOOR LADDER (2026-08-27 evening) — reproducibility substantially
+achieved at 200.** Three diagnose→fix cycles, each judged by three solo
+2400s runs, all flag-on (V2_RANKER expressive ordering):
+
+| config | f6ff55 spread |
+|---|---|
+| hand order (baseline) | {12, 22, 12} |
+| + learned expressive ordering | {15, 20} |
+| + burst witness breadth, interleaved (SAME stream) | {15, 15, 15} — variance dead, tail dead |
+| + per-worker witness streams (rotBase += partW*7) | **{20, 20, 20}** |
+
+The stable-20 config's provenance shows the intended machinery end to
+end: distinct workers produce distinct material (w0 and w4 seeds both
+originate climbs), sharing relays it, k=1 LNS walks it up — the same
+three-step in every run. The 270 basin is still beyond it (the lucky
+27 remains best-known, tracked in bench/lines/); reaching it
+reliably is the open problem, but "12 usually, 27 once" has become
+"20 always". Bottleneck and horsing-around have not yet run flag-on —
+required before any default flip.
+
 **PROVENANCE VERDICT (2026-08-27, two instrumented 2400s runs,
 V2_RANKER expressive ordering on):** results {15, 20} vs the hand
 baseline {12, 22, 12} — both runs cleared the 12-floor; n too small to
