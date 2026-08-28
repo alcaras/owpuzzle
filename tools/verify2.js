@@ -944,10 +944,17 @@ function stage2u(ctx, inc, deadline) {
 // ORDERING ONLY — bounds, costs, claims and verdicts never touch this.
 // Opt-in until it beats the hand order across the board offline
 // (v2, 2026-08-26: 235 vs 387 rank-sum on six real lines, bottleneck +4).
+// DEFAULT ON since 2026-08-28: the six-board flag-on acceptance held or
+// improved every row (f6ff55 floor 12 -> {20,20,20}); V2_RANKER=0 opts
+// out, V2_RANKER=<path> overrides the weights.
 var RANKW = null;
-if (process.env.V2_RANKER) {
-  RANKW = JSON.parse(require('fs').readFileSync(process.env.V2_RANKER, 'utf8'));
-}
+(function () {
+  var src = process.env.V2_RANKER;
+  if (src === '0' || src === 'off') return;
+  var fp = src || path.join(__dirname, '..', 'bench', 'ranker-weights.json');
+  try { RANKW = JSON.parse(require('fs').readFileSync(fp, 'utf8')); }
+  catch (e) { if (src) throw e; }              // silent only for the default path
+})();
 function rankerScore(ctx, b, o, entry) {
   var row0 = o.tiles0[entry.key], row = o.tiles[entry.key];
   var own0 = 0, ownOpt = 0;
@@ -1628,14 +1635,19 @@ function stage3(ctx, inc, deadline, opts) {
     // carried it. Fights, not candidates, are the real budget: cap them
     // per rebuild too (>8-blue only; small boards stay exact).
     var LNSF = process.env.V2_LNS_FIGHTS ? parseInt(process.env.V2_LNS_FIGHTS, 10) : 24;
-    var PB = { left: Infinity };            // per-seed fight budget, set by the loop
+    // seed#0 (the best shared material) gets 4x depth: the provenance runs
+    // showed EVERY climb happens there via k=1 — when it goes k1-dry, the
+    // shallow caps starve the k=2 neighbourhood that the 22->27 step of
+    // the lucky run plausibly lives in. Breadth for the field, depth for
+    // the leader.
+    var PB = { left: Infinity, perRebuild: Infinity };  // set by the loop
     function rebuild(cur, subset, refStr, refOrd) {
       PROV.cur = 'LNS' + (PROV.seed || '') + ' k' + subset.length + ' [' + subset.join('+') + ']';
       var saved = subset.map(function (id) { return cur[id]; });
       subset.forEach(function (id) { cur[id] = null; });
       var found = null, capped = false;
       var capLeft = ctx.BLUE.length <= 8 ? Infinity : LNSCAP;
-      var fightsLeft = ctx.BLUE.length <= 8 ? Infinity : LNSF;
+      var fightsLeft = ctx.BLUE.length <= 8 ? Infinity : PB.perRebuild;
       // k>=4 (front rebuilds): exact enumeration under a cap visits only the
       // lexicographic top corner of |L|^k, which is no diversity at all —
       // sample instead: LNSCAP score-biased draws (geometric over list rank,
@@ -1920,7 +1932,8 @@ function stage3(ctx, inc, deadline, opts) {
         if (Date.now() > deadline) break;
         var C = cursors[sd];
         PROV.seed = ' seed#' + sd + ':' + C.src;
-        PB.left = small ? Infinity : SEEDF;
+        PB.left = small ? Infinity : (sd === 0 ? SEEDF * 4 : SEEDF);
+        PB.perRebuild = small ? Infinity : (sd === 0 ? LNSF * 4 : LNSF);
         for (;;) {                    // VND: k=1 -> pairs -> triples; restart on any improvement
           if (Date.now() > deadline || PB.left <= 0) break;
           var r = null, i1;

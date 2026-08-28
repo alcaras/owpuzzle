@@ -260,8 +260,25 @@ originate climbs), sharing relays it, k=1 LNS walks it up — the same
 three-step in every run. The 270 basin is still beyond it (the lucky
 27 remains best-known, tracked in bench/lines/); reaching it
 reliably is the open problem, but "12 usually, 27 once" has become
-"20 always". Bottleneck and horsing-around have not yet run flag-on —
-required before any default flip.
+"20 always".
+
+**GRADUATED 2026-08-28: the ranker is DEFAULT ON.** The full six-board
+flag-on acceptance held or improved every row (king PROVEN 18/18,
+left-flank 19/22, closing-in PROVEN 10/22, horsing 26/11, bottleneck
+35/16, f6ff55 {20,20,20}) — the search-level standard the offline
+rank-sum bar was always a proxy for. `V2_RANKER=0` opts out;
+`V2_RANKER=<path>` overrides the weights; the default loads
+bench/ranker-weights.json when present. Ordering only, as ever.
+Note the unaided discipline the weights satisfy: trained purely on
+generated PROVEN boards — the real lines were used for evaluation,
+never training, so bench claims remain unaided.
+
+Also in this build: seed#0 gets 4x LNS depth (fights per rebuild and
+per visit) — every observed climb happens on the best shared seed via
+k=1, and when it goes k1-dry the shallow caps starved the k=2
+neighbourhood the 22->27 step plausibly lives in. Breadth for the
+field, depth for the leader. Being measured against the {20,20,20}
+baseline.
 
 **PROVENANCE VERDICT (2026-08-27, two instrumented 2400s runs,
 V2_RANKER expressive ordering on):** results {15, 20} vs the hand
