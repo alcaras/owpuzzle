@@ -2232,9 +2232,14 @@ function scheduleBig(ctx, inc, DEADLINE, SECONDS, masks, s3state, partW, partK) 
       console.log('--- stage3 (polish)' + (partK > 1 ? ' [worker ' + partW + '/' + partK + ']' : ''));
       stage3(ctx, inc, polEnd, { masks: masks, state: s3state, polishOnly: true, expressive: true });
       if (Date.now() >= DEADLINE) break;
+      // rotBase folds in the worker index: rotation-major interleave alone
+      // made every worker walk the SAME witness stream — three runs
+      // converged to the identical 15/24 basin and sharing had nothing to
+      // recombine. Distinct per-worker streams keep the breadth AND the
+      // diversity the tail basins need.
       planSlices(ctx, inc, Math.max(15000, (DEADLINE - Date.now()) * 0.15), DEADLINE,
         masks, s3state, partW, partK, 16, false,
-        { nearIncumbent: true, rotBase: round + 1, rots: 6 });
+        { nearIncumbent: true, rotBase: round + 1 + partW * 7, rots: 6 });
     }
   }
   return s3;
