@@ -955,17 +955,47 @@ var RANKW = null;
   try { RANKW = JSON.parse(require('fs').readFileSync(fp, 'utf8')); }
   catch (e) { if (src) throw e; }              // silent only for the default path
 })();
-function rankerScore(ctx, b, o, entry) {
+// The ONE feature computation, shared by the in-search scorer and the
+// offline harness (tools/rank_eval.js) — they must never drift apart, or
+// the offline bar stops predicting search behaviour. A weights file
+// lists the feature names it uses, so old models keep working as
+// features are added.
+function seatFeatures(ctx, b, entry) {
+  var o = ctx.OPT[b.id];
   var row0 = o.tiles0[entry.key], row = o.tiles[entry.key];
-  var own0 = 0, ownOpt = 0;
+  var own0 = 0, ownOpt = 0, nTargets = 0, dmgShare = 0, killPot = 0;
   for (var i = 0; i < ctx.NR; i++) {
-    if (row0 && row0[i] > own0) own0 = row0[i];
+    var v0 = (row0 && row0[i]) || 0;
+    if (v0 > 0) {
+      nTargets++;
+      var hp = ctx.REDS[i].hp || 1;
+      var share = Math.min(2, v0 / hp);
+      if (share > dmgShare) dmgShare = share;
+      if (v0 >= hp) killPot = 1;
+    }
+    if (v0 > own0) own0 = v0;
     if (row && row[i] > ownOpt) ownOpt = row[i];
   }
-  var feat = { orders: entry.orders, march: entry.march ? 1 : 0,
+  // adjacency geometry: how many reds could this seat stand beside?
+  var t = entry.key.split(','), tq = +t[0], tr = +t[1];
+  var adjRedN = 0;
+  for (var ri = 0; ri < ctx.NR; ri++) {
+    for (var di = 0; di < ctx.DRIFT[ri].length; di++) {
+      if (E.hexDistance({ q: tq, r: tr }, ctx.DRIFT[ri][di]) === 1) { adjRedN++; break; }
+    }
+  }
+  return { orders: entry.orders, march: entry.march ? 1 : 0,
     deferred: entry.deferred ? 1 : 0, essential: entry.essential ? 1 : 0,
     rout: entry.rout ? 1 : 0, adjRed: ctx.adjRed[entry.key] ? 1 : 0,
-    own0: own0, ownOpt: ownOpt };
+    own0: own0, ownOpt: ownOpt,
+    nTargets: nTargets, dmgShare: dmgShare, killPot: killPot,
+    adjRedN: adjRedN, melee: E.isMelee(b) ? 1 : 0,
+    flanker: effField(b, 'iFlankingAttackModifier') > 0 ? 1 : 0,
+    colGun: ctx.OPT[b.id].colCap > 0 ? 1 : 0,
+    travelFrac: ctx.POOL ? entry.orders / ctx.POOL : 0 };
+}
+function rankerScore(ctx, b, o, entry) {
+  var feat = seatFeatures(ctx, b, entry);
   var z = RANKW.b;
   for (var j = 0; j < RANKW.feats.length; j++) {
     var f = RANKW.feats[j];
@@ -2718,7 +2748,7 @@ function verdict(ctx, inc, U, U0, s2, s3) {
 module.exports = { build: build, feasibleMask: feasibleMask, fullRows: fullRows,
   sortedMasks: sortedMasks, upperBound: upperBound, stateBound: stateBound, gAD: gAD,
   verdict: verdict, stage2: stage2, mkIncumbent: mkIncumbent,
-  buildSeatLists: buildSeatLists };
+  buildSeatLists: buildSeatLists, seatFeatures: seatFeatures };
 
 if (!WT.isMainThread && WT.workerData && WT.workerData.v2worker) workerMain(WT.workerData);
 else if (require.main === module) main();

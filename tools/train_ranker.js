@@ -18,7 +18,8 @@ const fs = require('fs');
 const rows = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const OUT = process.argv[3] || 'bench/ranker-weights.json';
 
-const FEATS = ['orders', 'march', 'deferred', 'essential', 'rout', 'adjRed', 'own0', 'ownOpt'];
+const FEATS = ['orders', 'march', 'deferred', 'essential', 'rout', 'adjRed', 'own0', 'ownOpt',
+  'nTargets', 'dmgShare', 'killPot', 'adjRedN', 'melee', 'flanker', 'colGun', 'travelFrac'];
 // heurScore is deliberately excluded: the learned model must not lean on
 // the very heuristic it is trying to replace, or the comparison is moot.
 
