@@ -1635,11 +1635,10 @@ function stage3(ctx, inc, deadline, opts) {
     // carried it. Fights, not candidates, are the real budget: cap them
     // per rebuild too (>8-blue only; small boards stay exact).
     var LNSF = process.env.V2_LNS_FIGHTS ? parseInt(process.env.V2_LNS_FIGHTS, 10) : 24;
-    // seed#0 (the best shared material) gets 4x depth: the provenance runs
-    // showed EVERY climb happens there via k=1 — when it goes k1-dry, the
-    // shallow caps starve the k=2 neighbourhood that the 22->27 step of
-    // the lucky run plausibly lives in. Breadth for the field, depth for
-    // the leader.
+    // (seed#0 4x depth was tried 2026-08-28 and REGRESSED the ladder to
+    // {15,15,15} from {20,20,20}: the leader's extra fights starved the
+    // other seeds' visits, and the 20-basin lives in multi-seed
+    // recombination. Uniform budgets stand.)
     var PB = { left: Infinity, perRebuild: Infinity };  // set by the loop
     function rebuild(cur, subset, refStr, refOrd) {
       PROV.cur = 'LNS' + (PROV.seed || '') + ' k' + subset.length + ' [' + subset.join('+') + ']';
@@ -1932,8 +1931,8 @@ function stage3(ctx, inc, deadline, opts) {
         if (Date.now() > deadline) break;
         var C = cursors[sd];
         PROV.seed = ' seed#' + sd + ':' + C.src;
-        PB.left = small ? Infinity : (sd === 0 ? SEEDF * 4 : SEEDF);
-        PB.perRebuild = small ? Infinity : (sd === 0 ? LNSF * 4 : LNSF);
+        PB.left = small ? Infinity : SEEDF;
+        PB.perRebuild = small ? Infinity : LNSF;
         for (;;) {                    // VND: k=1 -> pairs -> triples; restart on any improvement
           if (Date.now() > deadline || PB.left <= 0) break;
           var r = null, i1;
