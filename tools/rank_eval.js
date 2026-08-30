@@ -40,21 +40,13 @@ function loadBoard(spec) {
 }
 const key = (q, r) => q + ',' + r;
 
-function featRow(ctx, bi, entry, lists) {
-  // everything the current heuristic sees for this (unit, seat)
-  const b = ctx.BLUE[bi], o = ctx.OPT[b.id];
-  const row0 = o.tiles0[entry.key], row = o.tiles[entry.key];
-  let own0 = 0, ownOpt = 0;
-  for (let i = 0; i < ctx.NR; i++) {
-    if (row0 && row0[i] > own0) own0 = row0[i];
-    if (row && row[i] > ownOpt) ownOpt = row[i];
-  }
-  return {
-    unitType: b.type, orders: entry.orders, march: entry.march ? 1 : 0,
-    deferred: entry.deferred ? 1 : 0, essential: entry.essential ? 1 : 0,
-    rout: entry.rout ? 1 : 0, adjRed: ctx.adjRed[entry.key] ? 1 : 0,
-    own0, ownOpt, heurScore: entry.score,
-  };
+function featRow(ctx, bi, entry) {
+  // the SHARED feature computation (verify2.seatFeatures) plus the hand
+  // score for comparison — offline features and in-search features must
+  // be the same numbers or the offline bar predicts nothing
+  const b = ctx.BLUE[bi];
+  return Object.assign({ unitType: b.type, heurScore: entry.score },
+    V.seatFeatures(ctx, b, entry));
 }
 
 const rows = [];
