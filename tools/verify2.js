@@ -2274,11 +2274,35 @@ function planSlices(ctx, inc, budgetMs, hardEnd, masks, s3state, partW, partK, p
   // plans are interleaved rotation-major, so budget truncation costs
   // extra witnesses, never whole masks.
   var ROTS = sel.rots || 3;
+  // nearIncumbent mask selection is STRATIFIED, not purely ascending:
+  // with ROTS 6 and PLANS 16 an ascending burst exhausted its quota on
+  // the first ~3 rungs and the upper band never got a slice — the f6ff55
+  // 37-mask sat behind dozens of 28-36 rungs, and the pin_fight verdict
+  // says ARRIVAL is all that is missing (the fight cashes the line in
+  // seconds once assembled). Nearest 4 rungs get 2 witnesses each; the
+  // rest of the quota is an even ladder of single-witness slices up the
+  // whole band to the summit.
+  var rotBudget = null;
+  if (sel.nearIncumbent && order.length > PLANS / 2) {
+    var band = order.slice();
+    order = [];
+    rotBudget = [];
+    var nearN = Math.min(4, band.length);
+    for (var bi2 = 0; bi2 < nearN; bi2++) { order.push(band[bi2]); rotBudget.push(2); }
+    var rest = band.length - nearN, want2 = Math.max(0, PLANS - nearN * 2);
+    for (var si2 = 0; si2 < want2 && rest > 0; si2++) {
+      var idx2 = nearN + Math.floor((si2 + 0.5) * rest / want2);
+      if (idx2 < band.length && order.indexOf(band[idx2]) < 0) {
+        order.push(band[idx2]); rotBudget.push(1);
+      }
+    }
+  }
   var perMask = order.map(function () { return []; });
   for (var oi = 0; oi < order.length && plans.length < PLANS; oi++) {
     var mi = order[oi];
     var seen = {};
-    for (var rot = 0; rot < ROTS && plans.length < PLANS; rot++) {
+    var rotsHere = rotBudget ? rotBudget[oi] : ROTS;
+    for (var rot = 0; rot < rotsHere && plans.length < PLANS; rot++) {
       var shift = ((sel.rotBase || 0) + rot * Math.ceil(walkRows.length / 3)) % walkRows.length;
       var rows2 = walkRows.slice(shift).concat(walkRows.slice(0, shift));
       var outw = {};
