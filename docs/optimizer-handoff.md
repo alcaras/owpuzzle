@@ -261,7 +261,24 @@ reachable unaided by the shipped config, sometimes. Also measured and
 REJECTED the same day: seed#0 4x LNS depth ({15,15,15} — starved the
 field), and ranker v3's richer 16-feature linear model (held-out 286
 vs v2's 270; worse on left-flank, bottleneck and the f6ff55 solver
-line — v2 stays).
+line — v2 stays).)
+
+**THE PIN_FIGHT VERDICT AND THE REFIGHT VALVE (2026-08-30/31).** The
+named experiment ran: pin the author's nine f6ff55 seats and let the
+exact fight machinery try to cash out 370/37. It did — **in seven
+seconds, search run to completion** (tools/pin_fight.js; king's 18/18
+cashes in 33ms). The wall was never fight execution and never
+expressiveness: plan-slice triage fights are capped at 2,500 nodes
+while that line's value sits ~7s of exact search deep, so the finder
+could assemble the right deployment and DISCARD it undervalued. Fix:
+a capped plan fight whose pinned-rows bound still promises above the
+incumbent is re-fought exactly (bound-gated, V2_REFIGHTS=6/slice).
+Three solo 2400s runs: **{22, 27, 22}** — the floor now sits at the
+old centre and the config is the campaign's best. King re-verified
+PROVEN 180/18. Remaining gap to the human 370: the search must now
+ARRIVE at the author-class deployment; when it does, seven seconds
+cashes it. The witness that ranks those seats ~25/350 exists — plan
+slices for str-37-class masks with refights armed are the path.
 
 The stable-20 config's provenance shows the intended machinery end to
 end: distinct workers produce distinct material (w0 and w4 seeds both
