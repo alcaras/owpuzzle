@@ -1188,9 +1188,17 @@ function stage3(ctx, inc, deadline, opts) {
   var stats = { leaves: 0, dedup: 0, illegal: 0, boundCut: 0, costCut: 0,
     tWalk: 0, tFight: 0, tPrune: 0, fightCapped: 0, gateCut: 0 };
   // fights are exact except in plan (finder) passes, where a node cap keeps
-  // the leaf rate up; a capped fight is honesty-tracked in the verdict
+  // the leaf rate up; a capped fight is honesty-tracked in the verdict.
+  // But a capped fight can HIDE a deep line's value — the f6ff55 author
+  // line's 37/37 fight needs ~7s of exact search (pin_fight, 2026-08-30),
+  // and a 2500-node triage sees a fraction and discards the deployment.
+  // So: when a capped plan fight leaves the placement's pinned-rows bound
+  // still promising above the incumbent, re-fight exactly. Bound-gated
+  // and rationed (V2_REFIGHTS per slice), so only leaves with a real
+  // chance pay the deep fight.
   var FCAP = process.env.FCAP ? parseInt(process.env.FCAP, 10)
     : (opts.plan ? 2500 : Infinity);
+  var refightsLeft = process.env.V2_REFIGHTS ? parseInt(process.env.V2_REFIGHTS, 10) : 6;
 
   // Cross-worker deployment sharing (see runParallel). Slots hold
   // (version, str, orders, one tile index per blue unit); a seqlock per
@@ -1510,7 +1518,28 @@ function stage3(ctx, inc, deadline, opts) {
     stats.leaves++;
     stats.tWalk += Date.now() - tW0;
     var tF0 = Date.now();
+    var cappedBefore = stats.fightCapped;
     var fres = fightOut(st, startLine, FCAP, pending);
+    if (opts.plan && FCAP !== Infinity && stats.fightCapped > cappedBefore &&
+        refightsLeft > 0 && opts.plan.str > curBest(inc)) {
+      var prows = ctx.BLUE.map(function (b2) {
+        var o2 = ctx.OPT[b2.id];
+        var pin2 = placement[b2.id] || (b2.q + ',' + b2.r);
+        var row2 = o2.tiles[pin2] || new Array(ctx.NR).fill(0);
+        if (o2.rout && ctx.adjRed[pin2]) {
+          row2 = row2.map(function (v2, i4) { return Math.max(v2, o2.routFire[i4]); });
+        }
+        return { id: b2.id, prim: row2, col: (o2.col && o2.col[pin2]) || new Array(ctx.NR).fill(0),
+          colCap: o2.colCap, maxAtt: o2.maxAtt,
+          travel: new Array(ctx.NR).fill(0), travelAny: 0 };
+      });
+      if (feasibleMask(ctx, opts.plan.mask, POOL - cost, prows, 30000)) {
+        refightsLeft--;
+        stats.refights = (stats.refights || 0) + 1;
+        var fres2 = fightOut(st, startLine, Infinity, pending);
+        if (fres2.str > fres.str || (fres2.str === fres.str && fres2.orders < fres.orders)) fres = fres2;
+      }
+    }
     stats.tFight += Date.now() - tF0;
     // remember the best deployments seen — seeds for the polish pass
     var tl = mem.topLeaves = mem.topLeaves || [];
@@ -2190,6 +2219,7 @@ function stage3(ctx, inc, deadline, opts) {
     ' · leaves ' + stats.leaves + ' · dedup ' + stats.dedup + ' · boundCut ' + stats.boundCut +
     ' · costCut ' + stats.costCut + ' · illegal ' + stats.illegal +
     (stats.fightCapped ? ' · fightCapped ' + stats.fightCapped : '') +
+    (stats.refights ? ' · refights ' + stats.refights : '') +
     ' · best ' + (inc.str / 10) +
     '   [walk ' + stats.tWalk + 'ms, fight ' + stats.tFight + 'ms, prune ' + stats.tPrune + 'ms]');
   publishShare();
