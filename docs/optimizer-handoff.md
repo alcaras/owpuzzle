@@ -252,7 +252,16 @@ achieved at 200.** Three diagnose→fix cycles, each judged by three solo
 | hand order (baseline) | {12, 22, 12} |
 | + learned expressive ordering | {15, 20} |
 | + burst witness breadth, interleaved (SAME stream) | {15, 15, 15} — variance dead, tail dead |
-| + per-worker witness streams (rotBase += partW*7) | **{20, 20, 20}** |
+| + per-worker witness streams (rotBase += partW*7) | **{20, 20, 20}** — and with n=6: {20,20,20,16,27,22} |
+
+(2026-08-30 correction: three more runs of the same config gave
+{16, 27, 22} — "20 always" was n=3 optimism. The honest distribution
+is floor 16, centre 20-22, unaided tail to 27: the 270 basin IS
+reachable unaided by the shipped config, sometimes. Also measured and
+REJECTED the same day: seed#0 4x LNS depth ({15,15,15} — starved the
+field), and ranker v3's richer 16-feature linear model (held-out 286
+vs v2's 270; worse on left-flank, bottleneck and the f6ff55 solver
+line — v2 stays).
 
 The stable-20 config's provenance shows the intended machinery end to
 end: distinct workers produce distinct material (w0 and w4 seeds both
