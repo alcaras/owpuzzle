@@ -274,7 +274,14 @@ could assemble the right deployment and DISCARD it undervalued. Fix:
 a capped plan fight whose pinned-rows bound still promises above the
 incumbent is re-fought exactly (bound-gated, V2_REFIGHTS=6/slice).
 Three solo 2400s runs: **{22, 27, 22}** — the floor now sits at the
-old centre and the config is the campaign's best. King re-verified
+old centre and the config is the campaign's best. A follow-up
+stratified-ladder burst (single-witness slices up the whole mask band)
+measured {22, 22, 22} — floor identical, 27-tail lost, and the sharp
+hypothesis for why the summit slices assemble nothing: burst rotations
+use rotBase = round+1+worker*7, so ROTATION ZERO — the exact witness
+under which the author line's seats rank ~25/350 (rank_eval measures
+rot-0) — is NEVER tried on the 37-class masks. Include shift-0 as the
+first rotation of every burst mask before any other ladder tuning. King re-verified
 PROVEN 180/18. Remaining gap to the human 370: the search must now
 ARRIVE at the author-class deployment; when it does, seven seconds
 cashes it. The witness that ranks those seats ~25/350 exists — plan
