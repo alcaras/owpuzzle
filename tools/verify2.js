@@ -1525,6 +1525,41 @@ function stage3(ctx, inc, deadline, opts) {
     return fres;
   }
 
+  // Diagnostic mode (tools/pin_fight.js): evaluate ONE pinned placement
+  // with the exact fight machinery and report what it cashes out. This is
+  // the "is the wall deployment-ordering or fight-execution?" experiment:
+  // a known-good line's seats are pinned, and if the fight search cannot
+  // execute the line's value even given the perfect deployment, no amount
+  // of ordering work upstream can close the gap.
+  if (opts.pinned) {
+    var pl = opts.pinned, pcost = 0, ptr = 0, pOK = true;
+    Object.keys(pl).forEach(function (id) {
+      var s = seatEntry(+id, pl[id]);
+      if (!s) {
+        console.log('  pinned: unit ' + id + ' seat ' + pl[id] + ' NOT in the seat model');
+        pOK = false;
+        return;
+      }
+      pcost += s.orders;
+      if (s.march) ptr += GLOB.UNIT_MARCH_COST;
+      console.log('  pinned: unit ' + id + ' @ ' + pl[id] +
+        (s.deferred ? ' [deferred, floor ' + s.orders + ']' : ' [' + s.orders + ' orders]') +
+        (s.march ? ' [march]' : ''));
+    });
+    console.log('  pinned placement: cost floor ' + pcost + ', training ' + ptr);
+    if (pOK) {
+      var t0p = Date.now();
+      var pr = evalPlacement(Object.assign({}, pl), pcost);
+      if (pr === -1) console.log('  pinned: fight memo dup (unexpected)');
+      else console.log('  pinned fight result: ' + (pr.str / 10) + ' STR in ' + pr.orders +
+        ' orders   [' + ((Date.now() - t0p) / 1000).toFixed(1) + 's, fight ' + stats.tFight + 'ms' +
+        (Date.now() > deadline ? ', DEADLINE HIT — result is a lower bound' : ', search ran to completion') + ']');
+    }
+    stats.exhausted = false;
+    stats.expressive = EXPR;
+    return stats;
+  }
+
   // LNS polish: take the strongest deployments seen so far (plus the
   // deployment the incumbent line itself stands on) and improve them by
   // destroying k units' seat assignments and rebuilding that subset
@@ -2748,7 +2783,7 @@ function verdict(ctx, inc, U, U0, s2, s3) {
 module.exports = { build: build, feasibleMask: feasibleMask, fullRows: fullRows,
   sortedMasks: sortedMasks, upperBound: upperBound, stateBound: stateBound, gAD: gAD,
   verdict: verdict, stage2: stage2, mkIncumbent: mkIncumbent,
-  buildSeatLists: buildSeatLists, seatFeatures: seatFeatures };
+  buildSeatLists: buildSeatLists, seatFeatures: seatFeatures, stage3: stage3 };
 
 if (!WT.isMainThread && WT.workerData && WT.workerData.v2worker) workerMain(WT.workerData);
 else if (require.main === module) main();
