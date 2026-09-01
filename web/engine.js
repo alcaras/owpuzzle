@@ -134,6 +134,76 @@
     });
   }
 
+  // Hidden from EVERYONE (Unit.isHiddenTileFrom with TeamType.NONE,
+  // Unit.cs:3491): a stealth carrier — a scout in trees or jungle
+  // (EFFECTUNIT_STEALTH, effectUnit.xml:1064-1077; the pairs resolve through
+  // terrainTarget.xml to vegetation), or a ranged unit under a Tactician
+  // leader (EFFECTUNIT_TACTICIAN_RANGED) — standing on hiding vegetation in
+  // neutral-or-friendly territory (Unit.cs:3535-3541), not revealed by a
+  // visible cooldown (hasVisibleAttackCooldown, Unit.cs:3941: attacking,
+  // routing, being stunned all show the unit; setting up siege does not).
+  // The fog-of-war half of hiding is out of scope — the whole board is
+  // visible in a puzzle — so this is consulted only where the GAME resolves
+  // hidden-ness without a viewer: push destinations (Unit.getPushTile tests
+  // candidates with TeamType.NONE, Unit.cs:10082) and the ambush attack
+  // bonus (Unit.cs:8843, where hostile teams reduce to the same check).
+  function isHiddenAt(state, u, t) {
+    if (!t || !t.vegetation) return false;
+    if (u.cooldown && u.cooldown !== 'UNLIMBERED') return false;
+    if (t.owner != null && t.owner !== u.player) return false;
+    return effectsOf(u).some(function (e) {
+      var d = DATA.effects[e];
+      return d && d.hideVegetation && d.hideVegetation.indexOf(t.vegetation) >= 0;
+    });
+  }
+
+  // Unit.bounce (Unit.cs:8181): relocate a unit whose tile was taken. The
+  // game first looks ONLY at adjacent tiles that keep the unit hidden
+  // (pRequiresHidden caps that pass at range 1, Game.cs:10317), then takes
+  // the nearest tile it can stand on, ring by ring (Game.findUnitTileNearby,
+  // Game.cs:10208), preferring tiles not adjacent to a hostile unit (the
+  // comparator, Game.cs:10261 — its other tie-breaks, land section /
+  // territory / path-to-city, collapse on a puzzle board; remaining ties
+  // fall to a fixed (r,q) scan). With nowhere at all to stand the unit dies
+  // (Unit.cs:8195-8198) — unreachable off a push, whose freshly vacated tile
+  // is always adjacent and standable.
+  function bounceUnit(s, u) {
+    var home = { q: u.q, r: u.r };
+    function standable(t) {
+      if (!t || unitAt(s, t.q, t.r)) return false;
+      if (info(u).bWater) return isWaterTile(t);
+      if (isWaterTile(t)) return false; // never END afloat (Tile.cs:10598)
+      return t.height !== 'HEIGHT_MOUNTAIN' && t.height !== 'HEIGHT_VOLCANO';
+    }
+    function nextToHostile(t) {
+      return s.units.some(function (o) {
+        return o.hp > 0 && o.player !== u.player && hexDistance(o, t) === 1;
+      });
+    }
+    var cands = [];
+    Object.keys(s.tiles).forEach(function (k) {
+      var t = s.tiles[k];
+      var dist = hexDistance(t, home);
+      if (dist >= 1 && standable(t)) cands.push({ t: t, dist: dist });
+    });
+    cands.sort(function (a, b) {
+      return (a.dist - b.dist) ||
+        (nextToHostile(a.t) - nextToHostile(b.t)) ||
+        (a.t.r - b.t.r) || (a.t.q - b.t.q);
+    });
+    var best = null;
+    for (var i = 0; i < cands.length && !best; i++)
+      if (cands[i].dist === 1 && isHiddenAt(s, u, cands[i].t)) best = cands[i].t;
+    if (!best && cands.length) best = cands[0].t;
+    if (best) {
+      u.q = best.q; u.r = best.r;
+      s.log.push(nameOf(u) + ' is bounced aside');
+    } else {
+      u.hp = 0; // Unit.bounce kills when there is nowhere to go (Unit.cs:8198)
+      s.log.push(nameOf(u) + ' has nowhere to go and is lost');
+    }
+  }
+
   // Attacker has a bRout effect the defender is not immune to (Unit.cs:8420).
   function routEffectVs(att, def) {
     var effs = effectsOf(att);
@@ -314,6 +384,10 @@
       add(labelWith('height', att, 'aiHeightFromModifier', from.height),
         sumEffectPair(att, 'aiHeightFromModifier', from.height));
       if (from.owner === att.player) add('friendly territory', sumEffect(att, 'iHomeModifier'));
+      // ambush: attacking from a tile where the unit is hidden from the
+      // defender's team (Unit.cs:8843 — for hostile sides this reduces to
+      // the same anonymous check the push uses)
+      if (isHiddenAt(state, att, from)) add('attacking from hiding', G.HIDDEN_ATTACK_MODIFIER);
 
       if (to) {
         if (isMelee(att) && riverBetween(state, from, to)) {
@@ -1100,12 +1174,26 @@
         var moved = null;
         for (var pi = 0; pi < order.length && !moved; pi++) {
           var pt = { q: defTile.q + DIRS[order[pi]].q, r: defTile.r + DIRS[order[pi]].r };
-          if (tileAt(s, pt.q, pt.r) && !unitAt(s, pt.q, pt.r) &&
-              moveCostInto(s, def, defTile, pt) !== Infinity) moved = pt;
+          var ptT = tileAt(s, pt.q, pt.r);
+          if (!ptT) continue;
+          // candidates are tested with canUnitOccupy(TeamType.NONE, ...)
+          // (Unit.cs:10082), which does not see hidden units (Tile.cs:10514)
+          // — a scout in trees does not block the shove
+          var occ = unitAt(s, pt.q, pt.r);
+          if (occ && !isHiddenAt(s, occ, ptT)) continue;
+          // the shove is a FINAL move: a land unit may cross friendly water
+          // but never end on it (canUnitTypeOccupy bFinalTile,
+          // Tile.cs:10598-10603) — moveCostInto alone would allow it
+          if (!info(def).bWater && isWaterTile(ptT)) continue;
+          if (moveCostInto(s, def, defTile, pt) !== Infinity) moved = pt;
         }
         if (moved) {
+          var hiddenOcc = unitAt(s, moved.q, moved.r);
           def.q = moved.q; def.r = moved.r;
           s.log.push(nameOf(def) + ' is pushed back!');
+          // arriving on a hidden unit's tile shoulders it aside: setTileID
+          // bounces whatever cannot share the tile (Unit.cs:1918-1921)
+          if (hiddenOcc) bounceUnit(s, hiddenOcc);
         } else {
           var noEsc = G.PANIC_NO_ESCAPE_EFFECTUNIT;
           if (noEsc && !isImmuneToEffect(def, noEsc)) {
@@ -1366,6 +1454,15 @@
     });
     if (d.iMeleeCounter) out.push('Counterattacks in melee');
     if (d.bIgnoreZOC) out.push('Ignores zone of control');
+    // Stealth (abHideTerrainTarget): the game's concept text — "Hidden while
+    // on a Trees tile in neutral or friendly territory" — plus the two
+    // consequences a puzzle can actually meet
+    if (d.hideVegetation) {
+      out.push('Hidden in ' + d.hideVegetation.map(function (v) {
+        return v.replace('VEGETATION_', '').toLowerCase();
+      }).sort().join(' or ') + ' (neutral or friendly territory): does not block a panicked enemy, +' +
+        G.HIDDEN_ATTACK_MODIFIER + '% attacking from hiding; visible for a turn after attacking');
+    }
     // An attack that leaves a mark: the game names the applied effect, so we do
     if (d.attackApply) {
       out.push('Attacks apply ' + effectName(d.attackApply.effect) +
@@ -1547,7 +1644,7 @@
     DATA: DATA, DIRS: DIRS, key: key, hexDistance: hexDistance, dirBetween: dirBetween,
     modify: modify, tileAt: tileAt, unitAt: unitAt, unitById: unitById,
     effectsOf: effectsOf, isMelee: isMelee, rangeMax: rangeMax, hpMax: hpMax,
-    canAct: canAct, canMove: canMove, canAttack: canAttack,
+    canAct: canAct, canMove: canMove, canAttack: canAttack, isHiddenAt: isHiddenAt,
     canMarch: canMarch, doMarch: doMarch, canUnlimber: canUnlimber, doUnlimber: doUnlimber,
     canSwap: canSwap, doSwap: doSwap,
     canAnchor: canAnchor, doAnchor: doAnchor, waterControlled: waterControlled,

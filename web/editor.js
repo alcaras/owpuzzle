@@ -103,7 +103,11 @@
     veg: [[null, 'no veg'], ['VEGETATION_TREES', 'trees'], ['VEGETATION_SCRUB', 'scrub'], ['VEGETATION_JUNGLE', 'jungle']],
     feature: [['road', 'road'], ['fort', 'fort'], ['river', 'river edge'], ['city0', 'city (yours)'], ['city1', 'city (enemy)'], ['own0', 'territory (yours)'], ['own1', 'territory (enemy)'], ['clear', 'clear tile']],
   };
-  var UNIT_ROSTER = ['UNIT_WARRIOR', 'UNIT_MILITIA', 'UNIT_SLINGER', 'UNIT_ARCHER', 'UNIT_LONGBOWMAN', 'UNIT_CROSSBOWMAN',
+  // The scout cannot attack at all (no bMelee, no range) — it is here for its
+  // stealth: hidden in trees/jungle it does not block an elephant's panic
+  // shove, so it can herd where a pushed unit ends up (see stealth.test.js)
+  var UNIT_ROSTER = ['UNIT_SCOUT',
+    'UNIT_WARRIOR', 'UNIT_MILITIA', 'UNIT_SLINGER', 'UNIT_ARCHER', 'UNIT_LONGBOWMAN', 'UNIT_CROSSBOWMAN',
     'UNIT_SPEARMAN', 'UNIT_HOPLITE', 'UNIT_PHALANGITE', 'UNIT_PIKEMAN', 'UNIT_AXEMAN', 'UNIT_MACEMAN', 'UNIT_SWORDSMAN',
     'UNIT_LEGIONARY', 'UNIT_HASTATUS', 'UNIT_SHOTELAI', 'UNIT_CHARIOT', 'UNIT_HORSEMAN', 'UNIT_CATAPHRACT',
     'UNIT_HORSE_ARCHER', 'UNIT_CAMEL_ARCHER', 'UNIT_PALTON_CAVALRY', 'UNIT_WAR_ELEPHANT', 'UNIT_TURRETED_ELEPHANT',

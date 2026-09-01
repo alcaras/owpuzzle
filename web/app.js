@@ -631,7 +631,11 @@
       var isSel = sel && sel.id === u.id;
       var isTarget = targetIds[u.id];
       var exhausted = u.player === 0 && !E.canAct(state, u) && !finished;
-      S.push('<g class="unit-chip" data-unit="' + u.id + '"' + (exhausted ? ' opacity="0.55"' : '') + '>');
+      // a hidden unit (scout in trees) fades: the board is fully visible in a
+      // puzzle, but the fade says "this tile does not block a panicked enemy"
+      var hidden = E.isHiddenAt(state, u, state.tiles[u.q + ',' + u.r]);
+      S.push('<g class="unit-chip" data-unit="' + u.id + '"' +
+        (hidden ? ' opacity="0.45"' : exhausted ? ' opacity="0.55"' : '') + '>');
       if (isSel) S.push('<circle cx="' + x + '" cy="' + (y + SIZE * 0.08) + '" r="' + (SIZE * 0.72) + '" fill="none" stroke="#fff" stroke-width="3"/>');
       if (isTarget) S.push('<circle cx="' + x + '" cy="' + (y + SIZE * 0.08) + '" r="' + (SIZE * 0.72) + '" fill="none" stroke="#ffb020" stroke-width="3" stroke-dasharray="8 5"/>');
       S.push('<circle cx="' + x + '" cy="' + (y + SIZE * 0.24) + '" r="' + (SIZE * 0.52) + '" fill="' + color + '" stroke="' + BOARD_BG + '" stroke-width="1.6"/>');

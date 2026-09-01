@@ -56,6 +56,7 @@ All verified against the game's source (see CLAUDE.md for where it lives).
 | **Line of sight** | Mountains block shots; units never do. |
 | **Disarm** | −20% strength for 2 turns, so it is a discount on every blow *after* it. Order matters. Worth +3 per maceman against a pikeman, +1 against a swordsman — check before designing around it. |
 | **Panic / no escape** | A pushed target with nowhere to go is disarmed instead. Blocking the escape tiles with your own bodies is a real play. |
+| **Stealth herding** | A scout hidden in trees/jungle does **not** block a panic shove — the pushed unit lands on its tile and the scout is bounced aside. A visible scout (open ground, enemy territory) blocks like anyone. So scouts steer where a panicked enemy ends up, without spending a fighting unit. Scouts cannot attack at all. |
 | **Zealot last stand** | Damage cannot take it below 1 hp — but splash can finish it. |
 
 ## Prove it against the POOL, not against par

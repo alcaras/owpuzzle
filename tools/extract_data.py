@@ -76,6 +76,17 @@ for z, e in entries(parse("unitTrait.xml")):
     if eff:
         trait_effect[z] = eff
 
+# ---------- terrain targets -> vegetation ----------
+# terrainTarget.xml names tile classes; abHideTerrainTarget on an effect
+# (EFFECTUNIT_STEALTH: trees + jungle) says where its carrier hides. We
+# resolve the indirection here so the engine can compare tile.vegetation
+# directly (only vegetation-based targets are needed for hiding).
+tt_veg = {}
+for z, e in entries(parse("terrainTarget.xml")):
+    v = strlist(e, "Vegetations")
+    if v:
+        tt_veg[z] = v
+
 # ---------- effect units (generic modifier bags) ----------
 EFFECT_LISTS = [
     "abUnitTraitValid", "abUnitTraitInvalid",
@@ -106,6 +117,11 @@ for z, e in entries(parse("effectUnit.xml")):
     ig = strlist(e, "aeIgnoreVegetationDefense")
     if ig:
         d["aeIgnoreVegetationDefense"] = ig
+    ht = pairlist(e, "abHideTerrainTarget")
+    if ht:
+        veg = sorted({v for k, on in ht.items() if on for v in tt_veg.get(k, [])})
+        if veg:
+            d["hideVegetation"] = veg
     if d:
         effects[z] = d
 

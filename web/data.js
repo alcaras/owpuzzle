@@ -908,6 +908,12 @@ var OWDATA = {
    },
    "bMultiTeams": 1
   },
+  "EFFECTUNIT_STEALTH": {
+   "hideVegetation": [
+    "VEGETATION_JUNGLE",
+    "VEGETATION_TREES"
+   ]
+  },
   "EFFECTUNIT_STRIKE1": {
    "abUnitTraitInvalid": {
     "UNITTRAIT_RANGED": 1
@@ -965,7 +971,11 @@ var OWDATA = {
    "bStun": 1
   },
   "EFFECTUNIT_TACTICIAN_RANGED": {
-   "bSkipIcon": 1
+   "bSkipIcon": 1,
+   "hideVegetation": [
+    "VEGETATION_JUNGLE",
+    "VEGETATION_TREES"
+   ]
   },
   "EFFECTUNIT_TESTUDO": {
    "abUnitTraitValid": {
@@ -999,7 +1009,14 @@ var OWDATA = {
    "abUnitTraitValid": {
     "UNITTRAIT_MELEE": 1,
     "UNITTRAIT_RANGED": 1
-   }
+   },
+   "hideVegetation": [
+    "VEGETATION_JUNGLE",
+    "VEGETATION_JUNGLE_CUT",
+    "VEGETATION_SCRUB",
+    "VEGETATION_TREES",
+    "VEGETATION_TREES_CUT"
+   ]
   },
   "EFFECTUNIT_TRAIT_ASTRONOMER": {
    "abUnitTraitValid": {
