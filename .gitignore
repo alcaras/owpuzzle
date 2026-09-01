@@ -3,5 +3,7 @@ __pycache__/
 .DS_Store
 data/
 server/node_modules/
+tools/turnsolver/node_modules/
+tools/turnsolver/.venv/
 submissions/
 web/_draft.html

@@ -1,0 +1,555 @@
+{
+ "id": "with-a-little-help-from-my-friends-f6ff55",
+ "name": "With A Little Help From My Friends",
+ "brief": "A precise assault against a fortified position.",
+ "lesson": "Disarm can be the key to bring down a stronger unit.",
+ "orders": 37,
+ "training": 200,
+ "radius": 4,
+ "objective": {
+  "kind": "maxKill"
+ },
+ "tiles": [
+  {
+   "q": -4,
+   "r": 0,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": -4,
+   "r": 1,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": -4,
+   "r": 2,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": -4,
+   "r": 3,
+   "terrain": "TERRAIN_SAND"
+  },
+  {
+   "q": -4,
+   "r": 4,
+   "terrain": "TERRAIN_SAND"
+  },
+  {
+   "q": -3,
+   "r": -1,
+   "vegetation": "VEGETATION_SCRUB"
+  },
+  {
+   "q": -3,
+   "r": 0,
+   "terrain": "TERRAIN_ARID",
+   "height": "HEIGHT_HILL"
+  },
+  {
+   "q": -3,
+   "r": 1,
+   "terrain": "TERRAIN_ARID",
+   "height": "HEIGHT_HILL"
+  },
+  {
+   "q": -3,
+   "r": 2,
+   "terrain": "TERRAIN_ARID",
+   "vegetation": "VEGETATION_SCRUB"
+  },
+  {
+   "q": -3,
+   "r": 3,
+   "terrain": "TERRAIN_SAND"
+  },
+  {
+   "q": -3,
+   "r": 4,
+   "terrain": "TERRAIN_WATER"
+  },
+  {
+   "q": -2,
+   "r": -2,
+   "vegetation": "VEGETATION_SCRUB",
+   "road": true,
+   "owner": 0
+  },
+  {
+   "q": -2,
+   "r": 0,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": -2,
+   "r": 1,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": -2,
+   "r": 2,
+   "terrain": "TERRAIN_SAND"
+  },
+  {
+   "q": -2,
+   "r": 3,
+   "terrain": "TERRAIN_WATER"
+  },
+  {
+   "q": -2,
+   "r": 4,
+   "terrain": "TERRAIN_SAND"
+  },
+  {
+   "q": -1,
+   "r": -3,
+   "terrain": "TERRAIN_URBAN",
+   "owner": 0
+  },
+  {
+   "q": -1,
+   "r": -2,
+   "road": true,
+   "owner": 0
+  },
+  {
+   "q": -1,
+   "r": -1,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": -1,
+   "r": 0,
+   "terrain": "TERRAIN_ARID",
+   "height": "HEIGHT_HILL"
+  },
+  {
+   "q": -1,
+   "r": 1,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": -1,
+   "r": 2,
+   "terrain": "TERRAIN_WATER"
+  },
+  {
+   "q": -1,
+   "r": 3,
+   "terrain": "TERRAIN_SAND",
+   "height": "HEIGHT_HILL"
+  },
+  {
+   "q": -1,
+   "r": 4,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": 0,
+   "r": -4,
+   "road": true,
+   "city": 0,
+   "owner": 0
+  },
+  {
+   "q": 0,
+   "r": -3,
+   "terrain": "TERRAIN_URBAN",
+   "road": true,
+   "owner": 0
+  },
+  {
+   "q": 0,
+   "r": -2,
+   "road": true,
+   "owner": 0
+  },
+  {
+   "q": 0,
+   "r": -1,
+   "road": true
+  },
+  {
+   "q": 0,
+   "r": 0,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": 0,
+   "r": 1,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": 0,
+   "r": 2,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": 0,
+   "r": 3,
+   "terrain": "TERRAIN_ARID",
+   "height": "HEIGHT_HILL"
+  },
+  {
+   "q": 0,
+   "r": 4,
+   "terrain": "TERRAIN_ARID",
+   "height": "HEIGHT_MOUNTAIN"
+  },
+  {
+   "q": 1,
+   "r": -4,
+   "terrain": "TERRAIN_URBAN",
+   "owner": 0
+  },
+  {
+   "q": 1,
+   "r": -3,
+   "terrain": "TERRAIN_URBAN",
+   "owner": 0
+  },
+  {
+   "q": 1,
+   "r": -2,
+   "owner": 0
+  },
+  {
+   "q": 1,
+   "r": -1,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": 1,
+   "r": 0,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": 1,
+   "r": 1,
+   "terrain": "TERRAIN_ARID",
+   "improvement": "IMPROVEMENT_FORT"
+  },
+  {
+   "q": 1,
+   "r": 2,
+   "terrain": "TERRAIN_ARID",
+   "height": "HEIGHT_HILL"
+  },
+  {
+   "q": 1,
+   "r": 3,
+   "terrain": "TERRAIN_ARID",
+   "height": "HEIGHT_HILL",
+   "vegetation": "VEGETATION_SCRUB"
+  },
+  {
+   "q": 2,
+   "r": -4,
+   "terrain": "TERRAIN_URBAN",
+   "owner": 0
+  },
+  {
+   "q": 2,
+   "r": -3,
+   "terrain": "TERRAIN_URBAN",
+   "vegetation": "VEGETATION_SCRUB",
+   "owner": 0
+  },
+  {
+   "q": 2,
+   "r": -2,
+   "owner": 0
+  },
+  {
+   "q": 2,
+   "r": -1,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": 2,
+   "r": 0,
+   "terrain": "TERRAIN_ARID"
+  },
+  {
+   "q": 2,
+   "r": 1,
+   "terrain": "TERRAIN_ARID",
+   "river": [
+    1
+   ]
+  },
+  {
+   "q": 2,
+   "r": 2,
+   "terrain": "TERRAIN_ARID",
+   "river": [
+    1
+   ]
+  },
+  {
+   "q": 3,
+   "r": -4,
+   "terrain": "TERRAIN_URBAN",
+   "owner": 0
+  },
+  {
+   "q": 3,
+   "r": -3,
+   "terrain": "TERRAIN_LUSH",
+   "vegetation": "VEGETATION_TREES",
+   "owner": 0
+  },
+  {
+   "q": 3,
+   "r": -2,
+   "terrain": "TERRAIN_WATER"
+  },
+  {
+   "q": 3,
+   "r": -1,
+   "terrain": "TERRAIN_ARID",
+   "height": "HEIGHT_HILL",
+   "river": [
+    3,
+    4
+   ]
+  },
+  {
+   "q": 3,
+   "r": 0,
+   "terrain": "TERRAIN_ARID",
+   "height": "HEIGHT_HILL",
+   "river": [
+    3,
+    4
+   ]
+  },
+  {
+   "q": 3,
+   "r": 1,
+   "terrain": "TERRAIN_ARID",
+   "river": [
+    3,
+    4
+   ]
+  },
+  {
+   "q": 4,
+   "r": -4,
+   "terrain": "TERRAIN_URBAN",
+   "owner": 0
+  },
+  {
+   "q": 4,
+   "r": -3,
+   "terrain": "TERRAIN_WATER",
+   "owner": 0
+  },
+  {
+   "q": 4,
+   "r": -2,
+   "terrain": "TERRAIN_SAND",
+   "height": "HEIGHT_HILL"
+  },
+  {
+   "q": 4,
+   "r": -1,
+   "terrain": "TERRAIN_ARID",
+   "height": "HEIGHT_HILL"
+  },
+  {
+   "q": 4,
+   "r": 0,
+   "terrain": "TERRAIN_ARID",
+   "height": "HEIGHT_HILL"
+  }
+ ],
+ "units": [
+  {
+   "player": 1,
+   "type": "UNIT_ARCHER",
+   "q": 4,
+   "r": 0
+  },
+  {
+   "player": 1,
+   "type": "UNIT_SPEARMAN",
+   "q": 1,
+   "r": 1,
+   "promotions": [
+    "EFFECTUNIT_HIGHLANDER",
+    "EFFECTUNIT_ZEALOT"
+   ]
+  },
+  {
+   "player": 0,
+   "type": "UNIT_WAR_ELEPHANT",
+   "q": -1,
+   "r": -3,
+   "promotions": [
+    "EFFECTUNIT_AMPHIBIOUS",
+    "EFFECTUNIT_BLOODTHIRSTY",
+    "EFFECTUNIT_FIERCE"
+   ]
+  },
+  {
+   "player": 1,
+   "type": "UNIT_SPEARMAN",
+   "q": -1,
+   "r": 3,
+   "promotions": [
+    "EFFECTUNIT_SHIELDBEARER"
+   ]
+  },
+  {
+   "player": 0,
+   "type": "UNIT_WAR_ELEPHANT",
+   "q": 1,
+   "r": -4,
+   "promotions": [
+    "EFFECTUNIT_HECKLER",
+    "EFFECTUNIT_HORSEBANE"
+   ]
+  },
+  {
+   "player": 1,
+   "type": "UNIT_ARCHER",
+   "q": 3,
+   "r": 1,
+   "promotions": [
+    "EFFECTUNIT_FIERCE"
+   ]
+  },
+  {
+   "player": 1,
+   "type": "UNIT_CATAPHRACT",
+   "q": 3,
+   "r": 0,
+   "promotions": [
+    "EFFECTUNIT_STRIKE1",
+    "EFFECTUNIT_STRIKE2",
+    "EFFECTUNIT_STRIKE3"
+   ]
+  },
+  {
+   "player": 0,
+   "type": "UNIT_HORSEMAN",
+   "q": -4,
+   "r": 0,
+   "promotions": [
+    "EFFECTUNIT_STRIKE1",
+    "EFFECTUNIT_STRIKE2",
+    "EFFECTUNIT_STRIKE3"
+   ]
+  },
+  {
+   "player": 0,
+   "type": "UNIT_BALLISTA",
+   "q": 0,
+   "r": -4,
+   "promotions": [
+    "EFFECTUNIT_BLOODTHIRSTY",
+    "EFFECTUNIT_BRAVE"
+   ]
+  },
+  {
+   "player": 1,
+   "type": "UNIT_ARCHER",
+   "q": -2,
+   "r": 4
+  },
+  {
+   "player": 0,
+   "type": "UNIT_HORSE_ARCHER",
+   "q": -3,
+   "r": -1,
+   "promotions": [
+    "EFFECTUNIT_EAGLE_EYE"
+   ]
+  },
+  {
+   "player": 0,
+   "type": "UNIT_BALLISTA",
+   "q": -2,
+   "r": -2,
+   "promotions": [
+    "EFFECTUNIT_SHIELDBEARER",
+    "EFFECTUNIT_WARDEN"
+   ]
+  },
+  {
+   "player": 1,
+   "type": "UNIT_MACEMAN",
+   "q": 3,
+   "r": -1,
+   "promotions": [
+    "EFFECTUNIT_COMBAT1"
+   ]
+  },
+  {
+   "player": 0,
+   "type": "UNIT_CROSSBOWMAN",
+   "q": -1,
+   "r": -2,
+   "promotions": [
+    "EFFECTUNIT_COMBAT1",
+    "EFFECTUNIT_COMBAT2",
+    "EFFECTUNIT_COMBAT3"
+   ]
+  },
+  {
+   "player": 1,
+   "type": "UNIT_MACEMAN",
+   "q": 4,
+   "r": -2,
+   "promotions": [
+    "EFFECTUNIT_COMBAT1"
+   ]
+  },
+  {
+   "player": 0,
+   "type": "UNIT_HORSE_ARCHER",
+   "q": -2,
+   "r": -1,
+   "promotions": [
+    "EFFECTUNIT_COMBAT1",
+    "EFFECTUNIT_EAGLE_EYE"
+   ]
+  },
+  {
+   "player": 0,
+   "type": "UNIT_ARCHER",
+   "q": -3,
+   "r": 1,
+   "promotions": [
+    "EFFECTUNIT_EAGLE_EYE",
+    "EFFECTUNIT_FIERCE",
+    "EFFECTUNIT_HIGHLANDER",
+    "EFFECTUNIT_MARKSMAN"
+   ]
+  },
+  {
+   "player": 0,
+   "type": "UNIT_MILITIA",
+   "q": 0,
+   "r": -3
+  },
+  {
+   "player": 0,
+   "type": "UNIT_MILITIA",
+   "q": -3,
+   "r": 0
+  },
+  {
+   "player": 1,
+   "type": "UNIT_ARCHER",
+   "q": 4,
+   "r": -1,
+   "promotions": [
+    "EFFECTUNIT_COMBAT1",
+    "EFFECTUNIT_COMBAT2"
+   ]
+  }
+ ],
+ "author": "Aran"
+}

@@ -59,6 +59,26 @@ afloat cannot attack**. The nearest C# guard (`canTargetTile`, Unit.cs:8449)
 bars *tribe* units only. It is enforced anyway, because the editor still lets an
 author place a land unit on water.
 
+## Stealth — implemented only where the game resolves it without a viewer
+
+Scouts (EFFECTUNIT_STEALTH) and tactician-led ranged units hide in trees or
+jungle. The vision system is out of scope (a puzzle shows the whole board), so
+the engine implements hidden-ness only where the C# tests it with
+`TeamType.NONE` or between hostile teams — checks that need no fog:
+
+- a hidden unit does not block a **panic shove** (`getPushTile` tests
+  candidates with NONE, Unit.cs:10082; `canUnitOccupy` skips hidden units,
+  Tile.cs:10514) — the pushed unit lands there and the hidden unit is bounced
+  aside (Unit.cs:1918-1921). This is what makes scouts *herd* a panic.
+- **+10% attacking from hiding** (HIDDEN_ATTACK_MODIFIER, Unit.cs:8843).
+- attacking, routing or being stunned reveals (`hasVisibleAttackCooldown`,
+  Unit.cs:3941); enemy territory offers no cover (Unit.cs:3535-3541).
+
+Deliberately NOT implemented (vision-side, would matter only for a *red* scout
+in trees): blue being unable to target it, and blue moving through it. Scouts
+also cannot attack at all — no bMelee, no range — which is the game's rule,
+not an omission. See `test/rules/stealth.test.js`.
+
 ## Testing
 
 ```
@@ -179,6 +199,18 @@ Three independent implementations, deliberately:
   exhaustive search when a found line meets the bound
   (see [docs/verifier-design.md](docs/verifier-design.md))
 
+And one **finder** that is not a prover:
+
+- `tools/ilp_fight.js` over `tools/turnsolver/` — the turn as a scheduled
+  integer programme (blow table → CP-SAT/HiGHS → engine-exact execution). It
+  reaches long interleaved lines the searches never execute: f6ff55's 37-STR
+  author line in ~40s (`SOLVER=cpsat … --k 6`; the fight search's best is
+  27). Its blow table keeps a few seats per (unit, target), so a line it
+  misses proves nothing; never cite it as a ceiling. `npm run test:ilp`
+  guards the 37. The same core is meant to plan real game positions from a
+  separate folder (ply-2 net exchange) — keep the core ignorant of which it
+  is solving: pool, training, objective are inputs.
+
 Keep all of them. Each has caught another being confidently wrong — including a
 `deploy_fight` bound that pruned whole trees while reporting "search complete".
 **Treat "search complete" with the same suspicion as a finding**; agreement
@@ -189,7 +221,40 @@ intended line **is** the optimum (not merely *a* line that reaches it), and
 check the trick is *required* — three of five drafts died because a cheaper
 line reached the same ceiling without the idea the puzzle was built around.
 
-## In flight (2026-08-19)
+## In flight (2026-09-01)
+
+- **The ILP turn planner landed as `tools/turnsolver/`** (blowtable, model,
+  lp + cpsat.py, solve) with `tools/ilp_fight.js` as its puzzle driver and
+  `test/turnsolver.test.js` (structural tests always; `npm run test:ilp` for
+  the real solves — it hard-fails on a missing backend rather than skipping).
+  The key insight of the two-phase solve: the timing-free master must not
+  promise a kill set the schedule cannot deliver, and the rows that keep it
+  honest (`hx` seat hand-over corollaries, `cy` 2-cycle cuts, `rk` rank
+  integers) were found mechanically — fix a master solution in the full
+  model, delete row families until feasible, read off the survivors. Next,
+  in order: memoise `waterControlled` in the engine (the blow table spends
+  90% of its time there on water boards; lab copy went 39s → 2s) and the
+  `hasPush` gap (engine.js pushes regardless of the target's immunity or a
+  settlement tile — Unit.cs:10046-10068), both with rule tests and a
+  ceilings sweep; then the game-position folder (ply-2 net exchange, boards
+  from saves — NOT in this repo) requiring this core.
+- **Scouts are in the editor, for stealth herding.** The Stealth section above
+  has the rules; `test/rules/stealth.test.js` has the citations. The scout is
+  a pure body — it cannot attack (no bMelee, no range; the game's rule) — and
+  its value is that hidden in trees/jungle it does not block a panic shove,
+  while visible it does, so it steers where a panicked enemy ends up. Same
+  change fixed a latent push bug: a shove can no longer end a land unit on
+  friendly-controlled water (bFinalTile, Tile.cs:10598). Both changes proved
+  inert on all 55 live boards (swept `/api/puzzles`: no stealth units, no red
+  ship or red-owned water next to a bPush board) and every ceiling re-proved.
+  `verify2`'s push-drift bound needed no change — it never excluded occupied
+  tiles, so hidden-scout pass-through was already inside the over-approximation.
+- **No puzzle uses a scout yet.** The first herding board should follow
+  docs/making-puzzles.md ("Stealth herding" row) and the full author-house-
+  puzzle gauntlet — the trick must be *required*, and a scout who could be
+  replaced by any blocking body is not a trick.
+
+## Earlier (2026-08-19)
 
 - **Seeding retires a row only when the FIGHT changes** (`puzzleHash`), not on
   any json diff. Rewording a name/brief/lesson used to retire the row and take
@@ -203,15 +268,33 @@ line reached the same ceiling without the idea the puzzle was built around.
 - `web/data.js` now carries `nation` (unit.xml `NationPrereq`) purely so the
   editor can group the unique units; it is acknowledged, not a combat rule.
 
-## Earlier (2026-08-14)
+## Earlier (2026-08-14, updated 08-25)
 
-- **`phase1-library-store` branch** carries the frontend refactor (tested on
-  owpuzzle-dev.fly.dev, awaiting a manual pass against `docs/phase1-test-plan.md`
-  before merge) *and* the whole verifier/optimizer programme:
-  `bench/human-baselines.json` plus `docs/optimizer-handoff.md`, which is the
-  resume point for that work — read it before touching `tools/verify2.js`.
-  Four of six benchmark boards pass unaided; the two gaps are search *ordering*,
-  not model expressiveness, and large-neighbourhood search is specced and gated.
+- **The verifier/optimizer programme is on main now**: verify2's stage 3,
+  the LNS polish (exact k-subset rebuild behind the kill-set gate),
+  cross-worker seed sharing, per-worker witness streams, climb-provenance
+  tags, and a LEARNED seat ordering that is default-on for the expressive
+  pass (`V2_RANKER=0` opts out; trained only on generated PROVEN boards,
+  so bench claims stay unaided). `docs/optimizer-handoff.md` is still the
+  resume point; read it before touching `tools/verify2.js`. Bench: five of
+  six rows pass unaided — king is PROVEN 180/18, matching the live par.
+  The moonshot f6ff55 stands at best-known 270/30 (line kept at
+  `bench/lines/`), unaided spread {16..27} over six runs of the shipped
+  config. Every schedule hypothesis this week was settled by measurement;
+  two (leader-depth, v3-linear features) were rejected on data — the
+  verdicts are in the handoff, do not re-buy them.
+- **The named next experiment for f6ff55** (cheap, decisive, not yet run):
+  pin the author's own nine seats as a placement and let `evalPlacement`'s
+  fight machinery try to cash the 370/37 out. The line is fully
+  expressible and its seats rank near-top under its own witness — if the
+  FIGHT search cannot execute it (11-unit interleaving; plan-slice fights
+  are capped at 2500 nodes), the remaining gap is fight-execution depth,
+  and no amount of deployment-ordering work will close it. Run that
+  before any further ordering research.
+- **`phase1-library-store` branch** now carries only the frontend refactor,
+  tested on owpuzzle-dev.fly.dev and still awaiting a manual pass against
+  `docs/phase1-test-plan.md` (the plan lives on that branch, not main) before
+  merge.
 - **`drafts/counterbattery.js`** — a siege puzzle mid-design. Its header holds
   the measured damage numbers and the idea: an onager with an enemy standing on
   top of it cannot fire (minimum range), and an elephant's PANIC shove is what
