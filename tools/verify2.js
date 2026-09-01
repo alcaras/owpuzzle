@@ -60,8 +60,14 @@ function key(q, r) { return q + ',' + r; }
 // InfoHelpers.getAttackDamage (engine.js:412) — replicated so blow values can
 // be computed RAW from a chosen (attStr, defStr) pair; attackUnitDamage caps
 // at def.hp, which would hide the true size of a blow from the bound.
+// NOTE the engine has NO zero guard here: a legal attack whose strength is
+// driven to 0 by defensive modifiers still takes a point off (Math.max(1,
+// dmg)). This replica used to `return 0` for fromStr <= 0, which made OPT
+// say "cannot hurt" — an UNDER-estimate, and under-estimates are the
+// unsound direction for a ceiling. Found on an imported real-game board:
+// longbowman at height-extended max range vs a promoted pikeman in trees in
+// its own territory, attStr 0, engine damage 1.
 function gAD(fromStr, toStr, percent) {
-  if (fromStr <= 0) return 0;
   var dmg = GLOB.BASE_DAMAGE * fromStr;
   if (fromStr > toStr) dmg += toStr - 1;
   dmg = Math.floor(dmg / toStr);
@@ -285,7 +291,8 @@ function build(P, POOL) {
         });
       });
     });
-    if (!any || bestA <= 0) return null;
+    // `any` (a legal shot exists) is the only gate: bestA 0 still deals 1
+    if (!any) return null;
     return { a: bestA, d: bestD,
       a0: any0 ? bestA0 : 0, d0: any0 ? bestD0 : 1 };
   }
@@ -392,7 +399,7 @@ function build(P, POOL) {
         });
       });
     });
-    return bestA > 0 ? { a: bestA, d: bestD } : null;
+    return bestD < Infinity ? { a: bestA, d: bestD } : null;   // bestA 0 still deals 1
   }
 
   // Assemble per-unit tables over its tileset: seats + (routers) red tiles.

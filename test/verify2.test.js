@@ -168,3 +168,24 @@ test('getAttackDamage replica matches the engine on a real attack', () => {
   const viaEngine = E.attackUnitDamage(s, att, { q: 0, r: 0 }, def);
   assert.equal(viaReplica, viaEngine);
 });
+
+test('a zero-attack-strength blow still deals 1 — OPT must not say 0 (InfoHelpers.cs:754)', () => {
+  // The engine's getAttackDamage has NO zero guard: it ends in
+  // Math.max(1, dmg), so a legal attack whose attack strength is driven to
+  // 0 by defensive modifiers STILL takes a point off. verify2's replica
+  // carried an `if (fromStr <= 0) return 0` guard, which made OPT report
+  // "cannot hurt" — an UNDER-estimate, the unsound direction: a bound
+  // built on it can sit below the true ceiling, and a PROVEN verdict on a
+  // beatable number is the worst thing this repo can ship. Found on an
+  // imported real-game board (longbowman at height-extended max range vs a
+  // promoted pikeman in trees in its own territory: attStr 0, engine
+  // damage 1), 3,192 tripwire hits in one run.
+  assert.equal(V.gAD(0, 10, 100), 1, 'zero attack strength must still floor at 1');
+  assert.equal(V.gAD(0, 100, 100), 1);
+  // and the engine agrees on a real state
+  const s = E.loadPuzzle({ ...MINI, orders: 8 });
+  const att = E.unitById(s, 0);
+  const def = E.unitById(s, 2);
+  const dmg = E.attackUnitDamage(s, att, { q: att.q, r: att.r }, def);
+  assert.ok(dmg >= 1, 'engine floors every legal blow at 1');
+});
