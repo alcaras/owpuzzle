@@ -12,6 +12,10 @@
 //        V2_LNS_SEED=n PRNG seed for the ALNS destroy-set draws (default 0xC0FFEE)
 //        V2_LNS_T3=n   ALNS triple budget per stall on >8-blue boards (default 40)
 //        V2_LNS_CAP=n  candidates per LNS rebuild on >8-blue boards (default 600)
+//        V2_NOMASKS=1  drop the kill-set machinery from stage3 (keep stage1's
+//                      U report). For imported real-game boards where nothing
+//                      refutes: every tree node otherwise pays a multi-second
+//                      allocator scan and the search fights ZERO leaves.
 //        V2_LNS_FIGHTS=n  fights per LNS rebuild on >8-blue boards (default 24)
 //        V2_LNS_SEEDF=n   fights per seed per polish visit, >8 blue (default 150)
 //
@@ -2431,7 +2435,7 @@ var PARENT_U = { U: null, U0: null };
 function workerMain(wd) {
   var POOL = wd.pool;
   var ctx = build(wd.puzzle, POOL);
-  var masks = ctx.NR <= 20 ? sortedMasks(ctx) : null;
+  var masks = (ctx.NR <= 20 && !process.env.V2_NOMASKS) ? sortedMasks(ctx) : null;
   var inc = mkIncumbent(wd.seed, new Int32Array(wd.sab));
   inc.onBest = function (i) {
     WT.parentPort.postMessage({ type: 'best', str: i.str, orders: i.orders, line: i.line });
@@ -2637,6 +2641,10 @@ function main() {
     console.log('stage1: skipped (' + ctx.NR + ' reds > 20)');
   }
   PARENT_U.U = U; PARENT_U.U0 = U0;
+  if (process.env.V2_NOMASKS) {
+    masks = null;
+    console.log('V2_NOMASKS: kill-set machinery disabled for the search');
+  }
 
   var inc = mkIncumbent(SEED);
   var s3state = { fightMemo: {}, pruneCache: {} };
