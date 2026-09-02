@@ -243,11 +243,33 @@ line reached the same ceiling without the idea the puzzle was built around.
   `test/rules/{movement,push}.test.js`; inert on all 55 live boards; every
   ceiling re-proved. The model also takes `counterW` (per-hp price on the
   counter damage a blow eats — counters never kill, Unit.cs:10614).
-  **Open gap flagged, not fixed:** the engine treats a
-  `_LEADER` promotion as a general but never attaches
-  EFFECTUNIT_LEADER_GENERAL itself (+1 movement, immune to PANIC/DISARMED/
-  GRAPPLER/TACTICIAN_LEADER — Character.cs:6508, 10613); only
-  king-of-the-hill carries a leader effect and its ceiling could move.
+- **The ruler aboard, closed (2026-09-02).** A `*_LEADER` effect exists
+  only because the general is the ruler (trait.xml `LeaderEffectUnit`,
+  Character.cs:10608-10616), and the ruler's unit also carries
+  EFFECTUNIT_LEADER_GENERAL (+1 move, immune to PANIC/DISARMED/GRAPPLER/
+  TACTICIAN_LEADER — Character.cs:6508). `effectsOf` now attaches it,
+  driven by `DATA.characterTraits` (new in `extract_data.py`: every trait's
+  general/leader effect). Extracting that table also let the coverage audit
+  see the ruler effects for the first time — its reachable set had been
+  built from unit traits alone — and it surfaced **bStun**
+  (EFFECTUNIT_TACTICIAN_LEADER): implemented, `hasStun` per Unit.cs:7069,
+  the survivor is STUNNED and cannot counter (Unit.cs:10634). Three ruler
+  gaps are acknowledged instead (Hannibal's extra action, Zealot heal-on-
+  kill, Hero launch-offensive). Rule tests in `test/rules/push.test.js`.
+  Live impact: three boards carry EFFECTUNIT_COMMANDER_LEADER (the-anvil,
+  left-flank-right-flank, king-of-the-hill); no board carries a stun. All
+  12 published maxKill ceilings re-proved; king-of-the-hill's recorded
+  author line now fails at action 13 (the red ruler no longer panics) but
+  the 12-action `-line18` still kills all three, so it stays solvable.
+  the-anvil (killAll, par 6, its ruler's horseman now moves 4): verify2
+  still kills all three in 6 and proves 16 of 24 the most in a 5-order
+  pool (full-play search complete), so the par holds; the exhaustive
+  `solver.js` line count — its "unique" claim — was not re-run (43 min
+  without finishing at 3M states). left-flank-right-flank (community, 190 of a 230 red army) is an
+  author-line ceiling (copied from the author's replay at approval) that
+  was never proven: verify2 bounds it at U=23 and finds only 14, before and
+  after. Its ruler is blue, so the change can only add lines, never remove
+  the author's; the 190 stands as it did — unproven, not re-proved.
 - **Scouts are in the editor, for stealth herding.** The Stealth section above
   has the rules; `test/rules/stealth.test.js` has the citations. The scout is
   a pure body — it cannot attack (no bMelee, no range; the game's rule) — and

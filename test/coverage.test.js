@@ -32,7 +32,11 @@ const ACKNOWLEDGED = {
   iRevealExtra: 'the whole board is visible in a puzzle',
   iHealAlways: 'healing happens between turns',
   iHealExtra: 'healing happens between turns',
+  bHealNeutral: 'healing happens between turns',
   bMultiTeams: 'two sides only',
+  bSkipIcon: 'display only',
+  bCriticalImmune: 'criticals are excluded (see iCriticalChance), so immunity to them is inert',
+  bGeneralHopping: 'a general changing units is not a combat action',
   // gates on which units may carry an effect; matters for the editor's
   // promotion list rather than for resolving combat
   // the editor already honours these when it offers promotions
@@ -44,6 +48,13 @@ const ACKNOWLEDGED = {
   bPushWater: 'GAP: fireship shoving ships into open water',
   iSettlementAttackModifier: 'GAP: marines assaulting a settlement',
   iRoadMovementModifier: 'GAP: siege road movement',
+  // the ruler's own traits, reachable only when the ruler is the general
+  // (Character.cs:10608). The audit never saw them until characterTraits
+  // was extracted: the reachable set was built from unit traits alone, so
+  // bStun sat unimplemented behind a promotion the editor offers.
+  iActionsExtra: 'GAP: Hannibal aboard — the unit acts once more before its cooldown (Unit.cs:2758 getFreeActions)',
+  bHealKill: 'GAP: Zealot ruler aboard — the unit heals on a kill (Unit.cs:9642)',
+  bLaunchOffensive: 'GAP: Hero ruler aboard — launch offensive (Unit.cs:14135)',
 };
 
 function reachableEffects() {
@@ -51,6 +62,14 @@ function reachableEffects() {
   for (const u of Object.keys(E.DATA.units)) for (const e of (E.DATA.units[u].effects || [])) set.add(e);
   for (const p of Object.keys(E.DATA.promotions)) set.add(E.DATA.promotions[p].effect);
   for (const t of Object.keys(E.DATA.traitEffects)) set.add(E.DATA.traitEffects[t]);
+  // a general lends the unit its character traits' effects (Character.cs:10588);
+  // the editor offers these as promotions, so they are reachable too
+  for (const t of Object.keys(E.DATA.characterTraits || {})) {
+    const d = E.DATA.characterTraits[t];
+    if (d.general) set.add(d.general);
+    if (d.leader) set.add(d.leader);
+  }
+  if (E.DATA.globals.LEADER_GENERAL_EFFECTUNIT) set.add(E.DATA.globals.LEADER_GENERAL_EFFECTUNIT);
   return set;
 }
 
@@ -121,5 +140,5 @@ test('the acknowledged list has not gone stale', () => {
 
 test('the known gaps are still only these', () => {
   const gaps = Object.keys(ACKNOWLEDGED).filter((k) => ACKNOWLEDGED[k].startsWith('GAP'));
-  assert.deepEqual(gaps.sort(), ['bImmobilize', 'bPushWater', 'iRoadMovementModifier', 'iSettlementAttackModifier']);
+  assert.deepEqual(gaps.sort(), ['bHealKill', 'bImmobilize', 'bLaunchOffensive', 'bPushWater', 'iActionsExtra', 'iRoadMovementModifier', 'iSettlementAttackModifier']);
 });

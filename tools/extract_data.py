@@ -76,6 +76,23 @@ for z, e in entries(parse("unitTrait.xml")):
     if eff:
         trait_effect[z] = eff
 
+# ---------- character traits -> the effects a general lends its unit ----------
+# trait.xml: GeneralEffectUnit for any general, LeaderEffectUnit only when the
+# general is the ruler (Character.getGeneralEffectUnits, Character.cs:10588-
+# 10616). A ruler-general also carries LEADER_GENERAL_EFFECTUNIT
+# (Character.cs:6508); the engine attaches it whenever a unit holds one of the
+# `leader` effects, since those exist only because the ruler is aboard.
+character_traits = {}
+for z, e in entries(parse("trait.xml")):
+    gen, lead = e.findtext("GeneralEffectUnit"), e.findtext("LeaderEffectUnit")
+    if gen or lead:
+        d = {}
+        if gen:
+            d["general"] = gen
+        if lead:
+            d["leader"] = lead
+        character_traits[z] = d
+
 # ---------- terrain targets -> vegetation ----------
 # terrainTarget.xml names tile classes; abHideTerrainTarget on an effect
 # (EFFECTUNIT_STEALTH: trees + jungle) says where its carrier hides. We
@@ -223,6 +240,7 @@ except Exception as ex:
 data = {
     "globals": g,
     "traitEffects": trait_effect,
+    "characterTraits": character_traits,
     "effects": effects,
     "promotions": promotions,
     "units": units,

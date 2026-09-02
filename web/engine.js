@@ -42,7 +42,7 @@
   // state = {
   //   tiles: { "q,r": {q,r,terrain,height,vegetation,improvement,river:[dir..],owner} },
   //   units: [ {id,player,type,hp,promotions:[],effects? (derived),fortifyTurns,
-  //             cooldown:null|'ATTACK'|'ROUT'|'ATTACKED',steps,name} ],
+  //             cooldown:null|'ATTACK'|'ROUT'|'ATTACKED'|'STUNNED'|'UNLIMBERED',steps,name} ],
   //   orders: int,
   //   log: [string]
   // }
@@ -69,15 +69,32 @@
 
   function info(u) { return DATA.units[u.type]; }
 
+  // The effects a trait lends only when the general aboard is the RULER
+  // (trait.xml LeaderEffectUnit; Character.cs:10608-10616). A unit holding
+  // one of these is ruler-led, and a ruler-led unit also carries
+  // LEADER_GENERAL_EFFECTUNIT (+1 movement, immune to PANIC/DISARMED/GRAPPLER/
+  // TACTICIAN_LEADER — Character.cs:6508). Attached here so a board that says
+  // EFFECTUNIT_COMMANDER_LEADER gets the immunities the game would give.
+  var RULER_EFFECTS = {};
+  Object.keys(DATA.characterTraits || {}).forEach(function (t) {
+    var l = DATA.characterTraits[t].leader;
+    if (l) RULER_EFFECTS[l] = true;
+  });
+  var LEADER_GENERAL = DATA.globals.LEADER_GENERAL_EFFECTUNIT;
+
   // All effect units on a unit: innate (traits + aeEffectUnit) + promotions.
   function effectsOf(u) {
     var effs = (info(u).effects || []).slice();
     (u.applied || []).forEach(function (e) { effs.push(e); });   // disarmed etc.
+    var rulerLed = false;
     (u.promotions || []).forEach(function (p) {
       var pr = DATA.promotions[p];
-      if (pr && pr.effect) effs.push(pr.effect);
-      else if (DATA.effects[p]) effs.push(p); // allow raw effect names in puzzles
+      var e = pr && pr.effect ? pr.effect : DATA.effects[p] ? p : null; // raw effect names allowed in puzzles
+      if (!e) return;
+      effs.push(e);
+      if (RULER_EFFECTS[e]) rulerLed = true;
     });
+    if (rulerLed && LEADER_GENERAL && DATA.effects[LEADER_GENERAL] && effs.indexOf(LEADER_GENERAL) < 0) effs.push(LEADER_GENERAL);
     return effs;
   }
 
@@ -216,6 +233,23 @@
     for (var i = 0; i < effs.length; i++) {
       var d = DATA.effects[effs[i]];
       if (d && d.bPush && !isImmuneToEffect(def, effs[i])) return true;
+    }
+    return false;
+  }
+
+  // Unit.hasStun (Unit.cs:7069): a bStun effect (EFFECTUNIT_TACTICIAN_LEADER —
+  // a Tactician ruler aboard) stuns what it hits at any range, unless the
+  // target stands in a city with walls up (isVulnerable = city hp 0; we have
+  // no city hp, so a city always protects), the attacker's element differs
+  // from the target tile's, or the target is immune (another ruler's unit).
+  function hasStun(state, att, def) {
+    var t = tileAt(state, def.q, def.r);
+    if (!t || t.city != null) return false;
+    if (!!info(att).bWater !== isWaterTile(t)) return false;
+    var effs = effectsOf(att);
+    for (var i = 0; i < effs.length; i++) {
+      var d = DATA.effects[effs[i]];
+      if (d && d.bStun && !isImmuneToEffect(def, effs[i])) return true;
     }
     return false;
   }
@@ -1280,6 +1314,14 @@
 
     // defender loses a fortification turn when melee-attacked (Unit.cs:9643)
     if (isMelee(att) && !killed && def.fortifyTurns > 0 && adjacent) def.fortifyTurns -= 1;
+
+    // stun (Unit.cs:9660-9665): the survivor gets STUNNED_COOLDOWN, and a
+    // stunned unit cannot counterattack (canCounterattack, Unit.cs:10634) —
+    // everyone who hits it next this turn hits it for free
+    if (!killed && hasStun(s, att, def)) {
+      def.cooldown = 'STUNNED';
+      s.log.push(nameOf(def) + ' is stunned!');
+    }
 
     // rout / advance / cooldown (Unit.cs:9705-9734, 8342-8433).
     // ROUT (and the advance) requires a FURTHER hostile attackable from the
