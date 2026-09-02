@@ -30,13 +30,13 @@ tools/compute_ceilings.js + tools/deploy_fight.js + tools/verify2.js
                          docs/making-puzzles.md); each has caught another
                          being confidently wrong — reports
                          winning-line count (1 = unique solution)
-tools/ilp_fight.js       ILP line FINDER (tools/turnsolver/): plans a turn as
+tools/ilp_fight.js       ILP line FINDER (tools/solverengine/): plans a turn as
                          a scheduled integer programme, executes it with the
                          engine; reaches long interleaved lines the searches
                          cannot, proves nothing. `npm install` in
-                         tools/turnsolver for HiGHS; SOLVER=cpsat needs a
+                         tools/solverengine for HiGHS; SOLVER=cpsat needs a
                          python with ortools ($CPSAT_PY or
-                         tools/turnsolver/.venv). `npm run test:ilp`
+                         tools/solverengine/.venv). `npm run test:ilp`
 tools/build_single.py    bundle everything into dist/owpuzzle.html
 ```
 

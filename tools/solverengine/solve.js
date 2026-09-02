@@ -1,6 +1,6 @@
-// The turn planner: plan by integer programme, execute by engine, re-plan.
+// The position solver: plan by integer programme, execute by engine, re-plan.
 //
-//   planTurn(state, opts) -> {state, line, str, orders, lostStr, ms, label}
+//   solvePosition(state, opts) -> {state, line, str, orders, lostStr, ms, label}
 //
 // The turn is a COVERING problem: choose which enemies die and which blows
 // (unit, seat, target) pay for each, subject to one blow per unit, one body
@@ -18,7 +18,7 @@
 // blows, proves itself in seconds.
 //
 // PANIC pushes that displace a target are not in the model (they move the
-// target, which rewrites every blow on it), so `planTurn` branches over them:
+// target, which rewrites every blow on it), so `solvePosition` branches over them:
 // each candidate push is applied by the engine as a PREFIX, the resulting
 // position is screened by the LP relaxation of the master, and the best few
 // are planned in full.
@@ -225,7 +225,7 @@ async function pushPrefixes(state) {
 // opts: seconds, quiet, verbose, branch (push prefixes; default on), branchK
 // (prefixes planned in full, default 3), waves, workers, twoPhaseAt,
 // masterShare, restarts, hint, greedy, pareto, topSeats, onShortfall
-async function planTurn(state, opts) {
+async function solvePosition(state, opts) {
   opts = opts || {};
   const t0 = Date.now();
   const say = opts.quiet ? () => {} : (...a) => console.log(...a);
@@ -262,4 +262,4 @@ async function planTurn(state, opts) {
   return { state: s, line: best.line, str: best.str, orders: state.orders - s.orders, lostStr: lost, ms: Date.now() - t0, label: best.label };
 }
 
-module.exports = { planTurn, planWaves, solveWave, pushPrefixes, binaryMaster, restrictTable, greedyHint, mopUp, blowTable, buildModel: M2.buildModel, extractPlan: M2.extractPlan, executePlan: M2.executePlan };
+module.exports = { solvePosition, planWaves, solveWave, pushPrefixes, binaryMaster, restrictTable, greedyHint, mopUp, blowTable, buildModel: M2.buildModel, extractPlan: M2.extractPlan, executePlan: M2.executePlan };

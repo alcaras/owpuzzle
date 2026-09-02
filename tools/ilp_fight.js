@@ -1,5 +1,5 @@
 // ILP line finder for a puzzle: plan the turn as a scheduled integer
-// programme (tools/turnsolver/), execute it with the engine, print the line.
+// programme (tools/solverengine/), execute it with the engine, print the line.
 //
 //   node tools/ilp_fight.js <puzzle.json|submission.json|puzzle-id> [pool] [options]
 //
@@ -18,8 +18,8 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const E = require('./turnsolver/engine.js');
-const { planTurn } = require('./turnsolver/solve.js');
+const E = require('./solverengine/engine.js');
+const { solvePosition } = require('./solverengine/solve.js');
 
 function loadBoard(arg) {
   if (fs.existsSync(arg)) { const raw = JSON.parse(fs.readFileSync(arg, 'utf8')); return raw.puzzle || raw; }
@@ -42,7 +42,7 @@ if (require.main === module) {
       masterShare: +(opt('--master') || 0) || undefined, hint: !args.includes('--no-hint'), pareto: !args.includes('--no-pareto'),
     };
     const s0 = E.loadPuzzle({ ...P, orders: pool });
-    const r = await planTurn(s0, opts);
+    const r = await solvePosition(s0, opts);
     console.log(`\nRESULT: ${r.str / 10} STR killed in ${r.orders}/${pool} orders, ${r.ms}ms (${r.label})` +
       (r.lostStr ? `, lost ${r.lostStr / 10} STR of our own` : ''));
     let chk = s0; for (const a of r.line) chk = E.applyAction(chk, a);

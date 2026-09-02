@@ -7,6 +7,6 @@
     "test:ceilings": "OWP_SLOW=1 node --test test/ceilings.test.js",
     "start": "node server/index.js",
     "data": "python3 tools/extract_data.py",
-    "test:ilp": "OWP_ILP=1 node --test test/turnsolver.test.js"
+    "test:ilp": "OWP_ILP=1 node --test test/solverengine.test.js"
   }
 }

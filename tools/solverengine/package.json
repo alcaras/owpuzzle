@@ -1,0 +1,8 @@
+{
+  "name": "owpuzzle-solverengine",
+  "private": true,
+  "description": "ILP position solver for the owpuzzle engine. `npm install` here for the HiGHS backend; CP-SAT needs a python with ortools (see README).",
+  "dependencies": {
+    "highs": "^1.15.2"
+  }
+}

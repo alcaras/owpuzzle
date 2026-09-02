@@ -1,6 +1,6 @@
-// The ILP turn planner (tools/turnsolver/): structural checks that run on
+// The ILP position solver (tools/solverengine/): structural checks that run on
 // every push, and the solver gauntlet behind OWP_ILP=1 (`npm run test:ilp`),
-// which needs the HiGHS package installed under tools/turnsolver and a python
+// which needs the HiGHS package installed under tools/solverengine and a python
 // with ortools for CP-SAT.
 //
 // The planner is a FINDER — a line it reaches is engine-replayed and real; a
@@ -16,10 +16,10 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const { E, setup } = require('./helpers.js');
-const B = require('../tools/turnsolver/blowtable.js');
-const M = require('../tools/turnsolver/model.js');
-const S = require('../tools/turnsolver/solve.js');
-const { hasHighs, hasCpsat } = require('../tools/turnsolver/lp.js');
+const B = require('../tools/solverengine/blowtable.js');
+const M = require('../tools/solverengine/model.js');
+const S = require('../tools/solverengine/solve.js');
+const { hasHighs, hasCpsat } = require('../tools/solverengine/lp.js');
 
 // an elephant (bPush), a horseman (bRout), a swordsman; an archer the
 // elephant cannot kill in one blow and a spearman beside it
@@ -125,14 +125,14 @@ const ILP = !!process.env.OWP_ILP;
 const F6 = path.join(__dirname, 'fixtures', 'with-a-little-help-f6ff55.json');
 
 test('gauntlet: both backends are present (a missing backend must fail, not skip)', { skip: !ILP }, () => {
-  assert.ok(hasHighs(), 'npm install in tools/turnsolver');
-  assert.ok(hasCpsat(), 'a python with ortools: $CPSAT_PY, tools/turnsolver/.venv, or python3');
+  assert.ok(hasHighs(), 'npm install in tools/solverengine');
+  assert.ok(hasCpsat(), 'a python with ortools: $CPSAT_PY, tools/solverengine/.venv, or python3');
 });
 
 test('gauntlet: HiGHS finds the twin-swords ceiling', { skip: !ILP }, async () => {
   const P = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'twin-swords.json'), 'utf8'));
   const s0 = E.loadPuzzle(P);
-  const r = await S.planTurn(s0, { seconds: 10, quiet: true, branch: false });
+  const r = await S.solvePosition(s0, { seconds: 10, quiet: true, branch: false });
   assert.equal(r.str, P.objective.count);
   let s = s0; for (const a of r.line) s = E.applyAction(s, a);
   assert.equal(E.strKilledOf(s), r.str, 'the line replays to its claim');
@@ -142,7 +142,7 @@ test('gauntlet: CP-SAT reaches f6ff55\'s 37-STR author line', { skip: !ILP, time
   const P = JSON.parse(fs.readFileSync(F6, 'utf8'));
   const s0 = E.loadPuzzle({ ...P, orders: 45 });
   process.env.SOLVER = 'cpsat';
-  const r = await S.planTurn(s0, { seconds: 30, quiet: true, branchK: 6 });
+  const r = await S.solvePosition(s0, { seconds: 30, quiet: true, branchK: 6 });
   assert.ok(r.str >= 370, `found ${r.str / 10} STR, the author's line is 37`);
   let s = s0; for (const a of r.line) s = E.applyAction(s, a);
   assert.equal(E.strKilledOf(s), r.str, 'the line replays to its claim');

@@ -201,15 +201,15 @@ Three independent implementations, deliberately:
 
 And one **finder** that is not a prover:
 
-- `tools/ilp_fight.js` over `tools/turnsolver/` — the turn as a scheduled
+- `tools/ilp_fight.js` over `tools/solverengine/` — the turn as a scheduled
   integer programme (blow table → CP-SAT/HiGHS → engine-exact execution). It
   reaches long interleaved lines the searches never execute: f6ff55's 37-STR
   author line in ~40s (`SOLVER=cpsat … --k 6`; the fight search's best is
   27). Its blow table keeps a few seats per (unit, target), so a line it
   misses proves nothing; never cite it as a ceiling. `npm run test:ilp`
-  guards the 37. The same core is meant to plan real game positions from a
-  separate folder (ply-2 net exchange) — keep the core ignorant of which it
-  is solving: pool, training, objective are inputs.
+  guards the 37. The core is a position solver, not a puzzle solver: keep it
+  ignorant of what it is solving — pool, training, objective, counter-damage
+  price are inputs, and nothing puzzle-shaped belongs inside it.
 
 Keep all of them. Each has caught another being confidently wrong — including a
 `deploy_fight` bound that pruned whole trees while reporting "search complete".
@@ -223,9 +223,9 @@ line reached the same ceiling without the idea the puzzle was built around.
 
 ## In flight (2026-09-01)
 
-- **The ILP turn planner landed as `tools/turnsolver/`** (blowtable, model,
+- **The ILP position solver landed as `tools/solverengine/`** (blowtable, model,
   lp + cpsat.py, solve) with `tools/ilp_fight.js` as its puzzle driver and
-  `test/turnsolver.test.js` (structural tests always; `npm run test:ilp` for
+  `test/solverengine.test.js` (structural tests always; `npm run test:ilp` for
   the real solves — it hard-fails on a missing backend rather than skipping).
   The key insight of the two-phase solve: the timing-free master must not
   promise a kill set the schedule cannot deliver, and the rows that keep it
@@ -242,17 +242,12 @@ line reached the same ceiling without the idea the puzzle was built around.
   a shoved siege unit loses its set-up (Unit.cs:9690-9693). Rule tests in
   `test/rules/{movement,push}.test.js`; inert on all 55 live boards; every
   ceiling re-proved. The model also takes `counterW` (per-hp price on the
-  counter damage a blow eats — counters never kill, Unit.cs:10614) for the
-  game-position use. **Open gap flagged, not fixed:** the engine treats a
+  counter damage a blow eats — counters never kill, Unit.cs:10614).
+  **Open gap flagged, not fixed:** the engine treats a
   `_LEADER` promotion as a general but never attaches
   EFFECTUNIT_LEADER_GENERAL itself (+1 movement, immune to PANIC/DISARMED/
   GRAPPLER/TACTICIAN_LEADER — Character.cs:6508, 10613); only
   king-of-the-hill carries a leader effect and its ceiling could move.
-- The game-position solver lives in a separate, unpushed folder next to
-  this repo (`../owposition`: save → the enemies the player can *see* →
-  `planTurn` priced for counter damage) and requires this core through
-  `$OWPUZZLE`. Nothing from a game save comes back here. Changes to the
-  core should keep it ignorant of which it is solving.
 - **Scouts are in the editor, for stealth herding.** The Stealth section above
   has the rules; `test/rules/stealth.test.js` has the citations. The scout is
   a pure body — it cannot attack (no bMelee, no range; the game's rule) — and
