@@ -263,6 +263,46 @@ field), and ranker v3's richer 16-feature linear model (held-out 286
 vs v2's 270; worse on left-flank, bottleneck and the f6ff55 solver
 line — v2 stays).)
 
+**ROT-0 AND THE PLAN-PRUNE FINDING (2026-09-02).** The named rot-0
+fix went in (planSlices: rotation 0 of every burst mask is shift 0) and
+measured **22/25** — the ladder floor, unchanged. But the run's summit
+slices explain why no rotation could have mattered:
+`plan 32 … leaves 0 · costCut 5311 · [walk 0ms, fight 0ms, prune 13987ms]`,
+plan 36 the same. `restrictedPrune` scanned every mask above the
+incumbent (hundreds at incumbent 12, a 30k-node feasibility each) for
+every node whose prefix refuted the last witness; a summit plan's pins
+refute the fantasy masks at the top, so every node re-walked the ladder
+and the 30-41 slices spent their whole 14s in prune, zero leaves, in
+every burst of every round. Three fixes were measured, one survives:
+
+| plan-slice prune | f6ff55 2400s | summit (30-41) leaves |
+|---|---|---|
+| old: scan all masks ≥ incumbent, restart at top per node | 22 | 0 |
+| own mask only (own cache key) | **12, 12** | 517 / 330 / 11,879 |
+| own mask, then lastWitness, then ≤16 masks below the rung (V2_PLANSCAN) | **12** | plan 42 back to 2.7s/slice |
+| monotone scan: old semantics, child starts at parent's witness (shipped) | **{22, 22}** (both 22/26) | 183 / 9 / 15 / 169 (31/32/36/41), same both runs |
+
+Own-mask pruning fixed the mechanism and starved the polish: 12
+rebuilds/633 leaves climbed nothing, where the old build hit 17 at
+rebuild 2 from 80 leaves. The polish climbs from a summit slice's
+GRACEFUL FAILURES — leaves that cannot complete the plan but do
+complete some mask far below it — and both the own-mask check and a
+scan capped near the rung cut exactly those (the capped scan proved
+they are feasible only far below the plan). So the old accept-any-mask
+semantics are load-bearing and only their cost was the bug. The fix
+that shipped is monotonicity: a pin only tightens rows and budget, so a
+mask infeasible for a prefix is infeasible for every extension, and a
+child's scan can start at its parent's witness index (`startK`/`out.k`
+on restrictedPrune, `mem.witAt` alongside pruneCache so a cache hit
+hands the witness on). Same verdicts as the old scan, one walk down
+per path instead of per node. Prune still takes ~10s of a 14s summit
+slice — the walk itself is hundreds of 30k-node checks — so the next
+cost lever there is the per-check cap, not the scan order. Smoke:
+the-shore-riders PROVEN 19 (0.3s), closing-in PROVEN 10 (2:21). Also
+visible in every log: each full-expressive coverage pass on this board
+ends "stopped (heap cap) · leaves 0" — ~25% of every round produces
+nothing. Not chased.
+
 **THE PIN_FIGHT VERDICT AND THE REFIGHT VALVE (2026-08-30/31).** The
 named experiment ran: pin the author's nine f6ff55 seats and let the
 exact fight machinery try to cash out 370/37. It did — **in seven

@@ -1196,6 +1196,7 @@ function stage3(ctx, inc, deadline, opts) {
   var masks = opts.masks;                 // sorted by strength desc
   // persistent across calls: fights already evaluated, prune decisions made
   var mem = opts.state || { fightMemo: {}, pruneCache: {} };
+  if (!mem.witAt) mem.witAt = {};
   var stats = { leaves: 0, dedup: 0, illegal: 0, boundCut: 0, costCut: 0,
     tWalk: 0, tFight: 0, tPrune: 0, fightCapped: 0, gateCut: 0 };
   // fights are exact except in plan (finder) passes, where a node cap keeps
@@ -1284,7 +1285,26 @@ function stage3(ctx, inc, deadline, opts) {
   // unassigned units' travel is priced inside the allocator, and pricing it
   // twice would make the bound inadmissible.
   var lastWitness = -1;
-  function restrictedPrune(assigned, costLB, cacheKey) {
+  // startK: where to begin the mask scan — the parent's witness index. A
+  // pin only tightens (an optimistic stat row becomes the seat's exact row,
+  // the budget shrinks by its cost), so a mask infeasible for a prefix is
+  // infeasible for every extension: nothing above the parent's witness can
+  // be feasible for the child. out.k receives this node's witness index.
+  //
+  // Why this matters (f6ff55, 2026-09-02): the scan used to restart at the
+  // top for every node whose prefix refuted the last witness. A summit
+  // plan's pins refute the fantasy masks at the top, so with a low
+  // incumbent every node re-walked hundreds of masks at a 30k-node
+  // feasibility each — the 30-41 plan slices spent their whole 14s budget
+  // in prune and produced ZERO leaves in every burst of every round, which
+  // is why no rotation of their witness could have mattered. Pruning
+  // plan slices to their OWN mask fixed the cost and gave {12, 12} against
+  // the {22,22,22} floor: the polish climbs from a slice's graceful
+  // failures — leaves that cannot complete the plan but do complete some
+  // mask far below it — and own-mask pruning (or a scan capped near the
+  // plan) cut exactly those. The monotone scan keeps every leaf the old
+  // scan accepted and pays for the walk down once per path, not per node.
+  function restrictedPrune(assigned, costLB, cacheKey, startK, out) {
     if (!masks) return false;
     // cached decisions: "prune" stays valid as the incumbent only rises;
     // "no prune" is valid while the incumbent hasn't risen since
@@ -1292,7 +1312,7 @@ function stage3(ctx, inc, deadline, opts) {
     var hit = mem.pruneCache[cacheKey];
     if (hit !== undefined) {
       if (hit === true) return true;
-      if (hit >= best) return false;
+      if (hit >= best) { if (out) out.k = mem.witAt[cacheKey] || 0; return false; }
     }
     var rows = ctx.BLUE.map(function (b) {
       var o = ctx.OPT[b.id];
@@ -1314,21 +1334,22 @@ function stage3(ctx, inc, deadline, opts) {
         travel: zero, travelAny: 0 };
     });
     var budget = POOL - costLB;
-    // `< best` (not <=): equal-strength kill-sets stay alive so cheaper
-    // lines to the same ceiling (par) can still be found
-    if (lastWitness >= 0 && masks[lastWitness].str >= best &&
-        feasibleMask(ctx, masks[lastWitness].mask, budget, rows, 30000)) {
+    var from = startK || 0;
+    function keep(k) {
+      lastWitness = k;
       mem.pruneCache[cacheKey] = best;
+      mem.witAt[cacheKey] = k;
+      if (out) out.k = k;
       return false;
     }
-    for (var k = 0; k < masks.length; k++) {
+    // `< best` (not <=): equal-strength kill-sets stay alive so cheaper
+    // lines to the same ceiling (par) can still be found
+    if (lastWitness >= from && masks[lastWitness].str >= best &&
+        feasibleMask(ctx, masks[lastWitness].mask, budget, rows, 30000)) return keep(lastWitness);
+    for (var k = from; k < masks.length; k++) {
       if (masks[k].str < best) break;
       if (k === lastWitness) continue;
-      if (feasibleMask(ctx, masks[k].mask, budget, rows, 30000)) {
-        lastWitness = k;
-        mem.pruneCache[cacheKey] = best;
-        return false;
-      }
+      if (feasibleMask(ctx, masks[k].mask, budget, rows, 30000)) return keep(k);
     }
     mem.pruneCache[cacheKey] = true;                      // no better kill-set is feasible
     return true;
@@ -2214,9 +2235,11 @@ function stage3(ctx, inc, deadline, opts) {
       pfx.push(assignment[ai].unitIdx + '@' + assignment[ai].seat.key);
     }
     var tP0 = Date.now();
-    var cut = restrictedPrune(pinned, node.cost, pfx.join('|'));
+    var wit = { k: 0 };
+    var cut = restrictedPrune(pinned, node.cost, pfx.join('|'), node.p ? node.p.wit : 0, wit);
     stats.tPrune += Date.now() - tP0;
     if (cut) { stats.boundCut++; continue; }
+    node.wit = wit.k;
     if (node.d === order.length - 1) { evalLeaf(assignment); continue; }
     var child = firstValid(node, node.d + 1, 0, node.g, node.cost, node.tr);
     if (child) hpush(child);
@@ -2314,7 +2337,13 @@ function planSlices(ctx, inc, budgetMs, hardEnd, masks, s3state, partW, partK, p
     var seen = {};
     var rotsHere = rotBudget ? rotBudget[oi] : ROTS;
     for (var rot = 0; rot < rotsHere && plans.length < PLANS; rot++) {
-      var shift = ((sel.rotBase || 0) + rot * Math.ceil(walkRows.length / 3)) % walkRows.length;
+      // rotation 0 is ALWAYS shift 0 — the un-rotated witness is the one
+      // rank_eval measures and the one under which f6ff55's author seats
+      // rank ~25/350; with rotBase folded into every rotation the ladder's
+      // single-witness summit slices never saw it (the {22,22,22} verdict).
+      // Later rotations keep the per-round, per-worker offsets.
+      var shift = rot === 0 ? 0
+        : ((sel.rotBase || 0) + rot * Math.ceil(walkRows.length / 3)) % walkRows.length;
       var rows2 = walkRows.slice(shift).concat(walkRows.slice(0, shift));
       var outw = {};
       if (feasibleMask(ctx, masks[mi].mask, POOL, rows2, 300000, outw) && outw.assign) {

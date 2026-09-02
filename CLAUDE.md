@@ -323,14 +323,23 @@ line reached the same ceiling without the idea the puzzle was built around.
   config. Every schedule hypothesis this week was settled by measurement;
   two (leader-depth, v3-linear features) were rejected on data — the
   verdicts are in the handoff, do not re-buy them.
-- **The named next experiment for f6ff55** (cheap, decisive, not yet run):
-  pin the author's own nine seats as a placement and let `evalPlacement`'s
-  fight machinery try to cash the 370/37 out. The line is fully
-  expressible and its seats rank near-top under its own witness — if the
-  FIGHT search cannot execute it (11-unit interleaving; plan-slice fights
-  are capped at 2500 nodes), the remaining gap is fight-execution depth,
-  and no amount of deployment-ordering work will close it. Run that
-  before any further ordering research.
+- **The f6ff55 pin experiment RAN (2026-08-30/31, `tools/pin_fight.js`):**
+  the author's nine seats cash out to 370/37 in seven seconds, search
+  complete. Fight depth was never the wall; the search does not *arrive*
+  at that deployment. The refight valve and the stratified ladder followed
+  ({22,27,22} then {22,22,22}); the handoff's named next fix — rotation 0
+  of every burst mask is shift 0, the witness under which the author
+  seats rank ~25/350 and which the ladder never tried — landed 2026-09-02
+  and measured 22: no change, because the summit slices produced ZERO
+  leaves — `restrictedPrune` re-walked the whole mask ladder per node and
+  ate each slice's 14s. Pruning slices to their own mask fixed the cost
+  and dropped the floor to {12,12}: the polish climbs from a slice's
+  graceful failures (leaves feasible only for masks far below the plan),
+  and own-mask pruning starves it. Shipped instead: the old accept-any-
+  mask scan made monotone (a child's scan starts at its parent's witness
+  — pins only tighten). {22, 22}: floor back, summit leaves nonzero,
+  no climb past 22. Table and reasoning in the handoff; do not re-buy own-mask or
+  capped-scan pruning.
 - **`phase1-library-store` branch** now carries only the frontend refactor,
   tested on owpuzzle-dev.fly.dev and still awaiting a manual pass against
   `docs/phase1-test-plan.md` (the plan lives on that branch, not main) before
