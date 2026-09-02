@@ -231,13 +231,25 @@ line reached the same ceiling without the idea the puzzle was built around.
   promise a kill set the schedule cannot deliver, and the rows that keep it
   honest (`hx` seat hand-over corollaries, `cy` 2-cycle cuts, `rk` rank
   integers) were found mechanically — fix a master solution in the full
-  model, delete row families until feasible, read off the survivors. Next,
-  in order: memoise `waterControlled` in the engine (the blow table spends
-  90% of its time there on water boards; lab copy went 39s → 2s) and the
-  `hasPush` gap (engine.js pushes regardless of the target's immunity or a
-  settlement tile — Unit.cs:10046-10068), both with rule tests and a
-  ceilings sweep; then the game-position folder (ply-2 net exchange, boards
-  from saves — NOT in this repo) requiring this core.
+  model, delete row families until feasible, read off the survivors.
+- **Engine follow-ups from the planner, both landed:** `waterControlled` is
+  memoised per state behind a ship signature (id, tile, alive, anchored) so
+  verifiers that mutate clones in place still see fresh control — the blow
+  table spent 90% of its time there on water boards (lab copy 39s → 2s);
+  and `hasPush` now follows Unit.cs:10046-10068 — no shove out of a
+  settlement, none when the defender is immune to the push effect (a
+  ruler-led unit carries EFFECTUNIT_LEADER_GENERAL, immune to PANIC), and
+  a shoved siege unit loses its set-up (Unit.cs:9690-9693). Rule tests in
+  `test/rules/{movement,push}.test.js`; inert on all 55 live boards; every
+  ceiling re-proved. The model also takes `counterW` (per-hp price on the
+  counter damage a blow eats — counters never kill, Unit.cs:10614) for the
+  game-position use. **Open gap flagged, not fixed:** the engine treats a
+  `_LEADER` promotion as a general but never attaches
+  EFFECTUNIT_LEADER_GENERAL itself (+1 movement, immune to PANIC/DISARMED/
+  GRAPPLER/TACTICIAN_LEADER — Character.cs:6508, 10613); only
+  king-of-the-hill carries a leader effect and its ceiling could move.
+- Next: the game-position folder (ply-2 net exchange, boards from saves —
+  NOT in this repo) requiring this core.
 - **Scouts are in the editor, for stealth herding.** The Stealth section above
   has the rules; `test/rules/stealth.test.js` has the citations. The scout is
   a pure body — it cannot attack (no bMelee, no range; the game's rule) — and

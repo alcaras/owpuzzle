@@ -108,6 +108,18 @@ test('model: a kill set fixes y to 0 outside it and drops the blows that only se
   assert.equal(y.ub, 0);
 });
 
+test('model: counterW charges each blow the counter it takes [Unit.cs:10614 — counters never kill, they weaken]', () => {
+  const g = setup(BOARD, { orders: 8 });
+  const T = B.blowTable(g.state);
+  const b = T.blows.find(b => b.counter > 0);
+  assert.ok(b, 'some melee blow takes a counter');
+  const m0 = M.buildModel(g.state, T, 8);
+  const m1 = M.buildModel(g.state, T, 8, { counterW: 0.5 });
+  assert.equal(m1.byName.get('x' + b.id).obj, m0.byName.get('x' + b.id).obj - 0.5 * b.counter);
+  const free = T.blows.find(b => b.counter === 0);
+  assert.equal(m1.byName.get('x' + free.id).obj, m0.byName.get('x' + free.id).obj, 'a ranged blow pays nothing');
+});
+
 // ---- the gauntlet: real solves, real backends
 const ILP = !!process.env.OWP_ILP;
 const F6 = path.join(__dirname, 'fixtures', 'with-a-little-help-f6ff55.json');

@@ -161,6 +161,37 @@ test('water control does not leak onto land [Unit.cs:4003 tile.isWater()]', () =
     'a land tile inside the radius is not "water controlled"');
 });
 
+// Not a game rule: an engine invariant. waterControlled memoises the union of
+// a player's controlled water per state (the blow table asks thousands of
+// times), and the memo must not outlive the ships it was computed from —
+// verifiers mutate cloned states in place (u.q = …, u.hp = 0).
+test('the water-control memo follows in-place changes to the ship [engine invariant]', () => {
+  const g = setup(`
+    tile 1,0 TERRAIN_WATER
+    tile 2,0 TERRAIN_WATER
+    tile 3,0 TERRAIN_WATER
+    blue AXEMAN 0,0
+    blue BIREME 1,0 anchored
+    red ARCHER -1,0 hp=5
+  `);
+  const s = g.state, ship = g.unit(g.blue(1));
+  assert.ok(E.waterControlled(s, { q: 3, r: 0 }, 0));
+  ship.anchored = false;
+  assert.ok(!E.waterControlled(s, { q: 3, r: 0 }, 0), 'weighing anchor drops control');
+  ship.anchored = true;
+  ship.hp = 0;
+  assert.ok(!E.waterControlled(s, { q: 3, r: 0 }, 0), 'a sunk ship controls nothing');
+  ship.hp = 10;
+  ship.q = 3;
+  assert.ok(E.waterControlled(s, { q: 3, r: 0 }, 0), 'moved and re-anchored, it controls from its new tile');
+  assert.ok(E.waterControlled(s, { q: 1, r: 0 }, 0));
+  // a clone is a fresh state: no stale memo rides along in the JSON
+  const c = E.cloneState(s);
+  E.unitById(c, ship.id).hp = 0;
+  assert.ok(!E.waterControlled(c, { q: 1, r: 0 }, 0));
+  assert.ok(E.waterControlled(s, { q: 1, r: 0 }, 0), 'and the original is untouched');
+});
+
 // A LAND unit standing on water cannot attack from it. Confirmed as in-game
 // behaviour by the project owner after zophister reported a ballista marching
 // onto owned water and shooting from it; the only guard in the C# I could

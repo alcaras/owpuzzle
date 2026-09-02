@@ -204,6 +204,22 @@
     }
   }
 
+  // Unit.hasPush (Unit.cs:10046-10068): the attacker has a bPush effect, the
+  // defender stands on land that is not a settlement, and the defender is not
+  // immune to that effect. (Tribe settlements and ruins are not modelled; a
+  // city is the settlement a puzzle can have.)
+  function hasPush(state, att, def) {
+    var t = tileAt(state, def.q, def.r);
+    if (!t || t.city != null) return false;
+    if (isWaterTile(t)) return false;   // bPushWater (fireships) is a known gap
+    var effs = effectsOf(att);
+    for (var i = 0; i < effs.length; i++) {
+      var d = DATA.effects[effs[i]];
+      if (d && d.bPush && !isImmuneToEffect(def, effs[i])) return true;
+    }
+    return false;
+  }
+
   // Attacker has a bRout effect the defender is not immune to (Unit.cs:8420).
   function routEffectVs(att, def) {
     var effs = effectsOf(att);
@@ -670,12 +686,43 @@
     return out;
   }
 
-  function waterControlled(state, pos, player) {
+  // The union of a player's controlled water, memoised per state: the flood
+  // fill above ran once per ship per QUERY, and the blow table / Dijkstra
+  // ask this thousands of times per state — 90% of a water board's planning
+  // time. The memo is keyed on the state object (clones start empty) and
+  // guarded by a signature of the ships that could change the answer, so a
+  // state mutated in place (a ship moved, anchored, sunk) is recomputed
+  // rather than served stale.
+  var WATER_MEMO = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function waterControlSig(state, player) {
+    var sig = '';
+    for (var i = 0; i < state.units.length; i++) {
+      var o = state.units[i];
+      if (o.player !== player || !info(o).bWater) continue;
+      sig += o.id + ':' + o.q + ',' + o.r + ':' + (o.hp > 0 ? 1 : 0) + (o.anchored ? 'a' : '') + ';';
+    }
+    return sig;
+  }
+  function controlledWaterOf(state, player) {
+    var memo = WATER_MEMO && WATER_MEMO.get(state);
+    var sig = waterControlSig(state, player);
+    if (memo && memo[player] && memo[player].sig === sig) return memo[player].set;
+    var set = {};
     for (var i = 0; i < state.units.length; i++) {
       var o = state.units[i];
       if (o.hp <= 0 || o.player !== player) continue;
-      if (waterControlTiles(state, o)[key(pos.q, pos.r)]) return true;
+      var tiles = waterControlTiles(state, o);
+      for (var k in tiles) set[k] = true;
     }
+    if (WATER_MEMO) {
+      if (!memo) { memo = {}; WATER_MEMO.set(state, memo); }
+      memo[player] = { sig: sig, set: set };
+    }
+    return set;
+  }
+
+  function waterControlled(state, pos, player) {
+    if (controlledWaterOf(state, player)[key(pos.q, pos.r)]) return true;
     var here = tileAt(state, pos.q, pos.r);
     // owned water is your own water (Tile.cs:8103). A friendly city owns its
     // harbour, so the old adjacent-city rule is subsumed by this — but keep it
@@ -1167,7 +1214,13 @@
     // tile directly behind, then the two tiles behind-and-to-the-side, then any
     // other adjacent tile away from the attacker. If NOTHING is free the unit
     // cannot escape and is DISARMED instead (PANIC_NO_ESCAPE_EFFECTUNIT).
-    if (!killed && adjacent && hasEffectFlag(att, 'bPush')) {
+    // Whether the shove happens at all is Unit.hasPush (Unit.cs:10046): not on
+    // a settlement tile, only a bPush effect against a LAND tile (bPushWater
+    // is the fireship's, a known gap), and only if the defender is not immune
+    // to that effect — a ruler-led unit carries EFFECTUNIT_LEADER_GENERAL,
+    // which is immune to PANIC. Then neither the shove nor the no-escape
+    // disarm happens; the elephant just hits.
+    if (!killed && adjacent && hasPush(s, att, def)) {
       var pd = dirBetween(from, defTile);
       if (pd >= 0) {
         var order = [pd, wrapDir(pd, 1), wrapDir(pd, -1), wrapDir(pd, 2), wrapDir(pd, -2)];
@@ -1190,6 +1243,9 @@
         if (moved) {
           var hiddenOcc = unitAt(s, moved.q, moved.r);
           def.q = moved.q; def.r = moved.r;
+          // a shoved siege unit loses its set-up: the UNLIMBERED cooldown is
+          // replaced by ATTACKED (Unit.cs:9690-9693)
+          if (def.unlimbered) def.unlimbered = false;
           s.log.push(nameOf(def) + ' is pushed back!');
           // arriving on a hidden unit's tile shoulders it aside: setTileID
           // bounces whatever cannot share the tile (Unit.cs:1918-1921)

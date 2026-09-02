@@ -19,7 +19,8 @@
 // row families until it became feasible.
 //
 // opts: eps (objective weight per damage point), ordW (per order), kills (a
-// Set of red ids: y fixed 0 outside it), damageOnly, exposure(blow) penalty.
+// Set of red ids: y fixed 0 outside it), damageOnly, exposure(blow) penalty,
+// counterW (per hp of counter damage taken; 0 = our hp is free).
 'use strict';
 const E = require('./engine.js');
 const { Model } = require('./lp.js');
@@ -432,6 +433,17 @@ function buildModel(state, T, pool, opts) {
     m.addCon('training', mv.map(v => [MARCH_COST, v]), '<=', state.training);
   }
   if (opts.exposure) for (const b of T.blows) { const pen = opts.exposure(b); if (pen) m.addObj(X(b), -pen); }
+  // counters never kill (Unit.cs:10614 caps them at hp-1), so nothing here
+  // stops a plan on survival grounds. What they do is leave our units weaker
+  // for the opponent's reply: counterW prices each point of counter damage
+  // a blow takes (0 for a maxKill puzzle, where our hp is worthless once the
+  // turn ends). The table's counter is the one the FIRST blow takes; later
+  // blows on a worn unit take less, so this over-charges slightly.
+  const counterW = opts.counterW == null ? 0 : opts.counterW;
+  if (counterW) {
+    for (const b of T.blows) if (b.counter) m.addObj(X(b), -counterW * b.counter);
+    for (const c of T.chains) if (c.counter) m.addObj(C(c), -counterW * c.counter);
+  }
   m.arrOf = arrOf;
   return m;
 }

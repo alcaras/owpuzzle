@@ -62,3 +62,43 @@ test('with nowhere to go the shove becomes a disarm [PANIC_NO_ESCAPE_EFFECTUNIT]
   assert.deepEqual(applied(d), ['EFFECTUNIT_DISARMED']);
   assert.equal(E.DATA.globals.PANIC_NO_ESCAPE_EFFECTUNIT, 'EFFECTUNIT_DISARMED');
 });
+
+// Unit.hasPush (Unit.cs:10046-10068) decides whether the shove happens AT
+// ALL. When it says no there is no push and no no-escape disarm either: the
+// elephant simply hits.
+test('a ruler-led unit is immune to panic: hit, not shoved [Unit.cs:10059 isImmuneEffectUnit; EFFECTUNIT_LEADER_GENERAL aeEffectUnitImmune]', () => {
+  const g = setup(`
+    blue AFRICAN_ELEPHANT 0,0
+    red SWORDSMAN 1,0 promo=EFFECTUNIT_LEADER_GENERAL
+  `);
+  assert.ok(E.DATA.effects.EFFECTUNIT_LEADER_GENERAL.aeEffectUnitImmune.includes('EFFECTUNIT_PANIC'));
+  g.attack(g.blue(), g.red());
+  const d = g.unit(g.red());
+  assert.equal(d.q + ',' + d.r, '1,0', 'open ground behind him, and he stays put');
+  assert.deepEqual(applied(d), []);
+  assert.ok(d.hp < E.hpMax(d), 'the blow itself still lands');
+});
+
+test('a unit in a city is never shoved [Unit.cs:10054 isSettlement]', () => {
+  const g = setup(`
+    tile 1,0 city=1
+    blue AFRICAN_ELEPHANT 0,0
+    red SWORDSMAN 1,0
+  `);
+  g.attack(g.blue(), g.red());
+  const d = g.unit(g.red());
+  assert.equal(d.q + ',' + d.r, '1,0');
+  assert.deepEqual(applied(d), []);
+});
+
+test('a shoved siege unit loses its set-up [Unit.cs:9690-9693 UNLIMBERED_COOLDOWN -> ATTACKED_COOLDOWN]', () => {
+  const g = setup(`
+    blue AFRICAN_ELEPHANT 0,0
+    red ONAGER 1,0 unlimbered
+  `);
+  assert.ok(g.unit(g.red()).unlimbered);
+  g.attack(g.blue(), g.red());
+  const d = g.unit(g.red());
+  assert.equal(d.q + ',' + d.r, '2,0', 'shoved');
+  assert.equal(d.unlimbered, false, 'and no longer set up');
+});
