@@ -20,11 +20,14 @@
 //
 // opts: eps (objective weight per damage point), ordW (per order), kills (a
 // Set of red ids: y fixed 0 outside it), damageOnly, exposure(blow) penalty,
-// counterW (per hp of counter damage taken; 0 = our hp is free).
+// counterW (per hp of counter damage taken; 0 = our hp is free), exposeW
+// (per STR of loss the enemy could inflict on the seat; threat.js) with
+// enemyOrders (their pool, for the threat map's reach).
 'use strict';
 const E = require('./engine.js');
 const { Model } = require('./lp.js');
 const { key, unkey, STR, hasLastStand, isImmune, MARCH_COST } = require('./blowtable.js');
+const { threatMap } = require('./threat.js');
 const sk = s => s.replace(/-/g, 'm').replace(',', '_');
 
 function buildModel(state, T, pool, opts) {
@@ -433,6 +436,18 @@ function buildModel(state, T, pool, opts) {
     m.addCon('training', mv.map(v => [MARCH_COST, v]), '<=', state.training);
   }
   if (opts.exposure) for (const b of T.blows) { const pen = opts.exposure(b); if (pen) m.addObj(X(b), -pen); }
+  // exposure: what the enemy could take from the unit where the blow leaves
+  // it, priced against its home (threat.js). A seat safer than home is a
+  // small reward, a seat in reach of the whole line costs the unit's worth.
+  // The map is memoised on the table: every model built on it shares one.
+  const exposeW = opts.exposeW == null ? 0 : opts.exposeW;
+  if (exposeW) {
+    if (!T.threat) T.threat = threatMap(state, { orders: opts.enemyOrders });
+    for (const b of T.blows) {
+      const pen = exposeW * (T.threat.loss(b.unit, b.seat) - T.threat.loss(b.unit, homeKey.get(b.unit)));
+      if (pen) m.addObj(X(b), -pen);
+    }
+  }
   // counters never kill (Unit.cs:10614 caps them at hp-1), so nothing here
   // stops a plan on survival grounds. What they do is leave our units weaker
   // for the opponent's reply: counterW prices each point of counter damage

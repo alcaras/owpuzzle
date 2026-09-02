@@ -19,6 +19,7 @@ const { E, setup } = require('./helpers.js');
 const B = require('../tools/solverengine/blowtable.js');
 const M = require('../tools/solverengine/model.js');
 const S = require('../tools/solverengine/solve.js');
+const TH = require('../tools/solverengine/threat.js');
 const { hasHighs, hasCpsat } = require('../tools/solverengine/lp.js');
 
 // an elephant (bPush), a horseman (bRout), a swordsman; an archer the
@@ -118,6 +119,67 @@ test('model: counterW charges each blow the counter it takes [Unit.cs:10614 — 
   assert.equal(m1.byName.get('x' + b.id).obj, m0.byName.get('x' + b.id).obj - 0.5 * b.counter);
   const free = T.blows.find(b => b.counter === 0);
   assert.equal(m1.byName.get('x' + free.id).obj, m0.byName.get('x' + free.id).obj, 'a ranged blow pays nothing');
+});
+
+test('threat map: what each enemy could deal to our unit on a tile, from its best post with a fresh turn', () => {
+  // a red archer (moves 2, iRangeMax 3 -> reaches five hexes on one order)
+  // and a red spearman (moves 2, strikes at three); our horseman asks about a
+  // tile in front of them and one beyond their reach. The enemy's pool is an
+  // input: with more orders a unit walks again (reachableTiles spends them)
+  const g = setup(`
+    blue HORSEMAN -2,0
+    red ARCHER 4,0
+    red SPEARMAN 4,1
+  `, { orders: 8, radius: 6 });
+  const ho = g.blue(0), ar = g.red(0), sp = g.red(1);
+  sp.cooldown = 'ATTACK';       // spent this turn; fresh again on its own
+  const TM = TH.threatMap(g.state, { orders: 1 });
+  const who = TM.who(ho.id, '2,0');
+  assert.ok(who.find(w => w.id === ar.id), 'the archer reaches a tile two hexes off its walk');
+  assert.ok(who.find(w => w.id === sp.id), 'the spearman too — its cooldown is gone on its own turn');
+  // the archer's figure is the engine's damage from the post it likes best
+  const s = E.cloneState(g.state); const a = E.unitById(s, ar.id), h = E.unitById(s, ho.id);
+  h.q = 2; h.r = 0;
+  let best = 0;
+  for (const p of [{ q: 4, r: 0 }].concat(E.reachableTiles(s, a))) {
+    a.q = p.q; a.r = p.r;
+    if (E.hexDistance(p, h) > E.effectiveRange(s, a, p, h) || E.isShotObstructed(s, p, h)) continue;
+    best = Math.max(best, E.attackUnitDamage(s, a, p, h));
+  }
+  assert.ok(best > 0);
+  assert.equal(who.find(w => w.id === ar.id).dmg, best);
+  assert.equal(TM.threat(ho.id, '-2,0'), 0, 'nobody reaches the horseman where it stands');
+  assert.equal(TM.loss(ho.id, '-2,0'), 0);
+  assert.ok(TM.loss(ho.id, '2,0') > 0 && TM.loss(ho.id, '2,0') <= TH.STR(ho), 'loss is at most the unit\'s worth');
+});
+
+test('model: exposeW charges a blow the loss of its seat relative to home; attacking from a safe home costs nothing', () => {
+  // our horseman (moves 3) sits three hexes from a red spearman that can only
+  // strike at three on one order; a seat next to the spearman is in its reach,
+  // the horseman's home is not. Our archer shoots it from where it stands.
+  const g = setup(`
+    blue HORSEMAN -1,0
+    blue ARCHER 0,0
+    red SPEARMAN 3,0 hp=6
+  `, { orders: 8, radius: 5 });
+  const T = B.blowTable(g.state, { topSeats: 20 });   // keep the home seat too
+  const m0 = M.buildModel(g.state, T, 8);
+  const m1 = M.buildModel(g.state, T, 8, { exposeW: 1, enemyOrders: 1 });
+  assert.ok(T.threat, 'the map is memoised on the table');
+  let charged = 0;
+  for (const b of T.blows) {
+    const u = E.unitById(g.state, b.unit);
+    const o0 = m0.byName.get('x' + b.id).obj, o1 = m1.byName.get('x' + b.id).obj;
+    const want = o0 - (T.threat.loss(b.unit, b.seat) - T.threat.loss(b.unit, u.q + ',' + u.r));
+    assert.ok(Math.abs(o1 - want) < 1e-9, `${b.unit}@${b.seat}`);
+    if (o1 < o0 - 1e-9) charged++;
+    assert.ok(o1 <= o0 + 1e-9, 'home is out of reach here, so no seat can be safer than it');
+  }
+  assert.ok(charged > 0, 'a seat next to the spearman is in its reach');
+  const ourArcher = g.blue(1);
+  const home = T.blows.find(b => b.unit === ourArcher.id && b.seat === '0,0');
+  assert.ok(home, 'our archer can shoot the spearman from where it stands');
+  assert.equal(m1.byName.get('x' + home.id).obj, m0.byName.get('x' + home.id).obj);
 });
 
 // ---- the gauntlet: real solves, real backends

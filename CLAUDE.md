@@ -281,6 +281,14 @@ line reached the same ceiling without the idea the puzzle was built around.
   ship or red-owned water next to a bPush board) and every ceiling re-proved.
   `verify2`'s push-drift bound needed no change — it never excluded occupied
   tiles, so hidden-scout pass-through was already inside the over-approximation.
+- **`tools/solverengine/threat.js` — the threat map, and `exposeW` in the
+  model.** The mirror of the blow table: every enemy teleported to every
+  post a fresh turn reaches, engine-exact damage to our unit on a tile;
+  `exposeW` charges a blow the loss of its seat relative to home. Default
+  0, `ilp_fight` never sets it — no puzzle impact, the 37 still holds.
+  Measured on a real position it moved what was in reach and not the
+  reply: the model has no retreat action, and an order-limited enemy only
+  cashes the cheapest kills. Verdict in the file header; do not re-buy it.
 - **No puzzle uses a scout yet.** The first herding board should follow
   docs/making-puzzles.md ("Stealth herding" row) and the full author-house-
   puzzle gauntlet — the trick must be *required*, and a scout who could be
