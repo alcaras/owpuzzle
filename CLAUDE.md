@@ -248,8 +248,11 @@ line reached the same ceiling without the idea the puzzle was built around.
   EFFECTUNIT_LEADER_GENERAL itself (+1 movement, immune to PANIC/DISARMED/
   GRAPPLER/TACTICIAN_LEADER — Character.cs:6508, 10613); only
   king-of-the-hill carries a leader effect and its ceiling could move.
-- Next: the game-position folder (ply-2 net exchange, boards from saves —
-  NOT in this repo) requiring this core.
+- The game-position solver lives in a separate, unpushed folder next to
+  this repo (`../owposition`: save → the enemies the player can *see* →
+  `planTurn` priced for counter damage) and requires this core through
+  `$OWPUZZLE`. Nothing from a game save comes back here. Changes to the
+  core should keep it ignorant of which it is solving.
 - **Scouts are in the editor, for stealth herding.** The Stealth section above
   has the rules; `test/rules/stealth.test.js` has the citations. The scout is
   a pure body — it cannot attack (no bMelee, no range; the game's rule) — and
