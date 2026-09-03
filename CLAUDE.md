@@ -216,6 +216,13 @@ Keep all of them. Each has caught another being confidently wrong — including 
 **Treat "search complete" with the same suspicion as a finding**; agreement
 between independent tools is what makes a ceiling trustworthy.
 
+A killList submission can be checked with the same tools: `V2_TARGETS=4,5,11`
+(red unit ids) makes every other red worth 0 in `verify2` and `deploy_fight`,
+so the ceiling is "all targets dead", the fewest orders reaching it is the
+par, and a stage-1 refutation at pool par-1 proves the par tight. The
+exhaustive `solver.js` truncates on anything with 6+ blue units and 20 orders
+and then prints NOT SOLVABLE — that is a timeout, not a verdict.
+
 Publishing checklist for a maxKill puzzle: prove the ceiling, confirm the
 intended line **is** the optimum (not merely *a* line that reaches it), and
 check the trick is *required* — three of five drafts died because a cheaper
@@ -289,6 +296,43 @@ line reached the same ceiling without the idea the puzzle was built around.
   Measured on a real position it moved what was in reach and not the
   reply: the model has no retreat action, and an order-limited enemy only
   cashes the cheapest kills. Verdict in the file header; do not re-buy it.
+- **Order pools (2026-09-03).** A state may carry `pools` ({key: orders})
+  with a `pool` key on each acting unit: `buildModel` adds one
+  `orders_<key>` row per pool on top of the total, `chargePools` (solve.js)
+  charges a played line back pool by pool, and `planWaves`, `mopUp` and the
+  push prefixes keep them current between waves. Several players spending
+  their own orders in one turn is the use; a puzzle has one pool and never
+  sets them, so no puzzle impact. Pinned in `test/solverengine.test.js`.
+- **CP-SAT gets its model as a file (2026-09-03).** `solveCpsat` used to
+  pipe a multi-megabyte JSON down `execFileSync`'s stdin; twice on macOS
+  the child sat for hours before its first read completed (python blocked
+  in `json.load(sys.stdin)` at 32 MB resident, node in kevent inside
+  SyncProcessRunner, stdio a socketpair). Now the payload is written to a
+  temp file named on cpsat.py's command line (stdin still works when no
+  argument is given). Same answers, no hang since.
+- **The reply estimate, the order price, the retreat pass (2026-09-03).**
+  `threat.js replyEstimate`: the enemy's order-limited answer — each
+  enemy's cheapest post (walked or force-marched, orders counted), the
+  cheapest kills bought first, strength per order, one strike per unit
+  (a `bRout` melee unit up to three) within each pool (`state.enemyPools`
+  with `pool` on enemy units, else `orders`); `price(unit, seat, hp)` is
+  STR × whether that kill fits under the margin, `rest(unit)` the cheapest
+  seat reachable without attacking. `exposeW` now charges price(seat) −
+  rest (the summed threat map survives as `exposeMode: 'threat'`);
+  `ordW` is honoured by mop-up (damage-only attacks only when worth the
+  order); `retreatPass` (solve.js) walks idle units to their rest seat
+  after the waves. Measured on a real 85-v-60 team position against five
+  full replies: within two STR of the hold reply, 10-20 under the attacks,
+  four of five ranked right; an order price of 0.3 STR moved a −35 line
+  to −16. No puzzle impact: puzzles set none of it.
+- **Fatigue is floored for player units.** `Unit.getFatigueLimit`
+  (Unit.cs:2703) takes `max(UNIT_MIN_BASE_FATIGUE, iFatigue)` for anything
+  not a tribe's; the engine read the raw `iFatigue`, so every mercenary and
+  tribal type with `iFatigue 1` (peltast, marauder, skirmisher, huscarl, the
+  nomad line) got one step where the game gives two, four force-marching
+  under FORCEMARCH_DOUBLE_FATIGUE. Fixed in `fatigueLimit`, pinned in
+  `test/rules/movement.test.js`. Ceilings not yet re-proved after it — a
+  puzzle whose blue side holds one of those types may have moved.
 - **No puzzle uses a scout yet.** The first herding board should follow
   docs/making-puzzles.md ("Stealth herding" row) and the full author-house-
   puzzle gauntlet — the trick must be *required*, and a scout who could be

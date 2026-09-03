@@ -53,7 +53,13 @@ var LATE_ARG = process.env.LATE !== undefined ? parseInt(process.env.LATE, 10) :
 
 var INIT = E.loadPuzzle(base);
 var DIRS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
-var STR = function (u) { return E.DATA.units[u.type].iStrength; };
+// V2_TARGETS=a,b — killList mode, as in verify2: only these red ids count
+var TARGETS = process.env.V2_TARGETS
+  ? process.env.V2_TARGETS.split(',').map(function (x) { return parseInt(x, 10); }) : null;
+var STR = function (u) {
+  if (TARGETS && TARGETS.indexOf(u.id) < 0) return 0;
+  return E.DATA.units[u.type].iStrength;
+};
 var BLUE = INIT.units.filter(function (u) { return u.player === 0 && u.hp > 0; });
 var REDS = INIT.units.filter(function (u) { return u.player === 1 && u.hp > 0; });
 function hasRout(u) { return E.effectsOf(u).indexOf('EFFECTUNIT_ROUT') >= 0; }

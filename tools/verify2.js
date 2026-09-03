@@ -5,6 +5,7 @@
 //        S2MAX=n       max blue units for the exhaustive in-state search (default 8)
 //        LATE=n        fix the mid-fight move ration instead of deepening 0..3
 //        V2_WORKERS=n  worker threads for big boards (default cpus-2; 0 = off)
+//        V2_TARGETS=a,b  killList mode: only these red unit ids count (see STRV)
 //        W=x           completion-heuristic weight in the deployment heap (<1 digs deeper)
 //        PLANK=n       seats kept per unit in plan (finder) slices (default 8)
 //        FCAP=n        fight node cap (default: 2500 in plan slices, exact elsewhere)
@@ -54,7 +55,16 @@ function immuneTo(u, eff) {
 }
 function hasRout(u) { return hasFlag(u, 'bRout'); }
 function hasPush(u) { return hasFlag(u, 'bPush'); }
-function STRV(u) { return E.DATA.units[u.type].iStrength; }
+// V2_TARGETS=4,5,11 turns a maxKill search into a killList question: only the
+// listed red unit ids are worth anything, so the ceiling is "all targets
+// dead" and the fewest orders that reach it is the par — and a stage-1
+// refutation of the all-targets mask at pool par-1 PROVES the par tight
+var TARGETS = process.env.V2_TARGETS
+  ? process.env.V2_TARGETS.split(',').map(function (x) { return parseInt(x, 10); }) : null;
+function STRV(u) {
+  if (TARGETS && TARGETS.indexOf(u.id) < 0) return 0;
+  return E.DATA.units[u.type].iStrength;
+}
 function key(q, r) { return q + ',' + r; }
 
 // InfoHelpers.getAttackDamage (engine.js:412) — replicated so blow values can
