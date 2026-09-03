@@ -826,6 +826,7 @@
         var live = m.status === 'approved' || m.status === 'core';
         return '<div class="mine-row">' +
           '<span class="mine-name">' + esc(m.name) + '</span>' +
+          '<span class="mine-at" title="submitted">' + esc(localTime(m.at)) + '</span>' +
           '<span class="mine-status ' + m.status + '">' +
             (m.status === 'pending' ? 'in review' : m.status) + '</span>' +
           (live ? '<a href="./?p=' + encodeURIComponent(m.slug) + '">play</a>' : '') +
@@ -850,6 +851,15 @@
         };
       });
     }).catch(function () {});
+  }
+  // the server stamps rows in UTC ("YYYY-MM-DD HH:MM:SS", sqlite's
+  // datetime('now')); show it in the author's own clock so four drafts of one
+  // board an hour apart can be told apart
+  function localTime(at) {
+    if (!at) return '';
+    var d = new Date(String(at).replace(' ', 'T') + (/[zZ]|[+-]\d\d:?\d\d$/.test(at) ? '' : 'Z'));
+    if (isNaN(d.getTime())) return String(at);
+    return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
