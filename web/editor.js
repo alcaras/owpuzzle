@@ -201,7 +201,12 @@
   // one routs and the other is immune to routing. Strength only sorts WITHIN a
   // class, where it means something.
   function unitClass(type) {
-    var t = (E.DATA.units[type].traits || []).map(function (x) { return x.replace('UNITTRAIT_', ''); });
+    var x = E.DATA.units[type];
+    // a unit with no attack at all — the scout carries UNITTRAIT_INFANTRY
+    // but no bMelee and no range, so by trait it would land among the
+    // swordsmen it cannot fight
+    if (!x.bMelee && !x.iRangeMax) return 'civilian';
+    var t = (x.traits || []).map(function (x) { return x.replace('UNITTRAIT_', ''); });
     if (t.indexOf('SHIP') >= 0) return 'ships';
     if (t.indexOf('SIEGE') >= 0) return 'siege';
     if (t.indexOf('ELEPHANT') >= 0) return 'elephants';
@@ -211,7 +216,7 @@
     if (t.indexOf('RANGED') >= 0) return 'ranged';
     return 'melee';
   }
-  var CLASS_ORDER = ['melee', 'polearm', 'ranged', 'mounted', 'elephants', 'siege', 'ships'];
+  var CLASS_ORDER = ['melee', 'polearm', 'ranged', 'mounted', 'elephants', 'siege', 'ships', 'civilian'];
   // A unique unit is one a single nation may build (unit.xml NationPrereq).
   // They sit in their own section grouped by nation rather than scattered
   // through the classes: you pick them because of WHOSE army you are building,
