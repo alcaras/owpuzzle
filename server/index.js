@@ -9,6 +9,7 @@ const { db, seedCorePuzzles, backfillAttempts, linkAuthors, resetAchievementsOnc
   reuniteRewordedSolves } = require('./db');
 const { computeAchievements, LIVE } = require('./achievements');
 const { beatsPublished, retireSupersededRecords } = require('./records');
+const { withdrawSubmission } = require('./submissions');
 const glicko = require('./glicko');
 const E = require(path.join(__dirname, '..', 'web', 'engine.js'));
 const SOLVER = require(path.join(__dirname, '..', 'web', 'solver.js'));
@@ -440,6 +441,14 @@ app.get('/api/draft-solution', (req, res) => {
   if (!user) return res.json({ solution: null });
   const row = db.prepare('SELECT json FROM draft_solutions WHERE user_id = ?').get(user.id);
   res.json({ solution: row ? JSON.parse(row.json) : null });
+});
+
+// the author's side of the review queue: pull a pending submission back
+// (a wrong draft, a duplicate) without waiting for an admin to reject it
+app.post('/api/withdraw/:slug', (req, res) => {
+  const r = withdrawSubmission(db, userFromReq(req), req.params.slug);
+  if (!r.ok) return res.status(r.code).json({ error: r.error });
+  res.json({ ok: true, status: r.status });
 });
 
 app.get('/api/submit-status/:slug', (req, res) => {

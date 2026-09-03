@@ -830,8 +830,25 @@
             (m.status === 'pending' ? 'in review' : m.status) + '</span>' +
           (live ? '<a href="./?p=' + encodeURIComponent(m.slug) + '">play</a>' : '') +
           '<a href="editor.html?load=' + encodeURIComponent(m.slug) + '">open</a>' +
+          (m.status === 'pending'
+            ? '<a href="#" class="mine-withdraw" data-slug="' + esc(m.slug) + '">withdraw</a>' : '') +
           '</div>';
       }).join('');
+      // a pending submission is the author's to take back — a wrong draft, a
+      // duplicate — without waiting for a reviewer to reject it
+      Array.prototype.forEach.call(document.querySelectorAll('#mine .mine-withdraw'), function (a) {
+        a.onclick = function (ev) {
+          ev.preventDefault();
+          if (!confirm('Withdraw this submission from review? You can still open it here and submit again.')) return;
+          fetch('/api/withdraw/' + encodeURIComponent(a.dataset.slug), { method: 'POST' })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (d && d.ok) loadMine();
+              else alert((d && d.error) || 'could not withdraw');
+            })
+            .catch(function () { alert('could not withdraw'); });
+        };
+      });
     }).catch(function () {});
   }
   function esc(s) {

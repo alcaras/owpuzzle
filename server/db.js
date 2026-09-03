@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS puzzles (
   id INTEGER PRIMARY KEY,
   slug TEXT UNIQUE NOT NULL,
   json TEXT NOT NULL,             -- full puzzle definition
-  status TEXT NOT NULL DEFAULT 'core',  -- core | pending | approved | rejected
+  status TEXT NOT NULL DEFAULT 'core',  -- core | pending | approved | rejected | withdrawn
   author_id INTEGER REFERENCES users(id),
   author_name TEXT,
   rating REAL NOT NULL DEFAULT 1200,
