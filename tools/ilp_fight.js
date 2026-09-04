@@ -31,7 +31,7 @@ function loadBoard(arg) {
 if (require.main === module) {
   (async () => {
     const args = process.argv.slice(2);
-    if (!args[0]) { console.error('usage: node tools/ilp_fight.js <puzzle.json|puzzle-id> [pool] [--seconds N] [--k N] [--waves N] [--dump FILE]'); process.exit(2); }
+    if (!args[0]) { console.error('usage: node tools/ilp_fight.js <puzzle.json|puzzle-id> [pool] [--seconds N] [--k N] [--waves N] [--targets a,b] [--dump FILE]'); process.exit(2); }
     const P = loadBoard(args[0]);
     const pool = parseInt(args[1], 10) || P.orders;
     const opt = k => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : null; };
@@ -41,12 +41,28 @@ if (require.main === module) {
       workers: +(opt('--workers') || 0) || undefined, twoPhaseAt: +(opt('--two-phase-at') || 0) || undefined,
       masterShare: +(opt('--master') || 0) || undefined, hint: !args.includes('--no-hint'), pareto: !args.includes('--no-pareto'),
     };
+    // --targets 2,3 — a killList question. Only the listed reds are worth
+    // anything, so "all targets dead" is the ceiling and the fewest orders
+    // reaching it is the par. The core stays ignorant of objectives: this
+    // rides the bounty hook it already exposes, cancelling every other red's
+    // strength. (Non-targets may still be killed — sometimes the line has to.)
+    const targets = opt('--targets');
+    if (targets) {
+      const want = new Set(targets.split(',').map(x => parseInt(x, 10)));
+      opts.bounty = r => (want.has(r.id) ? 0 : -(E.DATA.units[r.type].iStrength || 0));
+    }
     const s0 = E.loadPuzzle({ ...P, orders: pool });
     const r = await solvePosition(s0, opts);
     console.log(`\nRESULT: ${r.str / 10} STR killed in ${r.orders}/${pool} orders, ${r.ms}ms (${r.label})` +
       (r.lostStr ? `, lost ${r.lostStr / 10} STR of our own` : ''));
     let chk = s0; for (const a of r.line) chk = E.applyAction(chk, a);
     if (E.strKilledOf(chk) !== r.str) console.log('REPLAY MISMATCH', E.strKilledOf(chk), r.str);
+    if (targets) {
+      const want = targets.split(',').map(x => parseInt(x, 10));
+      const dead = want.filter(id => (E.unitById(chk, id) || {}).hp <= 0);
+      console.log(`TARGETS: ${dead.length}/${want.length} dead (${want.map(id =>
+        id + ':' + ((E.unitById(chk, id) || {}).hp <= 0 ? 'dead' : 'alive')).join(' ')})`);
+    }
     const dump = opt('--dump');
     if (dump) { fs.writeFileSync(dump, JSON.stringify({ strength: r.str, orders: r.orders, line: r.line }, null, 1)); console.log('line -> ' + dump); }
   })().catch(e => { console.error(e); process.exit(1); });

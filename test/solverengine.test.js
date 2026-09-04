@@ -164,7 +164,7 @@ test('model: exposeW charges a blow the loss of its seat relative to home; attac
   `, { orders: 8, radius: 5 });
   const T = B.blowTable(g.state, { topSeats: 20 });   // keep the home seat too
   const m0 = M.buildModel(g.state, T, 8);
-  const m1 = M.buildModel(g.state, T, 8, { exposeW: 1, enemyOrders: 1 });
+  const m1 = M.buildModel(g.state, T, 8, { exposeW: 1, enemyOrders: 1, exposeMode: 'threat' });
   assert.ok(T.threat, 'the map is memoised on the table');
   let charged = 0;
   for (const b of T.blows) {
@@ -208,4 +208,146 @@ test('gauntlet: CP-SAT reaches f6ff55\'s 37-STR author line', { skip: !ILP, time
   assert.ok(r.str >= 370, `found ${r.str / 10} STR, the author's line is 37`);
   let s = s0; for (const a of r.line) s = E.applyAction(s, a);
   assert.equal(E.strKilledOf(s), r.str, 'the line replays to its claim');
+});
+
+// several order pools at once (a team turn: each player spends their own).
+// The state carries `pools` ({key: orders}) and each acting unit a `pool`
+// key; the model keeps every pool within budget on top of the total, and
+// chargePools charges a played line back pool by pool.
+test('order pools: a unit whose pool is empty never acts; the line charges each pool by its own spend', async () => {
+  const g = setup(`
+    blue SWORDSMAN 1,0
+    blue SWORDSMAN 0,1
+    red ARCHER 2,0 hp=6
+    red ARCHER 1,1 hp=6
+  `, { orders: 4 });
+  const st = g.state;
+  st.pools = { a: 2, b: 0 };
+  st.units[0].pool = 'a'; st.units[1].pool = 'b';
+  const T = B.blowTable(st);
+  const m = M.buildModel(st, T, st.orders, {});
+  const rows = m.cons.filter(c => /^orders_/.test(c.name)).map(c => c.name).sort();
+  assert.deepEqual(rows, ['orders_a', 'orders_b']);
+  const ub = m.cons.find(c => c.name === 'orders_b');
+  assert.ok(ub.terms.every(([, v]) => T.blows.some(b => 'x' + b.id === v && b.unit === 1)), 'pool b only holds unit 1\'s blows');
+  assert.equal(ub.rhs, 0);
+  if (!hasHighs()) return;
+  const r = await S.solvePosition(st, { quiet: true, branch: false, seconds: 5 });
+  assert.ok(r.line.every(a => a.unit === 0), 'only the funded unit moves: ' + JSON.stringify(r.line));
+  const left = S.chargePools(st, r.line);
+  assert.equal(left.b, 0);
+  assert.equal(left.a, 2 - r.orders);
+  assert.ok(left.a >= 0);
+});
+
+test('model: bounty(red) adds to a kill\'s objective on top of its strength', () => {
+  const g = setup(`
+    blue SWORDSMAN 1,0
+    red ARCHER 2,0 hp=6
+    red SPEARMAN 2,-1 hp=6
+  `, { orders: 4 });
+  const T = B.blowTable(g.state);
+  const m = M.buildModel(g.state, T, 4, { bounty: r => r.type === 'UNIT_ARCHER' ? 70 : 0 });
+  const y = id => m.vars.find(v => v.name === 'y' + id);
+  const archer = g.state.units.find(u => u.type === 'UNIT_ARCHER'), spear = g.state.units.find(u => u.type === 'UNIT_SPEARMAN');
+  assert.equal(y(archer.id).obj, B.STR(archer) + 70);
+  assert.equal(y(spear.id).obj, B.STR(spear));
+});
+
+
+// the order-limited reply estimate (threat.js replyEstimate): the enemy
+// cashes the cheapest kills first and stops when its money runs out
+test('reply estimate: kill cost is the fewest orders that kill; the greedy reply stops at the pool; a seat out of reach is free', () => {
+  const g = setup(`
+    blue SWORDSMAN 0,0 hp=6
+    blue SWORDSMAN 0,2 hp=6
+    red SWORDSMAN 1,0
+    red SWORDSMAN 1,2
+    red ARCHER 8,0
+  `, { orders: 4 });
+  const st = g.state;
+  const est = TH.replyEstimate(st, { orders: 2 });
+  const [a, b] = st.units.filter(u => u.player === 0);
+  // a red swordsman beside each of ours kills it for one order (no walk)
+  assert.equal(est.killCost(a.id, a.q + ',' + a.r, a.hp), 1);
+  const far = TH.replyEstimate(st, { orders: 2 }).killCost(a.id, '-9,0', a.hp);
+  assert.equal(far, null, 'nobody reaches (-9,0)');
+  assert.equal(est.price(a.id, '-9,0', a.hp), 0);
+  const e = est.estimate(st);
+  assert.equal(e.kills.length, 2);
+  assert.equal(e.str, 2 * TH.STR(a));
+  assert.equal(e.spent, 2);
+  const poor = TH.replyEstimate(st, { orders: 1 }).estimate(st);
+  assert.equal(poor.kills.length, 1, 'one order buys one kill');
+  assert.ok(poor.lambda != null, 'the budget bound: a margin exists');
+  // per-pool money: the two swordsmen in separate pools of one order each
+  st.units.filter(u => u.player === 1).forEach((u, i) => { u.pool = 'p' + i; });
+  const split = TH.replyEstimate(st, { enemyPools: { p0: 1, p1: 1, p2: 0 } }).estimate(st);
+  assert.equal(split.kills.length, 2);
+});
+
+test('retreat pass: an idle unit walks to a seat the estimate prices lower, within its pool; a unit that acted stays', () => {
+  const g = setup(`
+    blue SWORDSMAN 0,0 hp=6
+    blue SWORDSMAN 0,2 hp=6
+    red SWORDSMAN 1,0
+    red SWORDSMAN 1,2 hp=3
+  `, { orders: 6 });
+  const st = g.state;
+  const [a, b] = st.units.filter(u => u.player === 0);
+  const est = TH.replyEstimate(st, { orders: 1 });
+  const s1 = E.applyAction(st, { type: 'attack', unit: b.id, target: st.units.find(u => u.player === 1 && u.hp === 3).id });
+  const rp = S.retreatPass(s1, est, {});
+  assert.ok(rp.line.every(x => x.unit === a.id), 'only the idle unit moves: ' + JSON.stringify(rp.line));
+  assert.equal(rp.line.length, 1);
+  const a2 = E.unitById(rp.state, a.id);
+  assert.ok(est.price(a.id, a2.q + ',' + a2.r, a2.hp) < est.price(a.id, a.q + ',' + a.r, a.hp));
+  // with no money in its pool it stays
+  const s2 = { ...s1, pools: { p: 0 } }; s2.units = s1.units.map(u => ({ ...u, pool: 'p' }));
+  assert.equal(S.retreatPass(s2, est, {}).line.length, 0);
+});
+
+test('reply estimate: a routing unit strikes again after a kill (bRout, three strikes), a march extends the posts at its price', () => {
+  const g = setup(`
+    blue SWORDSMAN 0,0 hp=4
+    blue SWORDSMAN 1,0 hp=4
+    blue SWORDSMAN 2,0 hp=4
+    red HORSEMAN 0,1
+    red ARCHER 0,-3 hp=20
+  `, { orders: 4 });
+  const st = g.state;
+  const est = TH.replyEstimate(st, { orders: 20 });
+  const a = st.units.find(u => u.player === 0);
+  const horse = est.options(a.id, a.q + ',' + a.r).find(o => E.unitById(st, o.id).type === 'UNIT_HORSEMAN');
+  assert.ok(horse && horse.again && horse.lives === 2, 'the horseman carries two extra strikes');
+  const e = est.estimate(st);
+  const byHorse = e.kills.flatMap(k => k.blows).filter(b => E.unitById(st, b.id).type === 'UNIT_HORSEMAN').length;
+  assert.ok(byHorse >= 2, 'the horseman is used more than once: ' + byHorse);
+  // a post only a force march reaches costs the doubled orders
+  const farArcher = st.units.find(u => u.type === 'UNIT_ARCHER');
+  const opts = TH.replyEstimate(st, { orders: 20 }).options(a.id, '3,0').find(o => o.id === farArcher.id);
+  assert.ok(opts, 'the archer reaches a shot at (3,0) with a march');
+});
+
+// The killList question, asked through the hook the core already exposes.
+// tools/ilp_fight.js --targets a,b cancels every other red's strength with a
+// negative bounty, so "all targets dead" is the objective and the core stays
+// ignorant of what it is solving. Needed because a scout-herding submission
+// arrived that no verifier could reason about (2026-09-03).
+test('a negative bounty cancels a red from the objective [model.js addVar obj = STR + bounty]', () => {
+  const g = setup(`
+    blue HORSEMAN -1,0
+    blue ARCHER 0,0
+    red SPEARMAN 3,0 hp=6
+    red ARCHER 3,1 hp=6
+  `);
+  const T = B.blowTable(g.state, { topSeats: 20 });
+  const wanted = g.state.units.find((u) => u.player === 1 && u.type === 'UNIT_SPEARMAN');
+  const other = g.state.units.find((u) => u.player === 1 && u.type === 'UNIT_ARCHER');
+  const m = M.buildModel(g.state, T, 8, {
+    bounty: (r) => (r.id === wanted.id ? 0 : -(E.DATA.units[r.type].iStrength || 0)),
+  });
+  assert.equal(m.byName.get('y' + wanted.id).obj, E.DATA.units[wanted.type].iStrength,
+    'the target keeps its full worth');
+  assert.equal(m.byName.get('y' + other.id).obj, 0, 'every other red is worth nothing');
 });
