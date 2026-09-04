@@ -79,6 +79,46 @@ in trees): blue being unable to target it, and blue moving through it. Scouts
 also cannot attack at all — no bMelee, no range — which is the game's rule,
 not an omission. See `test/rules/stealth.test.js`.
 
+## What a blow costs the unit throwing it
+
+`Unit.getCounterAttackDamage` (Unit.cs:10570-10615). The shape of the C# is
+the rule, and it is easy to port wrong:
+
+```
+if (!attacker.mbMelee)                    return 0;
+if (defender.mbWater != attacker.mbWater) return 0;   <- RETURN
+if (!defender.canCounterattack(...))      return 0;   <- RETURN
+value += defender.counterAttackMelee()   (or attack% of its damage)
+if (attacker.cooldown == ROUT) value += COUNTER_ROUT_DAMAGE (=1)
+return min(value, attacker.HP - 1)
+```
+
+Both refusals **return**, and the rout surcharge sits after them — so a
+defender that could not have answered at all (flanked, stunned, a scout, an
+onager with someone standing on it) costs a routing attacker *nothing*. We
+charged the 1 anyway until 2026-09-03, when an author asked why routing
+units seemed not to take damage from ranged ones.
+
+The other half of his question has the opposite answer: a **ranged defender
+does counter** — `canCounterattack` only needs `canDamage` — it just deals
+**0**, because the payload is `iMeleeCounter` summed over the defender's
+effects and only EFFECTUNIT_MELEE and EFFECTUNIT_SHIP carry it (=1). So a
+routing attacker pays exactly 1 against an archer, and 2 against a swordsman.
+
+`canCounterattack` (Unit.cs:10616-10645) also needs the defender to *reach*
+the attacker's tile — `canTargetTile`, so iRangeMin applies: the onager that
+cannot shoot what stands on top of it cannot counter it either. Siege
+counters only while **set up**, which is why a shoved onager stops answering.
+The counter never crits (bCritical false, Unit.cs:10601) and is capped at
+HP-1, so it can never kill.
+
+Flanking's payoff is exactly this — the defender cannot counter (Unit.cs:10598)
+— and never a damage bonus. A unit counts as a flank partner only if it can
+DAMAGE (`canDamage`, Tile.cs:12066), so a scout never flanks; and a defender
+inside a city with its walls up cannot be flanked at all (Tile.cs:12043,
+`isVulnerable` = city hp 0; we have no city hp, so a city always protects —
+the same convention as `hasStun`). Tests: `test/rules/counter.test.js`.
+
 ## Two units on one tile
 
 Old World is not one-unit-per-tile, and the scout is what made that visible

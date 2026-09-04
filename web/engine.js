@@ -378,6 +378,11 @@
     var opp = tileAt(state, toTile.q + DIRS[d].q, toTile.r + DIRS[d].r);
     if (!opp) return false;
     if (isWaterTile(tileAt(state, fromTile.q, fromTile.r) || fromTile) !== isWaterTile(opp)) return false;
+    // a defender standing in a city with its walls up cannot be flanked
+    // (Tile.cs:12043; isVulnerable = city hp 0, and we have no city hp, so a
+    // city always protects — the same convention as hasStun)
+    var dt = tileAt(state, toTile.q, toTile.r);
+    if (dt && dt.city != null) return false;
     return unitsAt(state, opp.q, opp.r).some(function (o) {
       return o.player === att.player && o.id !== att.id && canDamage(o);
     });
@@ -643,43 +648,71 @@
     var dmg = getAttackDamage(
       attackStrength(state, att, fromTile, toTile, def),
       defendStrength(state, def, toTile, att), percent);
-    if (!(opts && opts.collateral) && critApplies(att, def)) dmg *= 2; // Unit.cs:9135
+    if (!(opts && (opts.collateral || opts.noCrit)) && critApplies(att, def)) dmg *= 2; // Unit.cs:9135
     if (hasEffectFlag(def, 'bLastStand') && def.hp > 1 && dmg >= def.hp) dmg = def.hp - 1;
     return Math.min(dmg, def.hp);
   }
 
   // Unit.getCounterAttackDamage (Unit.cs:10526)
+  // Unit.getCounterAttackDamage (Unit.cs:10570-10615), computed for the
+  // ATTACKER: what this blow costs the unit throwing it. Two things are easy
+  // to get wrong and both were:
+  //
+  //  - the two refusals below are `return 0` in the game, not "skip the
+  //    counter". The rout surcharge sits AFTER them, so a defender that
+  //    cannot counter at all — flanked, stunned, a scout, an onager with
+  //    someone on top of it — costs a routing attacker NOTHING. We used to
+  //    fall through and still charge the 1.
+  //  - the payload comes off the DEFENDER's effects (iMeleeCounter, carried
+  //    only by EFFECTUNIT_MELEE and EFFECTUNIT_SHIP), so a ranged defender
+  //    that CAN counter still deals 0 — but it does open the rout surcharge.
+  //
+  // (The canDamageCity branch, COUNTER_CITY_DAMAGE, is unreachable here: a
+  // puzzle attack always names a unit.)
   function counterAttackDamage(state, att, fromTile, def) {
     if (!isMelee(att)) return 0;
     if (att.hp === 0) return 0;
     var val = 0;
     if (def) {
-      var defTile = tileAt(state, def.q, def.r);
-      var atTile = tileAt(state, fromTile.q, fromTile.r);
-      if (isWaterTile(defTile) !== isWaterTile(atTile)) {
-        // cross-domain: no counter (approximation of mbWater check)
-      } else if (!canCounterattack(state, def, att, fromTile)) {
-        // no counter
+      // cross-domain: the test is on the UNITS (a ship v a land unit),
+      // not on the tiles they stand on (Unit.cs:10590)
+      if (!!info(def).bWater !== !!info(att).bWater) return 0;
+      if (!canCounterattack(state, def, att, fromTile)) return 0;
+      // Unit.cs:10598 getCounterPercentOfAttack: max fortify counters with
+      // FULL attack damage; otherwise per-effect percent (Tactician = 100),
+      // clamped to 0..100 (Unit.cs:7166). The counter never crits
+      // (Unit.cs:10601 passes bCritical false).
+      var pct = ((def.fortifyTurns || 0) >= G.MAX_FORTIFY_TURNS) ? 100
+              : Math.max(0, Math.min(100, sumEffect(def, 'iMeleeCounterPercent')));
+      if (pct > 0) {
+        val += Math.floor(attackUnitDamage(state, def, { q: def.q, r: def.r }, att, 100,
+                                           { noCrit: true }) * pct / 100);
       } else {
-        // Unit.cs:10605 getCounterPercentOfAttack: max fortify counters with
-        // FULL attack damage; otherwise per-effect percent (Tactician = 100)
-        var pct = ((def.fortifyTurns || 0) >= G.MAX_FORTIFY_TURNS) ? 100
-                : sumEffect(def, 'iMeleeCounterPercent');
-        if (pct > 0) {
-          val += Math.floor(attackUnitDamage(state, def, { q: def.q, r: def.r }, att, 100) * pct / 100);
-        } else {
-          val += counterAttackMelee(def);
-        }
+        val += counterAttackMelee(def);
       }
     }
     if (att.cooldown === 'ROUT') val += G.COUNTER_ROUT_DAMAGE;
     return Math.min(val, att.hp - 1);
   }
 
+  // Unit.canCounterattack (Unit.cs:10616-10645), asked of the DEFENDER
   function canCounterattack(state, def, att, attTile) {
     if (!canDamage(def)) return false;
-    if (info(def).bUnlimber) return false; // siege must be limbered; simplification
+    // siege counters only while it is SET UP (Unit.cs:10621-10629) — a shove
+    // takes the set-up away, so a shoved onager stops answering back
+    if (info(def).bUnlimber && !def.unlimbered) return false;
     if (def.cooldown === 'STUNNED') return false;
+    // and it has to be able to reach the attacker's tile at all: melee is
+    // adjacency, ranged is iRangeMin..range with the shot unobstructed
+    // (canTargetTile, Unit.cs:8449-8500). This is what stops an onager
+    // countering the unit standing on top of it.
+    var d = hexDistance(def, attTile);
+    if (isMelee(def)) {
+      if (d !== 1) return false;
+    } else if (d < rangeMin(def) || d > effectiveRange(state, def, def, attTile) ||
+               isShotObstructed(state, def, attTile)) {
+      return false;
+    }
     // Unit.cs:10598 — a flanked defender cannot counterattack at all.
     // (This, not bonus damage, is the real payoff of the pincer.)
     if (flankingAttack(state, att, tileAt(state, attTile.q, attTile.r), tileAt(state, def.q, def.r))) return false;
@@ -1300,7 +1333,8 @@
     var defTile = { q: def.q, r: def.r };
     var adjacent = hexDistance(att, def) === 1;
 
-    // counter computed BEFORE damage (Unit.cs:9608), applied after — simultaneous
+    // counter computed BEFORE damage (Unit.cs:9613), applied after — so it
+    // lands even when the blow kills, and a dying defender still answers
     var counter = counterAttackDamage(s, att, from, def);
     var crit = critApplies(att, def);
     var dmg = attackUnitDamage(s, att, from, def, 100);
