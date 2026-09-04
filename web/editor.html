@@ -121,7 +121,14 @@
     <div id="tools">
       <h3>Puzzle</h3>
       <div class="row"><label>Name <input type="text" id="p-name" value="My Puzzle" size="18"></label>
-        <label>Par orders (hidden; players get a pool of <b id="pool-view">10</b>) <input type="number" id="p-orders" value="3" min="1" max="60" style="width:52px"></label></div>
+        <label>Par <input type="number" id="p-orders" value="3" min="1" max="60" style="width:52px"></label></div>
+      <div class="hint" id="par-hint">Par is the <b>fewest orders</b> a perfect solution needs — the optimum. Players who solve it in par or better earn the star. It is never shown to them.</div>
+      <div class="row"><label>Order pool <select id="p-pool-mode">
+          <option value="auto">automatic (from par)</option>
+          <option value="custom">I choose it</option>
+        </select></label>
+        <label id="pool-custom-wrap" style="display:none">Orders players get <input type="number" id="p-pool" value="10" min="1" max="120" style="width:56px"></label>
+        <span class="obj-view" id="pool-view">players get 10 orders</span></div>
       <div class="row"><label>Brief <input type="text" id="p-brief" size="34" value="Kill all enemies."></label></div>
       <div class="row"><label>Lesson (shown after victory) <input type="text" id="p-lesson" size="30" value=""></label></div>
       <div class="row"><label>Radius <select id="p-radius"><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select></label>

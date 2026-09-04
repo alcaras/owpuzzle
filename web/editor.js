@@ -389,19 +389,47 @@
     el.textContent = E.objectiveText({ kind: kind, targets: targets });
   }
 
-  // live pool preview: par -> the order pool players will actually get
+  // live pool preview: par -> the order pool players will actually get.
+  // Two ways to set it, and the difference matters: on 'auto' the pool is
+  // derived from par (par+5, rounded up to a multiple of 5) so the pool can
+  // never leak the par back to the player; on 'custom' the author names it,
+  // and then the pool IS a design decision — a tight pool is a second
+  // constraint, a loose one is pure slack. A custom pool below par would make
+  // the puzzle unsolvable at its own optimum, so it is floored at par.
   var poolView = document.getElementById('pool-view');
+  var poolMode = document.getElementById('p-pool-mode');
+  var poolInput = document.getElementById('p-pool');
+  var poolWrap = document.getElementById('pool-custom-wrap');
+  function parValue() { return +document.getElementById('p-orders').value || 1; }
+  function poolValue() {
+    var par = parValue();
+    if (poolMode && poolMode.value === 'custom') {
+      return Math.max(par, +poolInput.value || par);
+    }
+    return E.poolOrders({ orders: par });
+  }
   function refreshPool() {
-    var par = +document.getElementById('p-orders').value || 1;
-    if (poolView) poolView.textContent = E.poolOrders({ orders: par });
+    var par = parValue(), custom = poolMode && poolMode.value === 'custom';
+    if (poolWrap) poolWrap.style.display = custom ? '' : 'none';
+    if (poolInput) poolInput.min = par;
+    var pool = poolValue();
+    if (!poolView) return;
+    poolView.textContent = !custom
+      ? 'players get ' + pool + ' orders'
+      : pool <= par
+        ? 'players get exactly par — no slack at all'
+        : 'players get ' + pool + ' orders (' + (pool - par) + ' more than par)';
   }
   document.getElementById('p-orders').oninput = refreshPool;
+  if (poolMode) poolMode.onchange = refreshPool;
+  if (poolInput) poolInput.oninput = refreshPool;
   // Every puzzle field must go through render(), which is what autosaves and
   // snapshots for undo. Without this, changing the objective or par lived only
   // in the DOM: the draft sent to Test play had it, the autosave did not, and
   // returning to the editor silently reverted it — so the board you submitted
   // was not the board you played, and the check rightly refused it.
-  ['p-name', 'p-brief', 'p-lesson', 'p-orders', 'p-training', 'p-objective'].forEach(function (id) {
+  ['p-name', 'p-brief', 'p-lesson', 'p-orders', 'p-training', 'p-objective',
+   'p-pool-mode', 'p-pool'].forEach(function (id) {
     var el = document.getElementById(id);
     if (!el) return;
     var ev = el.tagName === 'SELECT' ? 'change' : 'input';
@@ -668,7 +696,11 @@
       name: document.getElementById('p-name').value || 'Untitled',
       brief: document.getElementById('p-brief').value || '',
       lesson: document.getElementById('p-lesson').value || '',
-      orders: +document.getElementById('p-orders').value || 3,
+      orders: parValue(),
+      // only a CUSTOM pool travels with the puzzle: leaving it off keeps the
+      // automatic par+slack rule (engine.poolOrders), so a board that wants
+      // the default hashes and plays exactly as it always did
+      pool: (poolMode && poolMode.value === 'custom') ? poolValue() : undefined,
       training: +document.getElementById('p-training').value || 0,
       radius: radius,
       objective: objective,
@@ -755,6 +787,18 @@
         (sol.strength / 10) + ' STR in ' + sol.orders + ' orders).\n\n' +
         'Reviewers use your line as the reference solution. Submit it anyway?')) {
       return out('Submission held \u2014 hit \u25b6 Test play and finish a winning line first.');
+    }
+    // Par is meant to be the OPTIMUM — the fewest orders any solution needs.
+    // The author's own reference line is proof that par is no lower than it,
+    // so a par ABOVE that line is simply too loose: it hands the star to
+    // sloppier lines than the one the author had to find.
+    if (sol.met !== false && sol.orders && sol.orders < p.orders && !confirm(
+        'Your own line solved this in ' + sol.orders + ' orders, but you set par to ' +
+        p.orders + '.\n\nPar is the FEWEST orders a solution needs, so it should be at ' +
+        'most ' + sol.orders + ' — as set, the star goes to lines looser than your own. ' +
+        'Submit anyway?')) {
+      return out('Submission held \u2014 lower par to ' + sol.orders +
+        ' (or to the shortest line you believe exists).');
     }
     out('submitting\u2026 (with your solution: ' + (sol.strength / 10) + ' STR in ' + sol.orders + ' orders)');
     fetch('/api/submit', {
@@ -1022,6 +1066,10 @@
       if (saved[f] != null) document.getElementById('p-' + f).value = saved[f];
     });
     if (saved.orders) document.getElementById('p-orders').value = saved.orders;
+    if (poolMode) {
+      poolMode.value = saved.pool ? 'custom' : 'auto';
+      if (poolInput) poolInput.value = saved.pool || E.poolOrders({ orders: saved.orders || 3 });
+    }
     if (saved.training != null) document.getElementById('p-training').value = saved.training;
     if (saved.objective) document.getElementById('p-objective').value = saved.objective.kind;
   }

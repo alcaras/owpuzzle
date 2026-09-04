@@ -1608,7 +1608,14 @@
       (p.objective && p.objective.targets ? p.objective.targets.slice().sort() : []).join(','),
       (p.units || []).map(tidyUnit).sort().join('|'),
       (p.tiles || []).map(tidyTile).sort().join('|'),
-    ].join(';');
+    ];
+    // A hand-set order pool changes the fight as surely as par does. The term
+    // is only PUSHED when there is one, so every board on the default rule
+    // keeps the fingerprint it has always had — an unconditional term (even
+    // the empty string, which still adds its separator) would re-hash the
+    // whole library and retire every row, with every solve on it.
+    if (p.pool) parts.push('pool' + p.pool);
+    parts = parts.join(';');
     var h = 5381;
     for (var i = 0; i < parts.length; i++) h = ((h * 33) ^ parts.charCodeAt(i)) >>> 0;
     return h.toString(36);
@@ -1750,7 +1757,11 @@
   }
 
   function poolOrders(p) {
-    if (p.pool) return p.pool;
+    // An author may name the pool outright (editor: "Order pool - I choose
+    // it"), which makes the pool a second constraint rather than slack. It is
+    // floored at par: a pool below the puzzle's own optimum is unwinnable at
+    // par and, on a killAll board, may be unwinnable at all.
+    if (p.pool) return Math.max(p.pool, p.orders || 1);
     // par+5 slack, rounded up to the next multiple of 5 so par can't be
     // back-derived from the pool (1-5 -> 10, 6-10 -> 15, 11-15 -> 20, ...).
     return Math.ceil((p.orders + 5) / 5) * 5;

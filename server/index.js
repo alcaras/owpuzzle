@@ -365,6 +365,16 @@ app.post('/api/submit', (req, res) => {
   if (!['killAll', 'killList', 'killTarget', 'capture', 'maxKill'].includes(p.objective.kind)) {
     return res.status(400).json({ error: 'unknown objective' });
   }
+  // An author may name the order pool instead of taking par+slack. It must be
+  // a whole number no smaller than par (a pool below the puzzle's own optimum
+  // is unwinnable at par, and on killAll may be unwinnable at all), and it
+  // must stay inside the same ceiling the editor offers. Absent means the
+  // automatic rule, so an untouched field must not arrive as 0 or null.
+  if (p.pool != null) {
+    if (!Number.isInteger(p.pool) || p.pool < p.orders || p.pool > 120) {
+      return res.status(400).json({ error: 'order pool must be a whole number between par (' + p.orders + ') and 120' });
+    }
+  }
   if (p.objective.kind === 'capture' &&
       !(p.tiles || []).some(t => t.city === 1)) {
     return res.status(400).json({ error: 'capture objective needs an enemy city tile' });

@@ -25,11 +25,18 @@ test("a draft's line is recorded before anything can return early", () => {
 test('every puzzle field persists what the author types', () => {
   // Fields that only live in the DOM are lost on the way back from a test
   // play, and the submitted board then differs from the one played.
-  for (const id of ['p-name', 'p-brief', 'p-lesson', 'p-orders', 'p-training', 'p-objective']) {
+  const FIELDS = ['p-name', 'p-brief', 'p-lesson', 'p-orders', 'p-training',
+    'p-objective', 'p-pool-mode', 'p-pool'];
+  for (const id of FIELDS) {
     assert.ok(EDITOR.includes(`'${id}'`), `${id} is never referenced in the editor`);
   }
-  const wiring = /\['p-name'[^\]]*'p-objective'\]\s*\.forEach/.test(EDITOR);
-  assert.ok(wiring, 'the puzzle fields should be wired to render() so they autosave');
+  // the render() wiring list itself, so a field added to the panel and not to
+  // the list fails here rather than silently reverting on the author
+  const list = EDITOR.match(/\['p-name'[\s\S]{0,300}?\]\s*\.forEach/);
+  assert.ok(list, 'the puzzle fields should be wired to render() so they autosave');
+  for (const id of FIELDS) {
+    assert.ok(list[0].includes(`'${id}'`), `${id} is not wired to render()`);
+  }
 });
 
 // A maxKill draft carries no objective.count — the reviewer sets it after

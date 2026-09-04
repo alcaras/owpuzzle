@@ -410,6 +410,20 @@ line reached the same ceiling without the idea the puzzle was built around.
   the "Two units on one tile" section. Inert on all 55 live boards — swept
   `/api/puzzles`: no board carries a non-blocking unit at all — and every
   ceiling re-proved.
+- **The editor lets an author name the order pool (2026-09-04).** Par has
+  always been the hidden optimum and the pool was always derived from it
+  (`poolOrders`: par+5 rounded up to a multiple of 5, so the pool cannot leak
+  par). The panel now says that in words, and offers a second mode: the author
+  sets the pool outright, floored at par. `p.pool` already existed in the
+  engine; what was missing is that it was **not in `puzzleHash`** — a board
+  handing out 6 orders is not the board handing out 10, but the fingerprint
+  could not tell them apart, so an edited pool would have kept a stale rating
+  and everyone's solves. The term is *pushed* only when a pool exists: an
+  unconditional term, even an empty string, adds its separator and re-hashes
+  the whole library, which retires every row and takes every solve with it.
+  Submit also warns when the author's own recorded line beats their par —
+  the reference line is proof par is no higher than it. Server validates the
+  pool (integer, par..120). `test/e2e/par-pool.py` drives the controls.
 - **No puzzle uses a scout yet.** The first herding board should follow
   docs/making-puzzles.md ("Stealth herding" row) and the full author-house-
   puzzle gauntlet — the trick must be *required*, and a scout who could be
