@@ -65,6 +65,21 @@ function STRV(u) {
   if (TARGETS && TARGETS.indexOf(u.id) < 0) return 0;
   return E.DATA.units[u.type].iStrength;
 }
+
+// killList mode (V2_TARGETS): the strength of the reds killed so far, counting
+// only what the caller asked for. E.strKilledOf knows nothing about TARGETS —
+// leaving the FIGHT scoring on it while the bounds used STRV meant the search
+// maximised the whole red army while the bound and the replay spoke about the
+// targets, and the two disagreed (a "11 STR" that no subset of the targets can
+// even sum to). Every value question in this file goes through here.
+function strKilled(s) {
+  var v = 0;
+  for (var i = 0; i < s.units.length; i++) {
+    var u = s.units[i];
+    if (u.player === 1 && u.hp <= 0) v += STRV(u);
+  }
+  return v;
+}
 function key(q, r) { return q + ',' + r; }
 
 // InfoHelpers.getAttackDamage (engine.js:412) — replicated so blow values can
@@ -695,7 +710,7 @@ function noteBest(inc, str, orders, line, tag) {
 // die within the orders left. Per-red cover with an order knapsack — blues are
 // shared between reds' covers (generous, hence admissible).
 function stateBound(ctx, s, mayMove) {
-  var cap = E.strKilledOf(s);
+  var cap = strKilled(s);
   var orders = s.orders;
   // per-blue row references, no copying in the hot path
   var bRow = [], bCrow = [], bRout = [], bCol = [], nb = 0;
@@ -800,7 +815,7 @@ function stage2(ctx, inc, deadline, lateLevels, m) {
     (function rec(s, moved, lateUsed, fought, line) {
       if (Date.now() > deadline) { complete = false; return; }
       nodes++;
-      noteBest(inc, E.strKilledOf(s), POOL - s.orders, line.length ? line.slice() : null, 'node ' + nodes);
+      noteBest(inc, strKilled(s), POOL - s.orders, line.length ? line.slice() : null, 'node ' + nodes);
       function mayMove(u) { return (moved[u.id] || 0) < MOVES && !(fought && lateUsed >= L); }
       var b2 = stateBound(ctx, s, mayMove);
       if (IMPROVE ? b2 <= curBest(inc) : b2 < curBest(inc)) return;
@@ -921,7 +936,7 @@ function stage2u(ctx, inc, deadline) {
   (function rec(s, line) {
     if (Date.now() > deadline) { complete = false; return; }
     nodes++;
-    noteBest(inc, E.strKilledOf(s), POOL - s.orders, line.length ? line.slice() : null,
+    noteBest(inc, strKilled(s), POOL - s.orders, line.length ? line.slice() : null,
       'full-play node ' + nodes);
     if (stateBound(ctx, s, mayMoveAlways) <= curBest(inc)) return;
     var acts = E.legalActions(s);
@@ -1387,11 +1402,11 @@ function stage3(ctx, inc, deadline, opts) {
   function fightOut(st, startLine, maxNodes, pending) {
     pending = pending || [];
     var seen = {}, fnodes = 0;
-    var localBest = { str: E.strKilledOf(st), orders: POOL - st.orders, line: null };
+    var localBest = { str: strKilled(st), orders: POOL - st.orders, line: null };
     (function rec(s, line, pend) {
       if (Date.now() > deadline) return;
       if (fnodes++ > maxNodes) { stats.fightCapped++; return; }
-      var str = E.strKilledOf(s), used = POOL - s.orders;
+      var str = strKilled(s), used = POOL - s.orders;
       if (str > localBest.str || (str === localBest.str && used < localBest.orders)) {
         localBest.str = str; localBest.orders = used; localBest.line = line.slice();
       }
@@ -2535,7 +2550,7 @@ function traceLine(ctx, line) {
       if (rec.seat === null) rec.seat = preAt;
     }
   });
-  var str = E.strKilledOf(s), used = POOL - s.orders;
+  var str = strKilled(s), used = POOL - s.orders;
   console.log('trace: line replays to ' + (str / 10) + ' STR in ' + used + ' orders' + (okAll ? '' : ' (WITH ILLEGAL ACTIONS)'));
   var mask = 0;
   s.units.forEach(function (u) { if (u.player === 1 && u.hp <= 0) mask |= (1 << ctx.ridx[u.id]); });

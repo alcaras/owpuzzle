@@ -8,6 +8,8 @@ const test = require('node:test');
 const assert = require('node:assert');
 const E = require('../web/engine.js');
 const V = require('../tools/verify2.js');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const MINI = {
   name: 'verify2-mini', orders: 8, radius: 2,
@@ -188,4 +190,22 @@ test('a zero-attack-strength blow still deals 1 — OPT must not say 0 (InfoHelp
   const def = E.unitById(s, 2);
   const dmg = E.attackUnitDamage(s, att, { q: att.q, r: att.r }, def);
   assert.ok(dmg >= 1, 'engine floors every legal blow at 1');
+});
+
+// V2_TARGETS (killList mode) must reach the FIGHT, not only the bounds.
+// It shipped half-wired: sortedMasks/upperBound/replay valued only the listed
+// reds while the fight scored with E.strKilledOf, which knows nothing about
+// the knob — so the search maximised the whole red army while the bound and
+// the replay talked about the targets. The tell on a real board was a "best
+// 11 STR" that no subset of two 6-STR onagers can sum to, and a MISMATCH
+// against its own replay. Every value question in verify2/deploy_fight now
+// goes through the targets-aware strKilled().
+test('V2_TARGETS reaches every value question in the verifiers [tools/verify2.js strKilled]', () => {
+  for (const f of ['tools/verify2.js', 'tools/deploy_fight.js']) {
+    const src = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+    const live = src.split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');
+    assert.ok(!/E\.strKilledOf\(/.test(live),
+      f + ' still scores with E.strKilledOf, which ignores V2_TARGETS — use strKilled()');
+    assert.ok(/function strKilled\(/.test(live), f + ' has no targets-aware strKilled()');
+  }
 });

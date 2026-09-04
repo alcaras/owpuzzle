@@ -60,6 +60,21 @@ var STR = function (u) {
   if (TARGETS && TARGETS.indexOf(u.id) < 0) return 0;
   return E.DATA.units[u.type].iStrength;
 };
+
+// killList mode (V2_TARGETS): the strength of the reds killed so far, counting
+// only what the caller asked for. E.strKilledOf knows nothing about TARGETS —
+// leaving the FIGHT scoring on it while the bounds used STR meant the search
+// maximised the whole red army while the bound and the replay spoke about the
+// targets, and the two disagreed (a "11 STR" that no subset of the targets can
+// even sum to). Every value question in this file goes through here.
+function strKilled(s) {
+  var v = 0;
+  for (var i = 0; i < s.units.length; i++) {
+    var u = s.units[i];
+    if (u.player === 1 && u.hp <= 0) v += STR(u);
+  }
+  return v;
+}
 var BLUE = INIT.units.filter(function (u) { return u.player === 0 && u.hp > 0; });
 var REDS = INIT.units.filter(function (u) { return u.player === 1 && u.hp > 0; });
 function hasRout(u) { return E.effectsOf(u).indexOf('EFFECTUNIT_ROUT') >= 0; }
@@ -177,7 +192,7 @@ BLUE.forEach(function (b) {
 
 function ceilingFrom(s, orders) {
   if (orders == null) orders = s.orders;
-  var cap = E.strKilledOf(s), minAttacks = 0, killable = [];
+  var cap = strKilled(s), minAttacks = 0, killable = [];
   var blues = s.units.filter(function (x) { return x.player === 0 && x.hp > 0; });
   s.units.forEach(function (R) {
     if (R.player !== 1 || R.hp <= 0) return;
@@ -217,7 +232,7 @@ function search(lateLimit) {
   (function rec(s, moved, lateUsed, fought, line) {
     if (Date.now() > DEADLINE) { complete = false; return; }
     nodes++;
-    var str = E.strKilledOf(s);
+    var str = strKilled(s);
     if (str > incumbent || (str === incumbent && incLine && line.length && POOL - s.orders < incOrders)) {
       incumbent = str; incOrders = POOL - s.orders; incLine = line.slice();
       console.log('  ' + (incumbent / 10) + ' STR in ' + incOrders + ' orders   (node ' + nodes + ')');
@@ -312,10 +327,10 @@ if (process.env.MODE === 'deploy') {
   });
 
   function fightOut(st) {                       // exact attack-only search
-    var best = E.strKilledOf(st), bestOrders = POOL - st.orders, bestLine = null, seen = {};
+    var best = strKilled(st), bestOrders = POOL - st.orders, bestLine = null, seen = {};
     (function rec(s, line) {
       if (Date.now() > DEADLINE) return;
-      var str = E.strKilledOf(s), used = POOL - s.orders;
+      var str = strKilled(s), used = POOL - s.orders;
       if (str > best || (str === best && bestLine && used < bestOrders)) {
         best = str; bestOrders = used; bestLine = line.slice();
       }
