@@ -622,10 +622,20 @@
     });
 
     // units: owner-color disc + in-game icon + HP bar (viewer :229-242)
+    // A tile can hold two units — a scout and the unit standing on it
+    // (E.canBothOccupy). Draw them side by side, else the top one swallows
+    // the other's clicks and the board lies about who is there.
+    var stackAt = {};
+    state.units.forEach(function (u) {
+      if (u.hp > 0) (stackAt[u.q + ',' + u.r] = stackAt[u.q + ',' + u.r] || []).push(u.id);
+    });
     state.units.forEach(function (u) {
       if (u.hp <= 0) return;
       var t = { q: u.q, r: u.r };
+      var mates = stackAt[u.q + ',' + u.r];
+      var slot = mates.length > 1 ? mates.indexOf(u.id) : -1;
       var x = cx(t), y = cy(t);
+      if (slot >= 0) x += (slot === 0 ? -1 : 1) * SIZE * 0.3;
       var color = PCOL[u.player] || PCOL[1];
       if (u.player === 1 && !mustKill[u.id]) color = 'rgb(158,112,104)'; // not an objective
       var isSel = sel && sel.id === u.id;

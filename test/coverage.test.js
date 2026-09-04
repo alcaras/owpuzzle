@@ -35,7 +35,6 @@ const ACKNOWLEDGED = {
   bHealNeutral: 'healing happens between turns',
   bMultiTeams: 'two sides only',
   bSkipIcon: 'display only',
-  bCriticalImmune: 'criticals are excluded (see iCriticalChance), so immunity to them is inert',
   bGeneralHopping: 'a general changing units is not a combat action',
   // gates on which units may carry an effect; matters for the editor's
   // promotion list rather than for resolving combat
@@ -104,7 +103,6 @@ const ACKNOWLEDGED_UNIT = {
   iFatigue: 'the fatigue LIMIT is derived from movement; this is the XML twin',
   effects: 'the effect list itself; its contents are audited above',
   traits: 'trait names; their consequences are audited via effects',
-  bBlocks: 'every unit blocks its tile in a puzzle',
   bCanCapture: 'capture is an objective, authored per puzzle',
   iCost: 'production cost, not a combat rule',
   iBuildTurns: 'production time, not a combat rule',
@@ -136,6 +134,21 @@ test('the acknowledged list has not gone stale', () => {
   // always reads as the current set of gaps.
   const stale = Object.keys(ACKNOWLEDGED).filter(referenced);
   assert.deepEqual(stale, [], 'these are implemented now; drop them from ACKNOWLEDGED: ' + stale.join(', '));
+});
+
+test('the acknowledged UNIT list has not gone stale either', () => {
+  // bBlocks sat here reading "every unit blocks its tile in a puzzle" — true
+  // when it was written and false the day the scout joined the editor roster,
+  // which is how an author found the bug instead of the suite. An excuse that
+  // rests on which units are reachable expires when the roster grows.
+  // These four ARE named in the engine and still belong on the list: the
+  // reason is "the mechanic lives elsewhere", not "we ignore it".
+  const REFERENCED_ANYWAY = ['iFatigue', 'effects', 'traits', 'bWater'];
+  const stale = Object.keys(ACKNOWLEDGED_UNIT)
+    .filter((f) => referenced(f) && !REFERENCED_ANYWAY.includes(f));
+  assert.deepEqual(stale, [], 'these are implemented now; drop them from ACKNOWLEDGED_UNIT: ' + stale.join(', '));
+  const gone = REFERENCED_ANYWAY.filter((f) => !ACKNOWLEDGED_UNIT[f]);
+  assert.deepEqual(gone, [], 'exempted but no longer acknowledged: ' + gone.join(', '));
 });
 
 test('the known gaps are still only these', () => {

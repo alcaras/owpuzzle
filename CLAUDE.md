@@ -79,6 +79,38 @@ in trees): blue being unable to target it, and blue moving through it. Scouts
 also cannot attack at all — no bMelee, no range — which is the game's rule,
 not an omission. See `test/rules/stealth.test.js`.
 
+## Two units on one tile
+
+Old World is not one-unit-per-tile, and the scout is what made that visible
+(an author's horseman could not step onto his own scout, 2026-09-03):
+
+| rule | where |
+|---|---|
+| allies share a tile when exactly one of them can DAMAGE | `canBothUnitsOccupy`, Tile.cs:10449; `canDamage` = bMelee \|\| iRangeMax>0, InfoHelpers.cs:741 |
+| ...or when either is a caravan, or only one can defend there | Tile.cs:10437-10457, `canUnitDefend` Tile.cs:10420 |
+| hostiles NEVER share | Tile.cs:10432 |
+| a unit walls a tile off only if it BLOCKS | `mbBlocks`, canUnitOccupy Tile.cs:10516 |
+
+The scout, workers, settlers, disciples and the caravan have neither
+`bMelee`/`iRangeMax` nor `bBlocks`, so you may walk **through** an enemy scout
+and **stop on** a friendly one. `canBothOccupy`/`canEndOn`/`unitsAt` in
+engine.js; tests in `test/rules/stacking.test.js`.
+
+Once a tile can hold two units, `unitAt` is the wrong question for anything
+asking *what is standing there* — it returns whichever comes first in the
+array. Flanking, ZOC, area-attack spill, the push candidates and the bounce
+all ask `unitsAt` now. Deliberately NOT implemented: attacking a stacked tile
+picks a defender in the game (best defender); our attacks name a unit id, so a
+scout under a horseman can still be targeted directly. Authoring stays
+one-per-tile — the editor selects the occupant instead of stacking on it, and
+`test/library.test.js` still asserts no two units share a tile — so stacks
+arise only in play.
+
+This is also why the coverage audit grew a staleness check for the UNIT list:
+`bBlocks` was acknowledged as "every unit blocks its tile in a puzzle", which
+was true until the day a non-blocking unit joined the editor roster. An excuse
+that rests on which units are *reachable* expires when the roster grows.
+
 ## Testing
 
 ```
@@ -333,6 +365,11 @@ line reached the same ceiling without the idea the puzzle was built around.
   under FORCEMARCH_DOUBLE_FATIGUE. Fixed in `fatigueLimit`, pinned in
   `test/rules/movement.test.js`. Ceilings not yet re-proved after it — a
   puzzle whose blue side holds one of those types may have moved.
+- **Stacking landed (2026-09-03), reported by an author.** A friendly unit
+  may end on its own scout and anyone may walk through an enemy one; see
+  the "Two units on one tile" section. Inert on all 55 live boards — swept
+  `/api/puzzles`: no board carries a non-blocking unit at all — and every
+  ceiling re-proved.
 - **No puzzle uses a scout yet.** The first herding board should follow
   docs/making-puzzles.md ("Stealth herding" row) and the full author-house-
   puzzle gauntlet — the trick must be *required*, and a scout who could be

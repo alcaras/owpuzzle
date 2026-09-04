@@ -1,6 +1,8 @@
 // Old World single-turn combat engine — a faithful JS port of the combat core
 // from the game's Reference C# source (Unit.cs / InfoHelpers.cs / Tile.cs).
-// Deterministic subset: no criticals, no events, no cities. Data comes from
+// Deterministic subset: no events, no cities, and no critical-hit ROLL — a
+// unit may carry a known, pre-rolled crit (`crit: true`, the game's
+// CRITICAL_HIT_PREVIEW flag) that its next attack spends. Data comes from
 // data.js (extracted from the game's XML).
 //
 // Works as a browser global (OWENGINE) and as a Node module.
@@ -59,6 +61,43 @@
       if (u.hp > 0 && u.q === q && u.r === r) return u;
     }
     return null;
+  }
+
+  // A tile can hold more than one unit — see canBothOccupy. unitAt returns
+  // the first, which is the wrong answer for any question about what is
+  // standing somewhere ("is a flank partner there", "does that tile project
+  // ZOC"); those must ask unitsAt.
+  function unitsAt(state, q, r) {
+    var out = [];
+    for (var i = 0; i < state.units.length; i++) {
+      var u = state.units[i];
+      if (u.hp > 0 && u.q === q && u.r === r) out.push(u);
+    }
+    return out;
+  }
+
+  // Tile.canBothUnitsOccupy (Tile.cs:10428-10477). Hostiles never share a
+  // tile. Allies share when either is a caravan (InfoHelpers.canStack,
+  // :2465), when exactly one of them can DAMAGE — canDamage = bMelee ||
+  // iRangeMax > 0 (InfoHelpers.cs:741-744), which is what lets a horseman
+  // stand on its own scout — or when only one of them can defend on that
+  // tile (a water unit on land, Tile.canUnitDefend:10420).
+  function canBothOccupy(state, u, o) {
+    if (u.id === o.id) return true;
+    if (u.player !== o.player) return false;
+    if (info(u).bCaravan || info(o).bCaravan) return true;
+    if (canDamage(u) !== canDamage(o)) return true;
+    var t = tileAt(state, o.q, o.r);
+    if (t && canDefendOn(u, t) !== canDefendOn(o, t)) return true;
+    return false;
+  }
+  function canDefendOn(u, t) { return !(info(u).bWater && !isWaterTile(t)); }
+  // may this unit END its move here — every occupant must be shareable
+  // (the game tests each unit on the tile in turn, Tile.cs:10510-10535)
+  function canEndOn(state, u, q, r) {
+    var all = unitsAt(state, q, r);
+    for (var i = 0; i < all.length; i++) if (!canBothOccupy(state, u, all[i])) return false;
+    return true;
   }
 
   function unitById(state, id) {
@@ -187,7 +226,7 @@
   function bounceUnit(s, u) {
     var home = { q: u.q, r: u.r };
     function standable(t) {
-      if (!t || unitAt(s, t.q, t.r)) return false;
+      if (!t || !canEndOn(s, u, t.q, t.r)) return false;
       if (info(u).bWater) return isWaterTile(t);
       if (isWaterTile(t)) return false; // never END afloat (Tile.cs:10598)
       return t.height !== 'HEIGHT_MOUNTAIN' && t.height !== 'HEIGHT_VOLCANO';
@@ -289,7 +328,16 @@
   }
   function hpMax(u) { return info(u).iHPMax + 0; }
   function isDamaged(u) { return u.hp < hpMax(u); }
-  function fatigueLimit(u) { return (info(u).iFatigue || G.UNIT_FATIGUE_LIMIT) + sumEffect(u, 'iFatigueExtra'); }
+  // Unit.getFatigueLimit (Unit.cs:2686-2708): the unit's iFatigue, floored at
+  // UNIT_MIN_BASE_FATIGUE (2) for every unit that is not a tribe's — the 1 on
+  // mercenary and tribal types (peltast, marauder, skirmisher, huscarl, the
+  // nomad line) is a tribal number; in a player's hands they get two steps,
+  // four under FORCEMARCH_DOUBLE_FATIGUE. Tribes add tribeLevel.miFatigue
+  // instead, which no board here carries.
+  function fatigueLimit(u) {
+    var base = info(u).iFatigue || G.UNIT_FATIGUE_LIMIT;
+    return Math.max(G.UNIT_MIN_BASE_FATIGUE || 0, base) + sumEffect(u, 'iFatigueExtra');
+  }
   function movementPoints(u) { return (info(u).iMovement + sumEffect(u, 'iMovementExtra')) * G.MOVEMENT_MULTIPLER; }
 
   function isWaterTile(t) { return t.terrain === 'TERRAIN_WATER'; }
@@ -330,8 +378,9 @@
     var opp = tileAt(state, toTile.q + DIRS[d].q, toTile.r + DIRS[d].r);
     if (!opp) return false;
     if (isWaterTile(tileAt(state, fromTile.q, fromTile.r) || fromTile) !== isWaterTile(opp)) return false;
-    var u = unitAt(state, opp.q, opp.r);
-    return !!(u && u.player === att.player && u.id !== att.id && canDamage(u));
+    return unitsAt(state, opp.q, opp.r).some(function (o) {
+      return o.player === att.player && o.id !== att.id && canDamage(o);
+    });
   }
 
   function canDamage(u) { return !!info(u).bMelee || (info(u).iRangeMax || 0) > 0; }
@@ -339,8 +388,11 @@
   function adjacentFriendSame(state, u, t) {
     // friendly unit sharing a trait-class adjacent (used by shield-wall style effects)
     for (var d = 0; d < 6; d++) {
-      var o = unitAt(state, t.q + DIRS[d].q, t.r + DIRS[d].r);
-      if (o && o.player === u.player && o.id !== u.id && o.type === u.type) return true;
+      var here = unitsAt(state, t.q + DIRS[d].q, t.r + DIRS[d].r);
+      for (var i = 0; i < here.length; i++) {
+        var o = here[i];
+        if (o.player === u.player && o.id !== u.id && o.type === u.type) return true;
+      }
     }
     return false;
   }
@@ -555,7 +607,7 @@
       att: { name: att.type, base: baseStrength(att), mods: attMods, total: aStr },
       def: { name: def.type, base: baseStrength(def), mods: defMods, total: dStr },
       rawDamage: getAttackDamage(aStr, dStr, 100),
-      damage: pv.damage, counter: pv.counter, kills: pv.kills, rout: pv.rout,
+      damage: pv.damage, counter: pv.counter, kills: pv.kills, rout: pv.rout, crit: pv.crit,
       collateral: pv.collateral,
     };
   }
@@ -571,14 +623,27 @@
     return Math.max(1, dmg);
   }
 
-  // Unit.attackUnitDamage (Unit.cs:9119) — no crits in puzzles.
-  function attackUnitDamage(state, att, fromTile, def, percent) {
+  // A loaded critical hit doubles the blow (Unit.cs:9135) unless the target
+  // is critical-immune (Unit.criticalChanceVs, Unit.cs:6566). It is rolled
+  // by the game, not here: with CRITICAL_HIT_PREVIEW on, the roll is made
+  // ahead of time and stored on the unit (Unit.resetCriticalHit,
+  // Unit.cs:3404-3420), so a puzzle or a save can state it as a fact.
+  function critApplies(att, def) {
+    return !!att.crit && !hasEffectFlag(def, 'bCriticalImmune');
+  }
+
+  // Unit.attackUnitDamage (Unit.cs:9124). The crit applies to the tile the
+  // attack targets only: collateral tiles are attacked with bTargetTile
+  // false, which never rolls one (Unit.attackTile, Unit.cs:10418) — pass
+  // opts.collateral for those.
+  function attackUnitDamage(state, att, fromTile, def, percent, opts) {
     percent = percent == null ? 100 : percent;
     var toTile = { q: def.q, r: def.r };
     if (percent === 0) return def.hp > 1 ? 1 : 0;
     var dmg = getAttackDamage(
       attackStrength(state, att, fromTile, toTile, def),
       defendStrength(state, def, toTile, att), percent);
+    if (!(opts && opts.collateral) && critApplies(att, def)) dmg *= 2; // Unit.cs:9135
     if (hasEffectFlag(def, 'bLastStand') && def.hp > 1 && dmg >= def.hp) dmg = def.hp - 1;
     return Math.min(dmg, def.hp);
   }
@@ -795,8 +860,10 @@
       if (!nt) continue;
       if (here && isWaterTile(here) !== isWaterTile(nt)) continue; // no ZOC across the shoreline (Tile.cs:10044)
       if (nt.city != null && nt.city !== u.player) return true; // hostile cities project ZOC (Tile.cs:10049)
-      var o = unitAt(state, q + DIRS[d].q, r + DIRS[d].r);
-      if (o && o.player !== u.player) {
+      var occs = unitsAt(state, q + DIRS[d].q, r + DIRS[d].r);
+      for (var oi = 0; oi < occs.length; oi++) {
+        var o = occs[oi];
+        if (o.player === u.player) continue;
         // Tile.isDirectionHostileZOC (Tile.cs:10091): ignoring ZOC is not
         // absolute. After the ignore test the game asks isUnitZoc(movingType)
         // — EFFECTUNIT_POLEARM lists UNITTRAIT_MOUNTED, so spears, pikes,
@@ -870,9 +937,14 @@
         var nq = cur.q + DIRS[d].q, nr = cur.r + DIRS[d].r;
         var t = tileAt(state, nq, nr);
         if (!t) continue;
-        var occ = unitAt(state, nq, nr);
-        if (occ && occ.player !== u.player) continue; // enemies block the path
-        // friendly units can be moved THROUGH but not ended on
+        // A hostile unit blocks the tile outright — but only if it BLOCKS:
+        // mbBlocks is the gate (canUnitOccupy, Tile.cs:10516) and the
+        // scout, the workers, the settlers and the caravan do not have it,
+        // so you walk straight through an enemy scout. Friendly units are
+        // never a wall; whether you may STOP on one is canEndOn's question.
+        if (unitsAt(state, nq, nr).some(function (o) {
+          return o.player !== u.player && info(o).bBlocks;
+        })) continue;
         if (curZOC && inEnemyZOC(state, u, nq, nr)) continue; // ZOC -> ZOC step
         var tileCost = moveCostInto(state, u, cur, { q: nq, r: nr });
         if (tileCost === Infinity) continue;
@@ -892,7 +964,7 @@
         // the one exception and only UNIT_WORKER has it.) Crossing to the far
         // bank is the whole point of water control.
         var endsOnWater = !info(u).bWater && isWaterTile(t);
-        if (!occ && !endsOnWater) {
+        if (!endsOnWater && canEndOn(state, u, nq, nr)) {
           var st = Math.ceil(c / full);
           out[k] = { q: nq, r: nr, cost: c, steps: st, orders: ordersForSteps(st),
                      forced: u.steps + st > limit };
@@ -1008,6 +1080,7 @@
     if (!canUnlimber(st, u)) throw new Error('cannot unlimber');
     u.unlimbered = true;
     u.cooldown = 'UNLIMBERED'; // setting up ends the turn (Unit.cs:11117)
+    u.crit = false; // any cooldown but rout drops a loaded crit (Unit.doCooldown, Unit.cs:2830-2836)
     st.orders -= 1;
     st.log.push(nameOf(u) + ' sets up — ready to fire next turn');
     return st;
@@ -1136,13 +1209,14 @@
     var counter = counterAttackDamage(state, att, from, def);
     var kills = dmg >= def.hp;
     var routEff = kills && isMelee(att) && hexDistance(att, def) === 1 ? routEffectVs(att, def) : null;
-    return { damage: dmg, counter: counter, kills: kills, rout: !!routEff, collateral: collateralPreview(state, att, def) };
+    return { damage: dmg, counter: counter, kills: kills, rout: !!routEff, crit: critApplies(att, def),
+      collateral: collateralPreview(state, att, def) };
   }
 
   function collateralPreview(state, att, def) {
     var out = [];
     forEachCollateral(state, att, def, function (victim, pct) {
-      out.push({ id: victim.id, damage: attackUnitDamage(state, att, { q: att.q, r: att.r }, victim, pct) });
+      out.push({ id: victim.id, damage: attackUnitDamage(state, att, { q: att.q, r: att.r }, victim, pct, { collateral: true }) });
     });
     return out;
   }
@@ -1185,8 +1259,9 @@
       },
     };
     function visit(pos, pct) {
-      var v = unitAt(state, pos.q, pos.r);
-      if (v && v.player !== att.player && v.hp > 0) fn(v, pct);
+      unitsAt(state, pos.q, pos.r).forEach(function (v) {
+        if (v.player !== att.player) fn(v, pct);
+      });
     }
     Object.keys(patterns).forEach(function (atk) {
       var value = sumEffectPair(att, 'aiAttackValue', atk);
@@ -1227,14 +1302,18 @@
 
     // counter computed BEFORE damage (Unit.cs:9608), applied after — simultaneous
     var counter = counterAttackDamage(s, att, from, def);
+    var crit = critApplies(att, def);
     var dmg = attackUnitDamage(s, att, from, def, 100);
     def.hp -= dmg;
     var killed = def.hp <= 0;
-    var msg = nameOf(att) + ' hits ' + nameOf(def) + ' for ' + dmg;
+    var msg = nameOf(att) + ' hits ' + nameOf(def) + ' for ' + dmg + (crit ? ' (critical hit)' : '');
+    // the attack spends the crit whether or not the target could take one
+    // (Unit.attackTile, Unit.cs:10422-10423: read, then reset)
+    att.crit = false;
 
     // collateral attacks (pierce/cleave/circle/splash)
     forEachCollateral(s, att, def, function (victim, pct) {
-      var cd = attackUnitDamage(s, att, from, victim, pct);
+      var cd = attackUnitDamage(s, att, from, victim, pct, { collateral: true });
       victim.hp -= cd;
       s.log.push(nameOf(att) + ' collateral ' + cd + ' to ' + nameOf(victim) + (victim.hp <= 0 ? ' (killed)' : ''));
     });
@@ -1266,8 +1345,11 @@
           // candidates are tested with canUnitOccupy(TeamType.NONE, ...)
           // (Unit.cs:10082), which does not see hidden units (Tile.cs:10514)
           // — a scout in trees does not block the shove
-          var occ = unitAt(s, pt.q, pt.r);
-          if (occ && !isHiddenAt(s, occ, ptT)) continue;
+          // an occupant blocks the shove only if the test can SEE it and it
+          // cannot share the tile with the shoved unit — its own scout can
+          if (unitsAt(s, pt.q, pt.r).some(function (o) {
+            return !isHiddenAt(s, o, ptT) && !canBothOccupy(s, def, o);
+          })) continue;
           // the shove is a FINAL move: a land unit may cross friendly water
           // but never end on it (canUnitTypeOccupy bFinalTile,
           // Tile.cs:10598-10603) — moveCostInto alone would allow it
@@ -1275,7 +1357,9 @@
           if (moveCostInto(s, def, defTile, pt) !== Infinity) moved = pt;
         }
         if (moved) {
-          var hiddenOcc = unitAt(s, moved.q, moved.r);
+          var shouldered = unitsAt(s, moved.q, moved.r).filter(function (o) {
+            return !canBothOccupy(s, def, o);
+          });
           def.q = moved.q; def.r = moved.r;
           // a shoved siege unit loses its set-up: the UNLIMBERED cooldown is
           // replaced by ATTACKED (Unit.cs:9690-9693)
@@ -1283,7 +1367,7 @@
           s.log.push(nameOf(def) + ' is pushed back!');
           // arriving on a hidden unit's tile shoulders it aside: setTileID
           // bounces whatever cannot share the tile (Unit.cs:1918-1921)
-          if (hiddenOcc) bounceUnit(s, hiddenOcc);
+          shouldered.forEach(function (o) { bounceUnit(s, o); });
         } else {
           var noEsc = G.PANIC_NO_ESCAPE_EFFECTUNIT;
           if (noEsc && !isImmuneToEffect(def, noEsc)) {
@@ -1366,6 +1450,7 @@
     if (!canMove(s, u) || !info(u).bFortify) throw new Error('cannot fortify');
     u.fortifyTurns = Math.min(G.MAX_FORTIFY_TURNS, (u.fortifyTurns || 0) + 1);
     u.cooldown = 'ATTACK'; // fortifying ends the unit's activity for the turn
+    u.crit = false; // Unit.doCooldown, Unit.cs:2830-2836
     s.orders -= 1;
     s.log.push(nameOf(u) + ' fortifies');
     return s;
@@ -1686,6 +1771,10 @@
         cooldown: null, steps: 0, general: hasGeneral(u), name: u.name || null,
         march: false, unlimbered: DATA.units[u.type].bUnlimber ? !!u.unlimbered : undefined,
         anchored: DATA.units[u.type].bAnchor ? !!u.anchored : undefined,
+        // a critical hit already rolled for this unit's next attack (the
+        // game's CriticalHit flag under CRITICAL_HIT_PREVIEW); a limbered
+        // siege unit never holds one (Unit.cs:3411-3414)
+        crit: !!u.crit && !(DATA.units[u.type].bUnlimber && !u.unlimbered),
       };
     });
     // A killList/killTarget id that resolves to nothing would count as
@@ -1740,7 +1829,8 @@
 
   var api = {
     DATA: DATA, DIRS: DIRS, key: key, hexDistance: hexDistance, dirBetween: dirBetween,
-    modify: modify, tileAt: tileAt, unitAt: unitAt, unitById: unitById,
+    modify: modify, tileAt: tileAt, unitAt: unitAt, unitsAt: unitsAt, unitById: unitById,
+    canBothOccupy: canBothOccupy, canEndOn: canEndOn,
     effectsOf: effectsOf, isMelee: isMelee, rangeMax: rangeMax, hpMax: hpMax,
     canAct: canAct, canMove: canMove, canAttack: canAttack, isHiddenAt: isHiddenAt,
     canMarch: canMarch, doMarch: doMarch, canUnlimber: canUnlimber, doUnlimber: doUnlimber,
