@@ -112,6 +112,31 @@
       if (onHome) loadCommunityPuzzles();
     }).catch(function () {});
 
+  // The mark on a solved card. Gold is a live judgement, not a memory: the
+  // par it was measured against can move under it when a better line is
+  // folded in, and a star that silently keeps claiming to be the best is the
+  // thing players cannot audit. Silver says "this was par when you did it".
+  function starOf(slug, par, entry) {
+    var mine = entry && entry.solved ? entry : null;
+    var srv = SERVER_STAR[slug];
+    if (mine && mine.orders != null && par != null) {
+      if (mine.orders <= par) return 'gold';
+      if (mine.perfect) return srv === 'gold' ? 'gold' : 'silver';
+    }
+    return srv || (SERVER_PERFECT[slug] ? 'gold' : null);
+  }
+  function starMark(star, slug) {
+    if (!star) return '<span class="done">\u2713</span>';
+    var why = SERVER_STARWHY[slug];
+    var tip = star === 'gold'
+      ? 'Solved in par — the fewest orders known'
+      : 'This was par when you solved it' +
+        (why ? ' (' + why.yours + '), but par is now ' + why.par : '') +
+        ' — someone has since found a shorter line';
+    return '<span class="done' + (star === 'silver' ? ' silver' : '') +
+      '" title="' + tip + '">\u2b50</span>';
+  }
+
   function loadCommunityPuzzles() {
     fetch('/api/puzzles').then(function (r) { return r.json(); }).then(function (d) {
       // fold the server's cross-device solved list into the library display
@@ -119,6 +144,10 @@
       (d.puzzles || []).forEach(function (x) {
         if (x.solvedByMe && !SERVER_SOLVED[x.slug]) { SERVER_SOLVED[x.slug] = true; changed = true; }
         if (x.perfectByMe && !SERVER_PERFECT[x.slug]) { SERVER_PERFECT[x.slug] = true; changed = true; }
+        // the server re-judges the star against TODAY's par, so unlike the
+        // others this one may go DOWN (gold -> silver) and must overwrite
+        if (x.starByMe && SERVER_STAR[x.slug] !== x.starByMe) { SERVER_STAR[x.slug] = x.starByMe; changed = true; }
+        if (x.parByMe) SERVER_STARWHY[x.slug] = x.parByMe;
         if (x.rating && SERVER_RATING[x.slug] !== x.rating) { SERVER_RATING[x.slug] = x.rating; changed = true; }
         if (x.band && SERVER_BAND[x.slug] !== x.band) { SERVER_BAND[x.slug] = x.band; changed = true; }
       });
@@ -152,9 +181,9 @@
         var cPe = null;
         try { cPe = JSON.parse(localStorage.getItem('owpuzzle-progress') || '{}')[x.slug]; } catch (e) {}
         var cDone = x.solvedByMe || !!(cPe && cPe.solved);
-        var cPerf = x.perfectByMe || !!(cPe && cPe.perfect);
+        var cStar = starOf(x.slug, pz.orders, cPe);
         return '<a class="card' + (cDone ? ' solved' : '') + '" href="?p=' + x.slug + '">' +
-          (cDone ? '<span class="done">' + (cPerf ? '\u2b50' : '\u2713') + '</span>' : '') +
+          (cDone ? starMark(cStar, x.slug) : '') +
           (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
           '<div class="body"><div class="card-head"><h3>' + esc(pz.name) + '</h3>' +
           '<span class="meta">' +
@@ -235,6 +264,9 @@
   // SERVER_SOLVED: slugs this signed-in account has solved (from /api/puzzles)
   // — local progress is per-browser, the server knows across devices.
   var SERVER_SOLVED = {}, SERVER_PERFECT = {}, SERVER_RATING = {}, SERVER_BAND = {};
+  // 'gold' (your best line still meets par) or 'silver' (it met the par that
+  // stood when you solved it, and a shorter line has since been folded in)
+  var SERVER_STAR = {}, SERVER_STARWHY = {};
   // community puzzles shown on this page — counted in the library total so
   // the home count matches the Hall of Fame (which counts every live puzzle)
   var COMMUNITY = [];
@@ -326,7 +358,7 @@
       html += list.map(function (p) {
         var pe = progEntry(prog, p);
         var done = isSolved(p);
-        var perf = (pe && pe.perfect) || !!SERVER_PERFECT[p.id];
+        var star = starOf(p.id, p.orders, pe);
         var heroU = (p.hero != null && p.units[p.hero]) ||
           p.units.filter(function (u) { return u.player === 0; })[0];
         var hero = heroU && unitIcon(heroU.type);
@@ -335,7 +367,7 @@
           return ic ? '<img src="' + ic + '" alt="">' : '';
         }).join('');
         return '<a class="card' + (done ? ' solved' : '') + '" href="?p=' + p.id + '">' +
-          (done ? '<span class="done">' + (perf ? '\u2b50' : '\u2713') + '</span>' : '') +
+          (done ? starMark(star, p.id) : '') +
           (hero ? '<img class="hero" src="' + hero + '" alt="">' : '') +
           '<div class="body"><div class="card-head"><h3>' + p.name + '</h3>' +
           '<span class="meta">' + (done && SERVER_RATING[p.id] ? 'puzzle elo ' + SERVER_RATING[p.id] : '') + '</span></div>' +

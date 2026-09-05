@@ -97,3 +97,63 @@ test('editing a unit in place honours the leader-implies-general rule', () => {
   assert.ok(/_LEADER\$/.test(body),
     'applyPanelToSelected should mark leader-carrying units as generals');
 });
+
+// The author's LAST test play is not their BEST one. Polishing a board means
+// playing it repeatedly, and a later run is often worse — the author is
+// exploring, not converging. The server used to keep whichever recording
+// arrived most recently, so on 2026-09-04 a 22-order reference line was
+// submitted for a board its author had already solved in 19, and the review
+// queue showed the 22. `betterRecording` is the one comparator both sides use.
+test('betterRecording keeps the best line for a board, not the latest', () => {
+  const E = require(path.join(__dirname, '..', 'web', 'engine.js'));
+  const rec = (o) => Object.assign(
+    { line: [{ type: 'move' }], puzzle: { objective: { kind: 'killList' } } }, o);
+
+  const nineteen = rec({ orders: 19, strength: 180, met: true });
+  const twentytwo = rec({ orders: 22, strength: 180, met: true });
+  assert.equal(E.betterRecording(twentytwo, nineteen).orders, 19, 'newer-but-worse must not win');
+  assert.equal(E.betterRecording(nineteen, twentytwo).orders, 19, 'and order of arguments cannot matter');
+
+  // meeting the objective outranks a cheap line that does not
+  const unmet = rec({ orders: 5, met: false });
+  const met = rec({ orders: 40, met: true });
+  assert.equal(E.betterRecording(unmet, met).met, true);
+
+  // maxKill scores by strength — that IS its objective — then by orders
+  const mk = (o) => Object.assign(
+    { line: [{ type: 'move' }], puzzle: { objective: { kind: 'maxKill' } } }, o);
+  assert.equal(E.betterRecording(mk({ orders: 20, strength: 270 }),
+                                 mk({ orders: 30, strength: 370 })).strength, 370,
+    'more strength wins even at more orders');
+  assert.equal(E.betterRecording(mk({ orders: 30, strength: 370 }),
+                                 mk({ orders: 25, strength: 370 })).orders, 25,
+    'equal strength falls to fewer orders');
+
+  // `met` is null on a maxKill draft and on recordings predating the field,
+  // so only an explicit false may count against a line
+  assert.equal(E.betterRecording(rec({ orders: 9, met: null }),
+                                 rec({ orders: 12, met: true })).orders, 9);
+
+  // a line-less recording is not a candidate at all
+  assert.equal(E.betterRecording(nineteen, { line: [] }).orders, 19);
+  assert.equal(E.betterRecording({ line: [] }, nineteen).orders, 19);
+});
+
+test('both sides of the submit flow consult the best recording', () => {
+  const SERVER = fs.readFileSync(path.join(__dirname, '..', 'server', 'index.js'), 'utf8');
+  // the server must compare before overwriting, and only within one board
+  assert.ok(/keep = E\.betterRecording\(old, body\)/.test(SERVER),
+    'POST /api/draft-solution should keep the better of the two recordings');
+  assert.ok(/puzzleHash\(old\.puzzle\) === E\.puzzleHash\(body\.puzzle\)/.test(SERVER),
+    'recordings may only be compared within one board');
+  // a better line arriving after submission must reach the pending row
+  assert.ok(/function improvePendingReference/.test(SERVER) &&
+            /status = 'pending'/.test(SERVER),
+    'a late better line should update the pending submission it belongs to');
+  // ...and never trade a working reference line for a broken one
+  assert.ok(/if \(!check\.solved && cur\) continue;/.test(SERVER),
+    'a non-solving line must not replace a solving one');
+  // the editor must ask the server rather than trusting its own localStorage
+  assert.ok(/E\.betterRecording\(sol, remote\)/.test(EDITOR),
+    'the editor should submit the best recording, not the most recent');
+});

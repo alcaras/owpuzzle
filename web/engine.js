@@ -1621,6 +1621,38 @@
     return h.toString(36);
   }
 
+  // Which of two recordings of the SAME board is the better reference line?
+  // (Callers must check puzzleHash first — comparing across boards is
+  // meaningless.) An author test-plays a puzzle many times while polishing
+  // it, and the LAST run is not the best one: on 2026-09-04 Sion submitted a
+  // 22-order reference line for a board he had already solved in 19, because
+  // the server kept whichever recording arrived most recently. The review
+  // queue then shows the worse line, and a reviewer sizing up the par from it
+  // is reading the wrong number.
+  //
+  // Ordering, by objective:
+  //   maxKill — more strength first (that IS the objective), then fewer orders
+  //   everything else — meeting the objective first, then fewer orders, then
+  //   more strength as a tie-break
+  // `met` is null on a maxKill draft (no ceiling exists until review) and on
+  // recordings made before it was stored, so only an explicit false counts
+  // against a line — the same test the editor's submit warning uses.
+  function betterRecording(a, b) {
+    if (!b || !Array.isArray(b.line) || !b.line.length) return a;
+    if (!a || !Array.isArray(a.line) || !a.line.length) return b;
+    var kind = (a.puzzle && a.puzzle.objective && a.puzzle.objective.kind) || '';
+    var ord = function (r) { return r.orders || 0; };
+    var str = function (r) { return r.strength || 0; };
+    if (kind === 'maxKill') {
+      if (str(a) !== str(b)) return str(a) > str(b) ? a : b;
+      return ord(a) <= ord(b) ? a : b;
+    }
+    var am = a.met !== false, bm = b.met !== false;
+    if (am !== bm) return am ? a : b;
+    if (ord(a) !== ord(b)) return ord(a) < ord(b) ? a : b;
+    return str(a) >= str(b) ? a : b;
+  }
+
   // ---------- ability text, in the game's own words ----------
   // Old World builds unit tooltips from per-field templates (text-helptext.xml,
   // TEXT_HELPTEXT_EFFECT_UNIT_HELP_*). We use the same templates so a panel
@@ -1883,7 +1915,7 @@
     canAnchor: canAnchor, doAnchor: doAnchor, waterControlled: waterControlled,
     waterControlTiles: waterControlTiles,
     poolOrders: poolOrders,
-    puzzleHash: puzzleHash, effectName: effectName,
+    puzzleHash: puzzleHash, betterRecording: betterRecording, effectName: effectName,
     describeEffect: describeEffect, describeUnitAbilities: describeUnitAbilities, killsOf: killsOf, strKilledOf: strKilledOf,
     nextStepOrderCost: nextStepOrderCost,
     canDamage: canDamage, fatigueLimit: fatigueLimit,

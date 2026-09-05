@@ -214,18 +214,33 @@ app.get('/api/puzzles', (req, res) => {
   const rows = db.prepare(`
     SELECT id, slug, json, status, author_name, rating, rd, attempts, solves
     FROM puzzles WHERE status IN ('core', 'approved') ORDER BY id`).all();
-  let solved = {}, perfect = {};
+  // `perfect` is what the attempt was worth WHEN IT LANDED; `orders_used` is
+  // what it actually cost. Keeping both is what lets a star be re-judged: par
+  // moves when a better line is folded in, and a player otherwise has no way
+  // to know whether their star still stands ("I have no way of knowing if
+  // someone found a shorter solution after I got the star" — Egotheist).
+  let solved = {}, perfect = {}, best = {};
   if (user) {
     for (const r of db.prepare(
-      `SELECT puzzle_id, MAX(perfect) perfect FROM attempts
+      `SELECT puzzle_id, MAX(perfect) perfect, MIN(orders_used) best FROM attempts
        WHERE user_id = ? AND solved = 1 GROUP BY puzzle_id`).all(user.id)) {
       solved[r.puzzle_id] = true;
       if (r.perfect) perfect[r.puzzle_id] = true;
+      if (r.best != null) best[r.puzzle_id] = r.best;
     }
   }
   res.json({
-    puzzles: rows.map(r => ({
-      id: r.id, slug: r.slug, puzzle: JSON.parse(r.json), status: r.status,
+    puzzles: rows.map(r => {
+      const pz = JSON.parse(r.json);
+      // GOLD: your best line still meets the par as published today.
+      // SILVER: it met the par that stood when you solved it, and someone has
+      // since found something shorter. The badge you were shown is never taken
+      // away — attempts.perfect is untouched, so achievements still count it —
+      // it just stops claiming to be the current best.
+      const gold = best[r.id] != null && best[r.id] <= pz.orders;
+      const star = gold ? 'gold' : (perfect[r.id] ? 'silver' : null);
+      return {
+      id: r.id, slug: r.slug, puzzle: pz, status: r.status,
       author: r.author_name,
       // puzzle Elo is disclosed only to players who have beaten it, but a
       // coarse BAND is public so the library can group by measured difficulty
@@ -233,8 +248,15 @@ app.get('/api/puzzles', (req, res) => {
       band: r.rating < 1000 ? 1 : (r.rating < 1300 ? 2 : 3),
       rating: solved[r.id] ? Math.round(r.rating) : undefined,
       attempts: r.attempts, solves: r.solves, solvedByMe: !!solved[r.id],
-      perfectByMe: !!perfect[r.id],
-    })),
+      // perfectByMe now means GOLD. A client too old to know about silver
+      // shows a tick instead of a star, which is the safe way to be wrong:
+      // it never claims a star that no longer stands.
+      perfectByMe: gold,
+      starByMe: star,
+      // what it would take to get the gold back, for the tooltip
+      parByMe: star === 'silver' ? { yours: best[r.id], par: pz.orders } : undefined,
+      };
+    }),
   });
 });
 
@@ -439,12 +461,65 @@ app.post('/api/draft-solution', (req, res) => {
   if (!user) return res.status(401).json({ error: 'not logged in' });
   const body = req.body || {};
   if (!body.puzzle || !Array.isArray(body.line)) return res.status(400).json({ error: 'bad recording' });
+  // Keep the BEST recording of a board, not the most recent one. Polishing a
+  // puzzle means test-playing it repeatedly, and a later run is often worse
+  // than an earlier one — the author is exploring, not converging. Only ever
+  // compare WITHIN one board: once the fight changes (puzzleHash), the stored
+  // recording is about a different puzzle and is simply replaced.
+  let keep = body;
+  const prev = db.prepare('SELECT json FROM draft_solutions WHERE user_id = ?').get(user.id);
+  if (prev) {
+    let old = null;
+    try { old = JSON.parse(prev.json); } catch (e) {}
+    if (old && old.puzzle && E.puzzleHash(old.puzzle) === E.puzzleHash(body.puzzle)) {
+      keep = E.betterRecording(old, body);
+    }
+  }
   db.prepare(`INSERT INTO draft_solutions (user_id, json, created_at)
               VALUES (?, ?, datetime('now'))
               ON CONFLICT(user_id) DO UPDATE SET json = excluded.json, created_at = excluded.created_at`)
-    .run(user.id, JSON.stringify(body));
-  res.json({ ok: true });
+    .run(user.id, JSON.stringify(keep));
+  // A better line can also arrive AFTER the puzzle was sent in — which is
+  // exactly what happened on 2026-09-04: the 19-order line was played an hour
+  // and a half after the 22-order submission, and the queue went on showing
+  // the 22. Nothing in the flow noticed, so a reviewer had no way to know a
+  // better line existed. Fold it into the pending row's reference line.
+  const improved = improvePendingReference(user, body);
+  res.json({ ok: true, keptBest: keep !== body, improved: improved || undefined });
 });
+
+// Replace the recorded reference line on this author's PENDING submissions
+// when a fresh recording of the same board beats it. Pending only: an
+// approved puzzle's numbers are the published ones and move through the
+// records queue, where a human decides. Returns the slug it improved, if any.
+function improvePendingReference(user, rec) {
+  let hash;
+  try { hash = E.puzzleHash(rec.puzzle); } catch (e) { return null; }
+  const rows = db.prepare(
+    `SELECT id, slug, json, notes FROM puzzles WHERE author_id = ? AND status = 'pending'`).all(user.id);
+  for (const row of rows) {
+    let p, note = null;
+    try { p = JSON.parse(row.json); } catch (e) { continue; }
+    try { if (E.puzzleHash(p) !== hash) continue; } catch (e) { continue; }
+    try { note = JSON.parse(row.notes); } catch (e) {}
+    const cur = note && Array.isArray(note.line) && note.line.length
+      ? { line: note.line, puzzle: p, met: note.met,
+          orders: (note.claimed || {}).orders, strength: (note.claimed || {}).strength }
+      : null;
+    if (cur && E.betterRecording(cur, rec) === cur) continue;   // nothing better on offer
+    // the reviewer reads `replayed`, so re-verify the new line here rather
+    // than trusting the browser's own count
+    const check = replayLine(p, rec.line);
+    if (!check.solved && cur) continue;                       // never trade down to a broken line
+    db.prepare('UPDATE puzzles SET notes = ? WHERE id = ?').run(JSON.stringify({
+      claimed: { strength: rec.strength, orders: rec.orders, kills: rec.kills },
+      replayed: { strength: check.strKilled, orders: check.ordersUsed, solved: check.solved },
+      met: rec.met, improvedAfterSubmit: true, line: rec.line,
+    }), row.id);
+    return row.slug;
+  }
+  return null;
+}
 
 app.get('/api/draft-solution', (req, res) => {
   const user = userFromReq(req);

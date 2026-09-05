@@ -104,3 +104,46 @@ test('a genuine revision keeps its solves retired [server/db.js]', opts, () => {
   assert.equal(reuniteRewordedSolves(), 0, 'must not resurrect a real revision');
   assert.equal(solvesOf(uid), 0);
 });
+
+// A star is a live judgement, not a memory. Par moves when a better line is
+// folded in, and a gold star that goes on claiming to be the best line is
+// exactly what a player cannot audit — "I have no way of knowing if my star
+// still stands, or someone found a shorter solution after I got the star"
+// (Egotheist, 2026-09-04). Gold is recomputed against TODAY's par; silver
+// remembers that it was par when it was earned.
+//
+// The stored attempts.perfect flag is deliberately NOT rewritten: achievements
+// are immutable once earned (server/db.js), so a demoted star still counts
+// toward Perfectionist and the rest. Only the display is re-judged.
+test('a gold star becomes silver when a shorter line is folded in', opts, () => {
+  const base = puzzleFor('star');
+  seedCorePuzzles([base]);
+  const uid = db.prepare('INSERT INTO users (discord_id, name) VALUES (?, ?)')
+    .run('star-' + base.id, 'Starholder').lastInsertRowid;
+  const p = db.prepare('SELECT id, json FROM puzzles WHERE slug = ?').get(base.id);
+  const par = JSON.parse(p.json).orders;
+  db.prepare(`INSERT INTO attempts (user_id,puzzle_id,solved,rated,orders_used,perfect)
+              VALUES (?,?,1,1,?,1)`).run(uid, p.id, par);
+
+  // the endpoint's rule, kept in one place here so the test states it plainly
+  const starFor = () => {
+    const row = db.prepare(`SELECT MAX(perfect) perfect, MIN(orders_used) best FROM attempts
+                            WHERE user_id=? AND puzzle_id=? AND solved=1`).get(uid, p.id);
+    const now = JSON.parse(db.prepare('SELECT json FROM puzzles WHERE id=?').get(p.id).json);
+    const gold = row.best != null && row.best <= now.orders;
+    return gold ? 'gold' : (row.perfect ? 'silver' : null);
+  };
+
+  assert.equal(starFor(), 'gold', 'solving in par earns gold');
+
+  const folded = Object.assign({}, JSON.parse(p.json), { orders: par - 1 });  // someone found shorter
+  db.prepare('UPDATE puzzles SET json=? WHERE id=?').run(JSON.stringify(folded), p.id);
+  assert.equal(starFor(), 'silver', 'the same solve is silver once par moves under it');
+  assert.equal(db.prepare('SELECT perfect FROM attempts WHERE puzzle_id=?').get(p.id).perfect, 1,
+    'the earned flag must survive — achievements are immutable');
+
+  // and it is recoverable: match the new par and the gold comes back
+  db.prepare(`INSERT INTO attempts (user_id,puzzle_id,solved,rated,orders_used,perfect)
+              VALUES (?,?,1,0,?,1)`).run(uid, p.id, par - 1);
+  assert.equal(starFor(), 'gold', 'matching the new par restores gold');
+});

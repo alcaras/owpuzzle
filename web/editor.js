@@ -857,7 +857,21 @@
       return out('\u2717 You have changed the puzzle since your test play. ' +
         'Play it once more with \u25b6 Test play, then submit.');
     }
-    submitWith(p, sol);
+    // This browser's recording is only the LATEST one. The server keeps the
+    // best (see /api/draft-solution), and the two differ whenever a later
+    // test play went worse than an earlier one \u2014 which is the normal shape of
+    // polishing a board, not an edge case. Ask for it before submitting, so
+    // the reviewer gets the author's best line rather than their last.
+    out('checking for a better test play\u2026');
+    fetch('/api/draft-solution').then(function (r) { return r.json(); })
+      .then(function (d) {
+        var remote = d && d.solution;
+        if (remote && remote.puzzle && puzzleHash(remote.puzzle) === puzzleHash(p)) {
+          sol = E.betterRecording(sol, remote);
+        }
+      })
+      .catch(function () {})               // offline: this browser's copy will do
+      .then(function () { submitWith(p, sol); });
   };
 
   // ---------- your own submissions ----------

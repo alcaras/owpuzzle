@@ -231,6 +231,10 @@
   .card .done {
     position: absolute; top: 8px; right: 10px; font-size: 17px; color: #5f9e4c;
   }
+  /* Silver: the same star, spent. Greyscale keeps the shape (so the card
+     still reads "you beat this at par") while removing the claim that it is
+     still the best line known. */
+  .card .done.silver { filter: grayscale(1) brightness(1.15); opacity: .85; }
   .card.solved { border-color: #5f9e4c; }
   .card .meta { margin-right: 20px; }
   /* wrap: a big board can field a dozen enemies and an unwrapped flex row runs
