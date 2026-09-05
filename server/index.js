@@ -163,6 +163,26 @@ function publicUser(u) {
   };
 }
 
+function parOf(json) { try { return JSON.parse(json).orders; } catch (e) { return null; } }
+
+// GOLD / SILVER / nothing, for one player's best line on one puzzle.
+// A star is a live judgement, not a memory: par moves when a better line is
+// folded in, and a gold star that goes on claiming to be the best line known
+// is the thing a player cannot audit ("I have no way of knowing if my star
+// still stands" — Egotheist, 2026-09-04). Gold means the line still meets par
+// TODAY; silver that it met the par standing when it was earned.
+//
+// attempts.perfect (what it was worth when it landed) is never rewritten, so
+// achievements — immutable once earned, server/db.js — still count a demoted
+// star. You lose the claim, not the credit.
+//
+// Both the library and the profile ask this, and a rule stated twice is a
+// rule that drifts.
+function starFor(perfect, bestOrders, par) {
+  if (bestOrders != null && par != null && bestOrders <= par) return 'gold';
+  return perfect ? 'silver' : null;
+}
+
 // Replay the client's action line through the real engine. The server is the
 // referee: "solved" is whatever the replay says, nothing else.
 function replayLine(puzzle, line) {
@@ -237,8 +257,8 @@ app.get('/api/puzzles', (req, res) => {
       // since found something shorter. The badge you were shown is never taken
       // away — attempts.perfect is untouched, so achievements still count it —
       // it just stops claiming to be the current best.
-      const gold = best[r.id] != null && best[r.id] <= pz.orders;
-      const star = gold ? 'gold' : (perfect[r.id] ? 'silver' : null);
+      const star = starFor(perfect[r.id], best[r.id], pz.orders);
+      const gold = star === 'gold';
       return {
       id: r.id, slug: r.slug, puzzle: pz, status: r.status,
       author: r.author_name,
@@ -765,6 +785,12 @@ app.get('/api/profile', (req, res) => {
       name: (() => { try { return JSON.parse(r.json).name; } catch (e) { return r.slug; } })(),
       rating: viewerBeat.has(r.slug) ? Math.round(r.rating) : undefined,
       perfect: !!r.perfect,
+      // Same three-way as the library (/api/puzzles): gold means this line
+      // still meets par TODAY, silver that par has moved under it since. The
+      // conquest list is where a player checks which of their stars still
+      // stand, so it is the one place the distinction has to be visible.
+      star: starFor(r.perfect, r.orders_used, parOf(r.json)),
+      par: parOf(r.json),
       orders: r.orders_used, at: r.first_at,
     }));
   const recent = conquests.slice().sort((a, b) => (b.at || '').localeCompare(a.at || '')).slice(0, 8);
@@ -786,7 +812,13 @@ app.get('/api/profile', (req, res) => {
       rating: (!!user && target.id === user.id) ? Math.round(target.rating) : undefined,
       unitArt: (!!user && target.id === user.id) ? (target.pref_unit_art || null) : undefined,
     },
-    stats, achievements, recent, conquests, authored,
+    // The leaderboard's perfect COUNT is deliberately left alone (it ranks on
+    // attempts.perfect, the flag you earned): losing rank because a stranger
+    // found a shorter line is exactly what immutability protects against.
+    // The profile just says how many of yours have been overtaken.
+    stats: Object.assign({}, stats,
+      { silver: conquests.filter(c => c.star === 'silver').length }),
+    achievements, recent, conquests, authored,
   });
 });
 

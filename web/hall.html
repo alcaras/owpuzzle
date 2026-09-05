@@ -6,6 +6,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>owpuzzle — hall of fame</title>
 <style>
+  /* Silver: the same star, spent — it was par when it was earned, and par has
+     moved since. Greyscale keeps the shape (the badge still stands) while
+     dropping the claim that it is the best line known. */
+  .silver { filter: grayscale(1) brightness(1.15); opacity: .85; }
+  .silver-note { color: var(--muted); font-weight: normal; font-size: .85em; }
   :root { --bg:#efe3cb; --panel:#faf3e3; --ink:#392e1f; --muted:#7a6a52; --accent:#8c2f1b; --edge:#b9a680; --gold:#b8860b; }
   @media (prefers-color-scheme: dark) { :root { --bg:#221c12; --panel:#2f2819; --ink:#e8dcc4; --muted:#a89877; --edge:#6a5a3f; --accent:#c25a3a; --gold:#e0b040; } }
   :root[data-theme="dark"] { --bg:#221c12; --panel:#2f2819; --ink:#e8dcc4; --muted:#a89877; --edge:#6a5a3f; --accent:#c25a3a; --gold:#e0b040; }
@@ -115,7 +120,10 @@ function renderProfile() {
       '<img src="' + esc(p.avatar) + '" alt="">' +
       '<div><h3>' + esc(p.name) + '</h3><div class="pstats">' +
       '<span><b>' + s.solved + '</b> solved</span>' +
-      '<span><b>' + s.perfect + '</b> perfect ⭐</span>' +
+      '<span><b>' + s.perfect + '</b> perfect ⭐' +
+        (s.silver ? ' <span class="silver-note" title="par has since moved under ' +
+          s.silver + ' of them — the badge stands, the claim does not">(' +
+          s.silver + ' silver)</span>' : '') + '</span>' +
       '<span><b>' + earned + '</b>/' + d.achievements.length + ' achievements</span>' +
       (p.rating != null ? '<span><b>' + p.rating + '</b> rating</span>' : '') +
       (s.authored ? '<span><b>' + s.authored + '</b> puzzle' + (s.authored === 1 ? '' : 's') + ' made</span>' : '') +
@@ -165,7 +173,11 @@ function renderProfile() {
         h += '<tr><td><a href="/?p=' + esc(r.slug) + '">' + esc(r.name) + '</a></td>' +
           '<td class="num">' + (r.rating != null ? '<b>' + r.rating + '</b>' : '—') + '</td>' +
           '<td class="num">' + r.orders + '</td>' +
-          '<td class="num">' + (r.perfect ? '⭐' : '—') + '</td>' +
+          '<td class="num">' + (r.star === 'gold' ? '⭐'
+            : r.star === 'silver'
+              ? '<span class="silver" title="This was par when you beat it (' + r.orders +
+                '), but par is now ' + r.par + ' — someone has since found a shorter line">⭐</span>'
+              : '—') + '</td>' +
           '<td>' + esc((r.at || '').slice(0, 10)) + '</td></tr>';
       });
       h += '</table><p class="note" style="text-align:left;margin-top:6px">' +
