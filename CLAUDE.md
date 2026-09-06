@@ -139,9 +139,12 @@ engine.js; tests in `test/rules/stacking.test.js`.
 Once a tile can hold two units, `unitAt` is the wrong question for anything
 asking *what is standing there* — it returns whichever comes first in the
 array. Flanking, ZOC, area-attack spill, the push candidates and the bounce
-all ask `unitsAt` now. Deliberately NOT implemented: attacking a stacked tile
-picks a defender in the game (best defender); our attacks name a unit id, so a
-scout under a horseman can still be targeted directly. Authoring stays
+all ask `unitsAt` now. An attack on a stacked tile meets its BEST defender —
+`tileDefender` (Tile.defendingUnit, Tile.cs:10697; Unit.isHigherTileDefender,
+Unit.cs:6262-6276): one that can damage beats one that cannot, then the higher
+defence where it stands, so a scout under a spearman is not a target. (This
+was listed here as deliberately unimplemented until 2026-09-05, on the
+grounds that our attacks name a unit id; it is implemented now.) Authoring stays
 one-per-tile — the editor selects the occupant instead of stacking on it, and
 `test/library.test.js` still asserts no two units share a tile — so stacks
 arise only in play.
@@ -439,8 +442,10 @@ line reached the same ceiling without the idea the puzzle was built around.
   tribal type with `iFatigue 1` (peltast, marauder, skirmisher, huscarl, the
   nomad line) got one step where the game gives two, four force-marching
   under FORCEMARCH_DOUBLE_FATIGUE. Fixed in `fatigueLimit`, pinned in
-  `test/rules/movement.test.js`. Ceilings not yet re-proved after it — a
-  puzzle whose blue side holds one of those types may have moved.
+  `test/rules/movement.test.js`. Re-proved 2026-09-05: all 12 published
+  ceilings hold, and the floor is inert on the live library anyway — none of
+  the 28 affected types appears on any of the 56 live boards (swept
+  `/api/puzzles`, not just the core file).
 - **Stacking landed (2026-09-03), reported by an author.** A friendly unit
   may end on its own scout and anyone may walk through an enemy one; see
   the "Two units on one tile" section. Inert on all 55 live boards — swept
@@ -464,6 +469,20 @@ line reached the same ceiling without the idea the puzzle was built around.
   docs/making-puzzles.md ("Stealth herding" row) and the full author-house-
   puzzle gauntlet — the trick must be *required*, and a scout who could be
   replaced by any blocking body is not a trick.
+
+- **The in-flight engine work landed (2026-09-05).** Crit (tests only — the
+  code predated), family territory, `cityHp`, `tileDefender` and the fatigue
+  floor were sitting uncommitted while three features shipped around them, so
+  main failed seven tests the whole time: the tests had been committed ahead
+  of their source, and a suite in that state says nothing. Landed together,
+  main green at 218. All 12 ceilings re-proved (9 to completion, 3 to the 90s
+  budget with lower-bound notes). Inert on all 56 live boards: no board
+  carries `family` or `cityHp`, none holds a fatigue-floored type, and the
+  only board that can form a stack is behind-enemy-lines-91b3f8, whose scout
+  is blue and so is never the defender being chosen.
+  **A test committed before its source is worse than no test** — it fails on
+  main, everyone learns to read the suite as "7 known reds", and the next real
+  regression hides inside that number.
 
 ## Earlier (2026-08-19)
 
