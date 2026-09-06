@@ -123,11 +123,14 @@ Discord app: create at discord.com/developers, add redirect
 
 ```js
 { id, name, brief, lesson, orders: N, radius: 3, objective: {kind:'killAll'},
-  units: [{player:0|1, type:'UNIT_HORSEMAN', q, r, hp?, promotions?, ...}],
+  units: [{player:0|1, type:'UNIT_HORSEMAN', q, r, hp?, promotions?, crit?, ...}],
   tiles: [{q, r, terrain?, height?, vegetation?, improvement?, river:[dirs]}] }
 ```
 
 Objectives: `killAll`, `killList`, `killTarget`, `capture`, `maxKill`.
+`crit: true` is a critical hit the game has already rolled for that unit's
+next attack (its CRITICAL_HIT_PREVIEW flag): the blow does double damage
+unless the target is critical-immune, and the attack spends it.
 Before publishing, follow docs/making-puzzles.md — prove the ceiling with the
 verifiers in tools/, and run `npm test` + `npm run test:ceilings`.
 

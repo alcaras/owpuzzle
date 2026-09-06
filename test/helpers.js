@@ -48,6 +48,7 @@ function setup(spec, opts) {
         else if (p === 'unlimbered') u.unlimbered = true;
         else if (p === 'anchored') u.anchored = true;
         else if (p.startsWith('fortify=')) u.fortifyTurns = Number(p.slice(8));
+        else if (p === 'crit') u.crit = true;
         else throw new Error('unknown unit token: ' + p);
       }
       units.push(u);

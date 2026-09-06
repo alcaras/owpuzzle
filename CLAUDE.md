@@ -397,6 +397,42 @@ line reached the same ceiling without the idea the puzzle was built around.
   full replies: within two STR of the hold reply, 10-20 under the attacks,
   four of five ranked right; an order price of 0.3 STR moved a −35 line
   to −16. No puzzle impact: puzzles set none of it.
+- **`cityHp` on a tile (2026-09-03).** A hostile city with hit points
+  cannot be entered or passed (`moveCostInto`): its garrison is shielded by
+  the walls and blocks as any blocking unit (Tile.canUnitOccupy,
+  Tile.cs:10483), and a city tile is never itself in ZOC, so without this a
+  unit slipped through the city between two ZOC tiles. Puzzles set none —
+  "move onto the city" stays capture. `test/rules/movement.test.js`. The
+  reply estimate also reads `state.unseenByEnemy(uid, tile)` when a board
+  attaches it: a unit the enemy cannot see there is no target.
+- **Committed seats in the reply estimate (2026-09-04).** `threat.js`:
+  `locked(uid, tile)` (no legal step from the seat), `lockable` (they can
+  shut the hex next turn: each ZOC unit of theirs that can stand beside it
+  closes three of its six neighbours, a walled city three), `committed`
+  (either, and a kill over two turns within twice their pools);
+  `price` returns the unit's strength for a committed seat it cannot kill
+  in one, `estimate()` lists them. `inEnemyZOC` is exported for it.
+  Measured on a real 1v1: the seat that lost a slinger two turns later now
+  prices as the slinger. Test in `test/solverengine.test.js`.
+- **Families (2026-09-05).** Two modifiers the engine never had, both
+  ±10% on nearly every blow in a real game: the family's opinion of the
+  player rides on each unit as an effect (Unit.cs:4352; the board attaches
+  `EFFECTUNIT_OPINIONFAMILY_*`, data already in DATA.effects), and
+  `FAMILY_TERRITORY_MODIFIER` on the attack from, and the defence of, a
+  tile whose family is the unit's under the unit's own player
+  (`Unit.familyTerritoryModifier`, Unit.cs:6964, 8907, 9017, 9530): tiles
+  and units carry `family` when the board knows it, puzzles carry none.
+  Measured against four in-game panels on turn 74 of a real game: all
+  four blows match. `attackStrength` and `defendStrength` are exported for
+  a board's effective-strength value. Test in `test/rules/combat.test.js`.
+- **A tile answers with its best defender (2026-09-05).** `attackTargets`
+  offered every unit on a tile; the game meets an attack with
+  `Tile.defendingUnit` (Tile.cs:10697; `Unit.isHigherTileDefender`,
+  Unit.cs:6262: a unit that can damage beats one that cannot, then the
+  higher defence where it stands). A scout under a spearman was being
+  "killed" for 3.2 STR in every reply on a real board. `tileDefender` is
+  exported; the reply estimate prices no seat for a unit that is not its
+  tile's defender. `test/rules/combat.test.js`.
 - **Fatigue is floored for player units.** `Unit.getFatigueLimit`
   (Unit.cs:2703) takes `max(UNIT_MIN_BASE_FATIGUE, iFatigue)` for anything
   not a tribe's; the engine read the raw `iFatigue`, so every mercenary and

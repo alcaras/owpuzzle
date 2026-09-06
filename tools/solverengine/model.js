@@ -21,13 +21,17 @@
 // opts: eps (objective weight per damage point), ordW (per order), kills (a
 // Set of red ids: y fixed 0 outside it), damageOnly, exposure(blow) penalty,
 // counterW (per hp of counter damage taken; 0 = our hp is free), exposeW
-// (per STR of loss the enemy could inflict on the seat; threat.js) with
-// enemyOrders (their pool, for the threat map's reach).
+// (per STR the enemy could cash from the seat: the order-limited estimate,
+// threat.js replyEstimate, or the summed threat map under exposeMode
+// 'threat') with enemyOrders / state.enemyPools (their money) and estimate
+// (a replyEstimate to share across waves), bounty(red) — extra
+// objective (in STR×10 units) for killing that red, on top of its strength:
+// a ruler, a general, whatever the caller values beyond the number.
 'use strict';
 const E = require('./engine.js');
 const { Model } = require('./lp.js');
 const { key, unkey, STR, hasLastStand, isImmune, MARCH_COST } = require('./blowtable.js');
-const { threatMap } = require('./threat.js');
+const { threatMap, replyEstimate } = require('./threat.js');
 const sk = s => s.replace(/-/g, 'm').replace(',', '_');
 
 function buildModel(state, T, pool, opts) {
@@ -48,7 +52,7 @@ function buildModel(state, T, pool, opts) {
   const hit = (rid, dmg, v, unit) => push(onTarget, rid, [dmg, v, unit]);
 
   for (const r of reds) {
-    m.addVar(Y(r), { binary: true, obj: STR(r), ub: opts.kills && !opts.kills.has(r.id) ? 0 : 1 });
+    m.addVar(Y(r), { binary: true, obj: STR(r) + (opts.bounty ? opts.bounty(r) : 0), ub: opts.kills && !opts.kills.has(r.id) ? 0 : 1 });
     m.addVar(TAU(r), { lb: 0, ub: H });
     m.addCon('alive' + r.id, [[1, TAU(r)], [H, Y(r)]], '>=', H);   // an unkilled red lives to the horizon
   }
@@ -424,6 +428,17 @@ function buildModel(state, T, pool, opts) {
   }
   // orders and training
   m.addCon('orders', T.blows.map(b => [b.mv + 1, X(b)]).concat(T.chains.map(c => [1, C(c)])), '<=', pool);
+  // several pools at once: a state carrying `pools` ({key: orders}) with a
+  // `pool` key on each acting unit keeps every pool within its own budget on
+  // top of the total — a team turn, where each player spends their own
+  if (state.pools) {
+    const poolOf = id => E.unitById(state, id).pool;
+    for (const k of Object.keys(state.pools)) {
+      const terms = T.blows.filter(b => poolOf(b.unit) === k).map(b => [b.mv + 1, X(b)])
+        .concat(T.chains.filter(c => poolOf(c.unit) === k).map(c => [1, C(c)]));
+      if (terms.length) m.addCon('orders_' + k, terms, '<=', state.pools[k]);
+    }
+  }
   const marchBlows = T.blows.filter(b => b.march);
   if (marchBlows.length) {
     const byU = new Map();
@@ -440,11 +455,28 @@ function buildModel(state, T, pool, opts) {
   // it, priced against its home (threat.js). A seat safer than home is a
   // small reward, a seat in reach of the whole line costs the unit's worth.
   // The map is memoised on the table: every model built on it shares one.
+  // (the bridge scales the objective by 1000 and wants integers after that,
+  // so every price is rounded to a thousandth)
   const exposeW = opts.exposeW == null ? 0 : opts.exposeW;
-  if (exposeW) {
+  if (exposeW && opts.exposeMode === 'threat') {
     if (!T.threat) T.threat = threatMap(state, { orders: opts.enemyOrders });
     for (const b of T.blows) {
-      const pen = exposeW * (T.threat.loss(b.unit, b.seat) - T.threat.loss(b.unit, homeKey.get(b.unit)));
+      const pen = Math.round(1000 * exposeW * (T.threat.loss(b.unit, b.seat) - T.threat.loss(b.unit, homeKey.get(b.unit)))) / 1000;
+      if (pen) m.addObj(X(b), -pen);
+    }
+  } else if (exposeW) {
+    // the order-limited estimate (threat.js replyEstimate): a seat is priced
+    // by whether the enemy can afford to kill the unit there, at the hp the
+    // blow's counter leaves it, relative to the best it could do by not
+    // attacking at all — its cheapest rest seat, home included
+    if (!T.est) T.est = opts.estimate || replyEstimate(state, { enemyPools: state.enemyPools, orders: opts.enemyOrders, ordW });
+    // the blow's own target dies if the blow is taken (the kill rows), so
+    // it never strikes or shuts this seat: priced without it. What OTHER
+    // blows kill is the solver's (solve.js re-prices on the kill set)
+    for (const b of T.blows) {
+      const u = E.unitById(state, b.unit);
+      const skip = new Set([b.target].concat((b.coll || []).map(c => c.id)));
+      const pen = Math.round(1000 * exposeW * (T.est.price(b.unit, b.seat, Math.max(1, u.hp - (b.counter || 0)), skip) - T.est.rest(b.unit).price)) / 1000;
       if (pen) m.addObj(X(b), -pen);
     }
   }

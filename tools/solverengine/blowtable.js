@@ -171,8 +171,11 @@ function blowTable(state, opts) {
       for (const b of kept) { b.id = blows.length; couple(u, b); blows.push(b); }
     }
     // rout paths: standing on dead red p's tile, what can u hit adjacent to p?
+    // The kill that got u there spent any loaded crit (Unit.cs:10423), so the
+    // chain hits are priced without it.
     if (canRout(u) && !isSiege(u)) {
       const water = !!info(u).bWater;
+      const wu = E.unitById(work, u.id), crit0 = wu.crit; wu.crit = false;
       for (const p of reds) {
         if (isImmune(p, 'EFFECTUNIT_ROUT')) continue;
         const pt = E.tileAt(state, p.q, p.r);
@@ -183,6 +186,7 @@ function blowTable(state, opts) {
           chains.push({ id: chains.length, unit: u.id, from: p.id, target: h.target, dmg: h.dmg, counter: h.counter, coll: h.coll, push: h.push });
         }
       }
+      wu.crit = crit0;
     }
   }
   // PANIC with no escape DISARMS the target (-20% strength for the rest of the

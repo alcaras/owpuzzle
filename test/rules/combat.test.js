@@ -257,3 +257,120 @@ test('a leader effect makes the unit a general (Unit.cs:2274 hasGeneral)', () =>
   assert.equal(g.red().general, true, 'COMMANDER_LEADER implies an attached general');
   assert.equal(mods(g, g.blue(), g.red())['att:vs general'], 25, 'so heckler applies');
 });
+
+// ---- critical hits: a pre-rolled flag the attack spends ----
+
+test('a loaded crit doubles the blow [Unit.attackUnitDamage, Unit.cs:9135]', () => {
+  const plain = setup(`
+    blue AXEMAN 0,0
+    red ARCHER 1,0
+  `);
+  const loaded = setup(`
+    blue AXEMAN 0,0 crit
+    red ARCHER 1,0
+  `);
+  assert.equal(damage(loaded, loaded.blue(), loaded.red()), 2 * damage(plain, plain.blue(), plain.red()));
+  assert.equal(E.previewAttack(loaded.state, loaded.blue().id, loaded.red().id).crit, true);
+  assert.equal(E.previewAttack(plain.state, plain.blue().id, plain.red().id).crit, false);
+});
+
+test('no crit against a critical-immune target [Unit.criticalChanceVs, Unit.cs:6566-6572]', () => {
+  const g = setup(`
+    blue AXEMAN 0,0 crit
+    red ARCHER 1,0 promo=EFFECTUNIT_SWORD_OF_THE_GODS
+  `);
+  const plain = setup(`
+    blue AXEMAN 0,0
+    red ARCHER 1,0 promo=EFFECTUNIT_SWORD_OF_THE_GODS
+  `);
+  assert.equal(damage(g, g.blue(), g.red()), damage(plain, plain.blue(), plain.red()));
+  assert.equal(E.previewAttack(g.state, g.blue().id, g.red().id).crit, false);
+});
+
+test('the attack spends the crit, immune target or not [Unit.attackTile, Unit.cs:10422-10423]', () => {
+  const g = setup(`
+    blue ARCHER 0,0 crit
+    red AXEMAN 2,0 promo=EFFECTUNIT_SWORD_OF_THE_GODS hp=100
+    red AXEMAN 0,2 hp=100
+  `, { orders: 20 });
+  assert.equal(g.unit(g.blue()).crit, true);
+  g.attack(g.blue(), g.red(0));
+  assert.equal(g.unit(g.blue()).crit, false, 'spent on an immune target too');
+});
+
+test('collateral hits never crit [Unit.attackTile bTargetTile, Unit.cs:10418]', () => {
+  // an onager fires a splash pattern; the tile behind takes collateral
+  const g = setup(`
+    blue ONAGER 0,0 unlimbered crit
+    red AXEMAN 2,0 hp=100
+    red AXEMAN 3,0 hp=100
+  `);
+  const plain = setup(`
+    blue ONAGER 0,0 unlimbered
+    red AXEMAN 2,0 hp=100
+    red AXEMAN 3,0 hp=100
+  `);
+  const pv = E.previewAttack(g.state, g.blue().id, g.red(0).id);
+  const pv0 = E.previewAttack(plain.state, plain.blue().id, plain.red(0).id);
+  assert.equal(pv.damage, 2 * pv0.damage, 'the targeted tile is doubled');
+  if (pv0.collateral.length) {
+    assert.deepEqual(pv.collateral, pv0.collateral, 'the tiles beside it are not');
+  }
+});
+
+test('a limbered siege unit holds no crit; fortifying drops one [Unit.cs:3411-3414, 2830-2836]', () => {
+  const siege = setup(`
+    blue ONAGER 0,0 crit
+    red AXEMAN 2,0
+  `);
+  assert.equal(siege.blue().crit, false);
+  const f = setup(`
+    blue AXEMAN 0,0 crit
+    red ARCHER 3,0
+  `);
+  f.act({ type: 'fortify', unit: f.blue().id });
+  assert.equal(f.unit(f.blue()).crit, false);
+});
+
+// Family: the family's opinion of the player rides on every unit of that
+// family as an effect (Unit.cs:4352; opinionFamily.xml: Friendly +10%), and
+// fighting on the family's own land under the unit's own player is worth
+// FAMILY_TERRITORY_MODIFIER on the attack from that tile (Unit.cs:8907) and
+// on the defence of it (Unit.cs:9017). Measured on turn 74 of a real game:
+// a spearman with both read 6.0 attack against 6.0 defence and dealt 6.
+test('family: the opinion effect and the territory modifier lift a spearman\'s blow from 5 to 6 [Unit.cs:4352, 6964, 8907, 9017]', () => {
+  const plain = setup(`
+    blue SPEARMAN 0,0
+    red SPEARMAN 1,0
+  `);
+  const d0 = E.previewAttack(plain.state, plain.state.units[0].id, plain.state.units[1].id).damage;
+  const fam = setup(`
+    blue SPEARMAN 0,0
+    red SPEARMAN 1,0
+  `);
+  const u = fam.state.units[0];
+  u.family = 'FAMILY_DIDONIAN'; u.promotions = ['EFFECTUNIT_OPINIONFAMILY_FRIENDLY'];
+  const home = Object.values(fam.state.tiles).find(t => t.q === 0 && t.r === 0);
+  home.owner = 0; home.family = 'FAMILY_DIDONIAN';
+  const d1 = E.previewAttack(fam.state, u.id, fam.state.units[1].id).damage;
+  assert.ok(d1 > d0, `family lifts the blow: ${d0} -> ${d1}`);
+  // the territory counts only under the unit's own player
+  home.owner = 1;
+  const d2 = E.previewAttack(fam.state, u.id, fam.state.units[1].id).damage;
+  assert.ok(d2 < d1, 'another owner\'s land gives no territory bonus');
+});
+
+// a tile answers an attack with its best defender: a scout sharing a tile
+// with a spearman cannot be picked off while the spearman stands
+test('a stacked scout is not a target while its tile has a better defender [Tile.defendingUnit, Tile.cs:10697; Unit.isHigherTileDefender, Unit.cs:6262]', () => {
+  const g = setup(`
+    blue SWORDSMAN 0,0
+    red SPEARMAN 1,0
+    red SCOUT 1,0
+  `);
+  const me = g.state.units[0], spear = g.state.units[1], scout = g.state.units[2];
+  const targets = E.attackTargets(g.state, me).map(t => t.id);
+  assert.deepEqual(targets, [spear.id], 'only the spearman answers');
+  spear.hp = 0;
+  assert.deepEqual(E.attackTargets(g.state, me).map(t => t.id), [scout.id], 'alone, the scout is the target');
+});

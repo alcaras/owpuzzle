@@ -111,10 +111,26 @@ function hasCpsat() {
   try { execFileSync(pythonPath(), ['-c', 'import ortools.sat.python.cp_model'], { stdio: 'ignore' }); return true; }
   catch (e) { return false; }
 }
-function solveCpsat(model, opts, hints, assumptions) {
+function solveCpsat(model, opts, hints, assumptions, retry) {
   if (model.timeScale && opts.ts == null) opts.ts = model.timeScale;
   const payload = JSON.stringify({ sense: model.sense, vars: model.vars, cons: model.cons, opts, hints: hints || null, assumptions: assumptions || null });
-  const res = execFileSync(pythonPath(), [path.join(__dirname, 'cpsat.py')], { input: payload, maxBuffer: 1 << 28, stdio: ['pipe', 'pipe', 'inherit'] });
+  // the model goes over as a file, not down stdin: a multi-megabyte payload
+  // through execFileSync's stdin pipe hung twice on macOS (the child sat for
+  // hours before its first read completed, node in kevent), and never once
+  // as a file
+  const os = require('os');
+  const tmp = path.join(os.tmpdir(), 'cpsat-' + process.pid + '-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.json');
+  fs.writeFileSync(tmp, payload);
+  let res;
+  try { res = execFileSync(pythonPath(), [path.join(__dirname, 'cpsat.py'), tmp], { maxBuffer: 1 << 28, stdio: ['ignore', 'pipe', 'inherit'] }); }
+  catch (e) {
+    // OR-tools' hint-repair worker (repair_hint + hint_conflict_limit) has
+    // died on a short solve with "Check failed: heuristics.fixed_search";
+    // the hints are a convenience, so the same model goes once more without
+    if (hints && !retry) { process.stderr.write('cpsat: solver died with hints, retrying without\n'); const o = { ...opts }; delete o.hint_conflict_limit; return solveCpsat(model, o, null, assumptions, true); }
+    throw e;
+  }
+  finally { try { fs.unlinkSync(tmp); } catch (e) { /* gone */ } }
   const out = JSON.parse(res.toString());
   const values = new Map(Object.entries(out.values));
   return { status: out.status, obj: out.obj, bound: out.bound, values, core: out.core };

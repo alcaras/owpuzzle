@@ -433,6 +433,12 @@
 
     var from = tileAt(state, fromTile.q, fromTile.r);
     var to = toTile ? tileAt(state, toTile.q, toTile.r) : null;
+    // fighting on your own family's land: FAMILY_TERRITORY_MODIFIER when the
+    // tile's family is the unit's and the tile is the unit's player's
+    // (Unit.familyTerritoryModifier, Unit.cs:6964; on the attack from the
+    // tile attacked from, Unit.cs:8907). A board carries `family` on units
+    // and tiles when it knows them; puzzles carry none
+    if (from && from.family && from.family === att.family && from.owner === att.player) add('family territory', G.FAMILY_TERRITORY_MODIFIER || 0);
 
     if (from && to) {
       var flank = sumEffect(att, 'iFlankingAttackModifier');
@@ -551,6 +557,8 @@
     addPerEffect('iStrengthModifier');
     addPerEffect('iDefenseModifier', ' (defense)');
     var to = tileAt(state, toTile.q, toTile.r);
+    // and on the defence, from the tile defended (Unit.cs:9017)
+    if (to && to.family && to.family === def.family && to.owner === def.player) add('family territory', G.FAMILY_TERRITORY_MODIFIER || 0);
 
     var adjSame = sumEffect(def, 'iAdjacentSameModifier');
     if (adjSame !== 0 && adjacentFriendSame(state, def, to)) add('adjacent same unit', adjSame);
@@ -740,6 +748,13 @@
   function moveCostInto(state, u, from, to) {
     var t = tileAt(state, to.q, to.r);
     if (!t) return Infinity;
+    // A hostile city with hit points is walled: its garrison, shielded by the
+    // walls (every blow at the tile lands on the city while it has hp,
+    // Unit.cs:8595-8606, 10430-10450), blocks entry as any blocking unit does
+    // (Tile.canUnitOccupy, Tile.cs:10483), and taking the tile is a siege the
+    // board does not plan. `cityHp` is the board's word for it; puzzles set
+    // none and keep "move onto the city" as capture.
+    if (t.city != null && t.city !== u.player && t.cityHp > 0) return Infinity;
     if (info(u).bWater) {
       // ships sail water only
       if (!isWaterTile(t)) return Infinity;
@@ -1217,17 +1232,39 @@
     return r + rangeChangeOf(state, pos.q, pos.r);
   }
 
+  // The unit that meets an attack on a tile (Tile.defendingUnit, Tile.cs:
+  // 10697; Unit.isHigherTileDefender, Unit.cs:6262-6276): of the living
+  // units there, one that can damage beats one that cannot, then the higher
+  // defence where it stands. A scout under a spearman is not a target.
+  function tileDefender(state, q, r, viewer) {
+    var best = null;
+    unitsAt(state, q, r).forEach(function (o) {
+      if (o.hp <= 0 || (viewer != null && o.player === viewer)) return;
+      if (!best) { best = o; return; }
+      var a = canDamage(o), b = canDamage(best);
+      if (a !== b) { if (a) best = o; return; }
+      var da = 0, db = 0;
+      try { da = defendStrength(state, o, { q: q, r: r }, null, null); db = defendStrength(state, best, { q: q, r: r }, null, null); } catch (e) { /* keep best */ }
+      if (da > db) best = o;
+    });
+    return best;
+  }
+
   function attackTargets(state, u) {
     if (!canAttack(state, u) || !canDamage(u)) return [];
-    var out = [];
+    var out = [], seen = {};
     state.units.forEach(function (t) {
       if (t.hp <= 0 || t.player === u.player) return;
-      var dist = hexDistance(u, t);
+      var k = key(t.q, t.r);
+      if (seen[k]) return;
+      seen[k] = true;
+      var def = tileDefender(state, t.q, t.r, u.player) || t;
+      var dist = hexDistance(u, def);
       if (isMelee(u)) {
-        if (dist === 1) out.push(t);
-      } else if (dist >= rangeMin(u) && dist <= effectiveRange(state, u, u, t) &&
-                 !isShotObstructed(state, u, t)) {
-        out.push(t);
+        if (dist === 1) out.push(def);
+      } else if (dist >= rangeMin(u) && dist <= effectiveRange(state, u, u, def) &&
+                 !isShotObstructed(state, u, def)) {
+        out.push(def);
       }
     });
     return out;
@@ -1850,7 +1887,7 @@
         // damage taken THIS TURN; measuring from iHPMax instead reported the
         // wounds the author painted into the board as the player's own losses
         hp0: hp0,
-        promotions: u.promotions || [], fortifyTurns: u.fortifyTurns || 0,
+        promotions: u.promotions || [], fortifyTurns: u.fortifyTurns || 0, family: u.family || undefined,
         cooldown: null, steps: 0, general: hasGeneral(u), name: u.name || null,
         march: false, unlimbered: DATA.units[u.type].bUnlimber ? !!u.unlimbered : undefined,
         anchored: DATA.units[u.type].bAnchor ? !!u.anchored : undefined,
@@ -1915,7 +1952,7 @@
     modify: modify, tileAt: tileAt, unitAt: unitAt, unitsAt: unitsAt, unitById: unitById,
     canBothOccupy: canBothOccupy, canEndOn: canEndOn,
     effectsOf: effectsOf, isMelee: isMelee, rangeMax: rangeMax, hpMax: hpMax,
-    canAct: canAct, canMove: canMove, canAttack: canAttack, isHiddenAt: isHiddenAt,
+    canAct: canAct, canMove: canMove, canAttack: canAttack, isHiddenAt: isHiddenAt, inEnemyZOC: inEnemyZOC, attackStrength: attackStrength, defendStrength: defendStrength, tileDefender: tileDefender,
     canMarch: canMarch, doMarch: doMarch, canUnlimber: canUnlimber, doUnlimber: doUnlimber,
     canSwap: canSwap, doSwap: doSwap,
     canAnchor: canAnchor, doAnchor: doAnchor, waterControlled: waterControlled,

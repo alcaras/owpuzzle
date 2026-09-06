@@ -14,7 +14,12 @@ OS = 1000     # objective scale
 
 
 def main():
-    data = json.load(sys.stdin)
+    # the model: a file named on the command line, else stdin
+    if len(sys.argv) > 1:
+        with open(sys.argv[1]) as f:
+            data = json.load(f)
+    else:
+        data = json.load(sys.stdin)
     opts = data.get('opts', {})
     TS = int(opts.get('ts', 100))
     m = cp_model.CpModel()

@@ -29,7 +29,8 @@
 const E = require('./engine.js');
 const { Model, solve } = require('./lp.js');
 const M2 = require('./model.js');
-const { blowTable, unkey, STR, canPush, isImmune } = require('./blowtable.js');
+const { blowTable, key, unkey, STR, canPush, isImmune } = require('./blowtable.js');
+const { replyEstimate } = require('./threat.js');
 
 // ---------------------------------------------------------------- two-phase
 // the binary rows of the full model. D_r (total damage) is a pure sum of
@@ -114,7 +115,7 @@ async function solveWave(state, T, pool, opts, say) {
   let best = null, bestMaster = null;
   for (let seed = 1; seed <= n; seed++) {
     const t0 = Date.now();
-    const r1 = await solve(master, { backend: 'cpsat', time_limit: Math.round(secs * share / n), workers: opts.workers || 10, seed, hints: mh, hint_conflict_limit: (opts.greedy || seed > 1) ? 20 : undefined });
+    const r1 = await solve(master, { backend: 'cpsat', time_limit: Math.round(secs * share / n), workers: opts.workers || 10, seed: seed + (opts.seed || 0), hints: mh, hint_conflict_limit: (opts.greedy || seed > 1) ? 20 : undefined });
     if (!bestMaster || r1.obj > bestMaster.obj) { bestMaster = r1; mh = {}; for (const [k, v] of r1.values) mh[k] = v; }
     const K = new Set(); for (const [k, v] of r1.values) if (/^y\d+$/.test(k) && v) K.add(+k.slice(1));
     say(`   master${n > 1 ? ' #' + seed : ''}: ${r1.status} ${((r1.obj || 0)).toFixed(0)} (bound ${(r1.bound || 0).toFixed(0)}) in ${Date.now() - t0}ms, K = ${K.size} reds`);
@@ -128,34 +129,86 @@ async function solveWave(state, T, pool, opts, say) {
     // let the sub complete the timing — hinting every master binary drags in
     // ordering/last-blow literals the master never constrained
     const hints = {}; if (opts.hint !== false) for (const [k, v] of r1.values) if (/^[xcy]\d/.test(k) && sub.byName.has(k)) hints[k] = v;
-    const r2 = await solve(sub, { backend: 'cpsat', time_limit: Math.round(secs * (1 - share) / n), workers: opts.workers || 10, hints, hint_conflict_limit: opts.hint !== false ? 50 : undefined });
+    const r2 = await solve(sub, { backend: 'cpsat', time_limit: Math.round(secs * (1 - share) / n), workers: opts.workers || 10, seed: opts.seed || undefined, hints, hint_conflict_limit: opts.hint !== false ? 50 : undefined });
     say(`   sub: ${T2.blows.length} blows, ${sub.cons.length} rows, ${r2.status} ${(r2.obj || 0).toFixed(0)} (bound ${(r2.bound || 0).toFixed(0)}) in ${Date.now() - t1}ms`);
     if (!best || (r2.obj || 0) > (best.sol.obj || 0)) best = { T: T2, m: sub, sol: r2 };
   }
   return best;
 }
 
+// order pools (model.js): the state's `pools` ({key: orders}) and each
+// unit's `pool` key. The model keeps every pool within budget; after the
+// engine has played a line, its spend is charged back pool by pool
+function chargePools(state, line) {
+  if (!state.pools) return undefined;
+  const pools = { ...state.pools };
+  let s = state;
+  for (const a of line) {
+    const u = E.unitById(s, a.unit);
+    const s2 = E.applyAction(s, a);
+    if (u && u.pool != null) pools[u.pool] -= s.orders - s2.orders;
+    s = s2;
+  }
+  return pools;
+}
+
 // ---------------------------------------------------------------- driver
 // after the plan: any attack still affordable that kills, or failing that
 // hurts the most
-function mopUp(state) {
+// Kills only: every objective the engine scores is a kill (maxKill,
+// killList, killTarget), so a blow that kills nothing is worth nothing
+// and the order it costs is worth keeping. `damageOnly` (the experimental
+// mode) still takes the most hurtful blow left.
+function mopUp(state, opts) {
+  opts = opts || {};
   let s = state; const line = [];
   for (;;) {
     if (s.orders <= 0) break;
     let best = null;
     for (const u of s.units) {
       if (u.player !== 0 || u.hp <= 0 || !E.canAttack(s, u)) continue;
+      if (s.pools && (s.pools[u.pool] || 0) < 1) continue;
       for (const t of E.attackTargets(s, u)) {
+        if (opts.kills && !opts.kills.has(t.id)) continue;   // a fixed kill set: nothing outside it
         let d = 0; try { d = E.attackUnitDamage(s, u, { q: u.q, r: u.r }, t); } catch (e) { continue; }
+        if (d < t.hp && !opts.damageOnly) continue;
         const score = (d >= t.hp ? 100000 + STR(t) : 0) + d * 10;
-        if (!best || score > best.score) best = { score, unit: u.id, target: t.id };
+        if (!best || score > best.score) best = { score, unit: u.id, target: t.id, pool: u.pool };
       }
     }
     if (!best) break;
     try { s = E.applyAction(s, { type: 'attack', unit: best.unit, target: best.target }); line.push({ type: 'attack', unit: best.unit, target: best.target }); }
     catch (e) { break; }
+    if (s.pools) s = { ...s, pools: { ...s.pools, [best.pool]: s.pools[best.pool] - 1 } };
   }
   return { state: s, line };
+}
+
+// the retreat pass: every unit that did not act walks to the seat the
+// estimate prices lowest, its walk included, if that beats standing where it
+// is. The model's only action is a blow; this is the move without one.
+function retreatPass(state, est, opts) {
+  opts = opts || {};
+  const ordW = opts.ordW || 0;
+  let s = state; const line = [], notes = [];
+  const idle = s.units.filter(u => u.player === 0 && u.hp > 0 && !u.cooldown && !u.steps && STR(u) > 0);
+  for (const u0 of idle) {
+    const u = E.unitById(s, u0.id);
+    if (!u || u.cooldown || u.steps) continue;
+    const home = key(u.q, u.r), pHome = est.price(u.id, home, u.hp);
+    if (pHome <= 0) continue;
+    const seats = E.reachableTiles(s, u).filter(t => !(s.pools && (s.pools[u.pool] || 0) < t.orders))
+      .map(t => ({ t, p: est.price(u.id, key(t.q, t.r), u.hp) + ordW * t.orders }))
+      .filter(x => x.p < pHome - 1e-9).sort((a, b) => a.p - b.p);
+    for (const x of seats) {
+      let s2; try { s2 = E.applyAction(s, { type: 'move', unit: u.id, q: x.t.q, r: x.t.r }); } catch (e) { continue; }
+      if (s.pools) s2 = { ...s2, pools: { ...s.pools, [u.pool]: s.pools[u.pool] - (s.orders - s2.orders) } };
+      s = s2; line.push({ type: 'move', unit: u.id, q: x.t.q, r: x.t.r });
+      notes.push(`${E.nameOf(u)}#${u.id} retreats ${home} -> ${x.t.q},${x.t.r} (${(pHome / 10).toFixed(1)} -> ${(x.p / 10).toFixed(1)} STR at risk, ${x.t.orders} orders)`);
+      break;
+    }
+  }
+  return { state: s, line, notes };
 }
 
 async function planWaves(state, opts) {
@@ -178,6 +231,7 @@ async function planWaves(state, opts) {
     const before = E.strKilledOf(s), ordBefore = s.orders;
     const dbg = opts.verbose ? [] : null;
     const ex = M2.executePlan(s, plan, dbg);
+    if (s.pools) ex.state = { ...ex.state, pools: chargePools(s, ex.line) };
     if (dbg) for (const l of dbg) say('   ' + l);
     const planned = plan.kills.reduce((a, r) => a + STR(r), 0);
     if (opts.onShortfall && E.strKilledOf(ex.state) - before < planned) opts.onShortfall({ wave: w, state: s, T: Tw, plan, sol });
@@ -185,9 +239,15 @@ async function planWaves(state, opts) {
     say(`   executed: +${(E.strKilledOf(s) - before) / 10} STR for ${ordBefore - s.orders} orders (total ${E.strKilledOf(s) / 10}, ${s.orders} orders left)`);
     if (ex.line.length === 0) break;
   }
-  const mu = mopUp(s);
+  const mu = mopUp(s, opts);
   if (mu.line.length) say(`mop-up: +${(E.strKilledOf(mu.state) - E.strKilledOf(s)) / 10} STR in ${s.orders - mu.state.orders} orders`);
+  if (s.pools && mu.line.length) mu.state = { ...mu.state, pools: chargePools(s, mu.line) };
   s = mu.state; line.push(...mu.line);
+  if (opts.estimate && (opts.retreat || (opts.exposeW && opts.retreat !== false))) {
+    const rp = retreatPass(s, opts.estimate, opts);
+    for (const n of rp.notes) say('   ' + n);
+    s = rp.state; line.push(...rp.line);
+  }
   return { state: s, line };
 }
 
@@ -224,13 +284,48 @@ async function pushPrefixes(state) {
 
 // opts: seconds, quiet, verbose, branch (push prefixes; default on), branchK
 // (prefixes planned in full, default 3), waves, workers, twoPhaseAt,
-// masterShare, restarts, hint, greedy, pareto, topSeats, onShortfall
+// masterShare, restarts, hint, greedy, pareto, topSeats, onShortfall, and
+// the model's (ordW, counterW, exposeW, exposeMode, enemyOrders, bounty);
+// retreat (default on with exposeW: idle units walk to safer seats); seed
+// (added to CP-SAT's, for a second opinion from the same budget)
+// The enemy the estimate prices is the enemy the line LEAVES: every unit
+// the line kills strikes nothing and shuts nothing next turn. Each blow's
+// own target is excluded exactly (model.js); for what the rest of the line
+// kills, the position is solved, the dead taken out of the estimate, and
+// solved again, until the kill set holds (three rounds at most). The first
+// estimate that counted the spearmen a line was about to kill as the
+// strikers on its seats walked three spearmen away from a two-kill line.
 async function solvePosition(state, opts) {
+  opts = opts || {};
+  if ((opts.exposeW || opts.retreat) && opts.exposeMode !== 'threat' && !opts.estimate) {
+    const estOn = dead => {
+      const st = dead.size ? E.cloneState(state) : state;
+      if (dead.size) for (const u of st.units) if (dead.has(u.id)) u.hp = 0;
+      return replyEstimate(st, { enemyPools: state.enemyPools, orders: opts.enemyOrders, ordW: opts.ordW, unseen: state.unseenByEnemy });
+    };
+    const say = opts.quiet ? () => {} : (...a) => console.log(...a);
+    let dead = new Set(), r = null;
+    for (let round = 0; round < (opts.exposeW ? (opts.repriceRounds == null ? 3 : opts.repriceRounds) : 1); round++) {
+      r = await solveOnce(state, { ...opts, estimate: estOn(dead) });
+      const now = new Set(r.state.units.filter(u => u.player !== 0 && u.hp <= 0 && E.unitById(state, u.id).hp > 0).map(u => u.id));
+      const same = now.size === dead.size && [...now].every(id => dead.has(id));
+      if (same) break;
+      say(`re-price: the line kills ${now.size} (${[...now].map(id => E.nameOf(E.unitById(state, id)) + '#' + id).join(', ')}); pricing the seats without them`);
+      dead = now;
+      r.reprice = round + 1;
+    }
+    return r;
+  }
+  return solveOnce(state, opts);
+}
+
+async function solveOnce(state, opts) {
   opts = opts || {};
   const t0 = Date.now();
   const say = opts.quiet ? () => {} : (...a) => console.log(...a);
   const cands = [{ state, line: [], label: 'no push' }];
   if (opts.branch !== false) cands.push(...await pushPrefixes(state));
+  if (state.pools) for (const c of cands) if (c.line.length) c.state = { ...c.state, pools: chargePools(state, c.line) };
   if (cands.length > 1) {
     // screen by the LP relaxation of the timing-free master — the same
     // relaxation the two-phase solve trusts to pick a kill set
@@ -259,7 +354,9 @@ async function solvePosition(state, opts) {
   const lost = state.units.filter(u => u.player === 0).reduce((a, u) => {
     const v = E.unitById(s, u.id); return a + (v.hp <= 0 ? STR(u) : 0);
   }, 0);
-  return { state: s, line: best.line, str: best.str, orders: state.orders - s.orders, lostStr: lost, ms: Date.now() - t0, label: best.label };
+  const est = opts.estimate ? opts.estimate.estimate(s) : null;
+  return { state: s, line: best.line, str: best.str, orders: state.orders - s.orders, lostStr: lost, ms: Date.now() - t0, label: best.label,
+    estimate: est ? { str: est.str, spent: est.spent, kills: est.kills.length, lambda: est.lambda } : null };
 }
 
-module.exports = { solvePosition, planWaves, solveWave, pushPrefixes, binaryMaster, restrictTable, greedyHint, mopUp, blowTable, buildModel: M2.buildModel, extractPlan: M2.extractPlan, executePlan: M2.executePlan };
+module.exports = { solvePosition, planWaves, solveWave, pushPrefixes, binaryMaster, restrictTable, greedyHint, mopUp, retreatPass, chargePools, replyEstimate, blowTable, buildModel: M2.buildModel, extractPlan: M2.extractPlan, executePlan: M2.executePlan };

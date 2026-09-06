@@ -351,3 +351,50 @@ test('a negative bounty cancels a red from the objective [model.js addVar obj = 
     'the target keeps its full worth');
   assert.equal(m.byName.get('y' + other.id).obj, 0, 'every other red is worth nothing');
 });
+
+// committed seats: a unit the enemy cannot kill this turn but can trap and
+// finish the turn after is priced as lost
+test('reply estimate: a seat with no way out beside a walled city and a ZOC unit is committed and priced as the unit; the price lifts when the locker leaves', () => {
+  const g = setup(`
+    blue SLINGER 0,0
+    red WARRIOR 1,0
+    red SLINGER -1,1
+  `, { orders: 6 });
+  const st = g.state;
+  // a walled hostile city at (0,-1): not enterable, projects ZOC
+  const city = Object.values(st.tiles).find(t => t.q === 0 && t.r === -1);
+  city.terrain = 'TERRAIN_URBAN'; city.urban = true; city.road = true; city.owner = 1; city.city = 1; city.cityHp = 20;
+  const est = TH.replyEstimate(st, { orders: 6 });
+  const me = st.units[0];
+  assert.equal(est.killCost(me.id, '0,0', me.hp), null, 'a warrior and a slinger cannot kill 20 hp in one turn');
+  assert.ok(est.locked(me.id, '0,0'), 'every neighbour is in their zone: no legal step');
+  assert.ok(est.committed(me.id, '0,0', me.hp));
+  assert.equal(est.price(me.id, '0,0', me.hp), TH.STR(me));
+  const e = est.estimate(st);
+  assert.equal(e.kills.length, 0); assert.equal(e.committed.length, 1); assert.equal(e.committedStr, TH.STR(me));
+  // the lockers gone: a way out, no commitment
+  const s2 = E.cloneState(st); for (const u of s2.units) if (u.player === 1 && u.type === 'UNIT_SLINGER') u.hp = 0;
+  const est2 = TH.replyEstimate(s2, { orders: 6 });
+  assert.ok(!est2.locked(me.id, '0,0'));
+});
+
+// the enemy a seat is priced against is the enemy the line leaves: a blow's
+// own target never strikes back (it dies if the blow is taken), so a seat
+// beside the only enemy in reach is free once that enemy is the target
+test('reply estimate: a seat priced without the blow\'s target is free when that target was the only striker; the model prices blows that way', () => {
+  const g = setup(`
+    blue SWORDSMAN 0,0 hp=4
+    red SPEARMAN 3,0
+  `, { orders: 6 });
+  const st = g.state;
+  const est = TH.replyEstimate(st, { orders: 10 });
+  const me = st.units[0], red = st.units[1];
+  assert.ok(est.price(me.id, '2,0', me.hp) > 0, 'beside the spearman the seat is priced');
+  assert.equal(est.price(me.id, '2,0', me.hp, new Set([red.id])), 0, 'without the target nobody strikes it');
+  const T = B.blowTable(st);
+  const m = M.buildModel(st, T, 6, { exposeW: 1, estimate: est });
+  const b = T.blows.find(x => x.target === red.id && x.seat === '2,0');
+  assert.ok(b, 'a blow from (2,0)');
+  const v = m.vars.find(x => x.name === 'x' + b.id);
+  assert.ok(v.obj >= -0.01, 'no exposure charge on the seat its own kill makes safe: ' + v.obj);
+});

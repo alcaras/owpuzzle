@@ -239,3 +239,35 @@ test('a land unit may cross controlled water but not stop on it [Tile.cs:10600-1
   assert.ok(reach.includes('3,0'),
     'but the far bank beyond the water must be reachable, got: ' + reach.join(' '));
 });
+
+test('fatigue: a player unit is floored at UNIT_MIN_BASE_FATIGUE — a mercenary with iFatigue 1 gets two steps, four force-marching [Unit.getFatigueLimit, Unit.cs:2703]', () => {
+  const g = setup(`
+    blue PELTAST_2 0,0
+    blue WARRIOR 3,0
+  `);
+  const [pelt, war] = g.state.units;
+  assert.equal(E.DATA.units.UNIT_PELTAST_2.iFatigue, 1);
+  assert.equal(E.fatigueLimit(pelt), E.DATA.globals.UNIT_MIN_BASE_FATIGUE);
+  assert.equal(E.fatigueLimit(war), E.DATA.globals.UNIT_FATIGUE_LIMIT);
+  // FORCEMARCH_DOUBLE_FATIGUE: a marching unit may take twice the limit (Unit.canActMove, Unit.cs:7469)
+  pelt.march = true; g.state.orders = 10;
+  pelt.steps = 2 * E.DATA.globals.UNIT_MIN_BASE_FATIGUE - 1;
+  assert.ok(E.canMove(g.state, pelt), 'the fourth step is allowed');
+  pelt.steps = 2 * E.DATA.globals.UNIT_MIN_BASE_FATIGUE;
+  assert.ok(!E.canMove(g.state, pelt), 'a fifth is not');
+});
+
+test('a hostile city with hit points cannot be entered or passed; at 0 hp it can [Tile.canUnitOccupy, Tile.cs:10483; Unit.cs:8595-8606]', () => {
+  const walled = setup(`
+    blue SLINGER 0,0
+    red ARCHER 4,-4
+  `);
+  const city = walled.state.tiles['0,1'] || Object.values(walled.state.tiles).find(t => t.q === 0 && t.r === 1);
+  city.terrain = 'TERRAIN_URBAN'; city.urban = true; city.road = true; city.owner = 1; city.city = 1; city.cityHp = 12;
+  const u = walled.state.units[0];
+  const reach = E.reachableTiles(walled.state, u).map(t => t.q + ',' + t.r);
+  assert.ok(!reach.includes('0,1'), 'the walled city is not a destination');
+  assert.deepEqual(E.movePath(walled.state, u, 0, 1), []);
+  city.cityHp = 0;
+  assert.ok(E.reachableTiles(walled.state, u).map(t => t.q + ',' + t.r).includes('0,1'), 'at 0 hp the tile opens');
+});
