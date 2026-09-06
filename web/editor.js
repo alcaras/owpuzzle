@@ -346,7 +346,7 @@
   setTimeout(function () { refreshPromoList(); renderUnitGrid(); layoutPanel(false); refreshModeLine(); }, 0);
 
   // every control in the unit panel edits the selected unit as you touch it
-  ['u-side', 'u-hp', 'u-general', 'u-anchored'].forEach(function (id) {
+  ['u-side', 'u-hp', 'u-general', 'u-anchored', 'u-unlimbered'].forEach(function (id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('change', function () {
       applyPanelToSelected();
@@ -475,6 +475,7 @@
     document.getElementById('u-hp').value = u.hp == null ? '' : u.hp;
     document.getElementById('u-general').checked = !!u.general;
     document.getElementById('u-anchored').checked = !!u.anchored;
+    document.getElementById('u-unlimbered').checked = !!u.unlimbered;
     sel.value = u.type;
     refreshPromoList();
     Array.prototype.forEach.call(promoList.querySelectorAll('input'), function (cb) {
@@ -498,6 +499,12 @@
       || promos.some(function (pr) { return /_LEADER$/.test(pr); }) || undefined;
     u.anchored = (document.getElementById('u-anchored').checked
       && E.DATA.units[sel.value].bAnchor) || undefined;
+    // Set-up siege. Gated on bUnlimber exactly as anchoring is on bAnchor: a
+    // flag on a unit that cannot carry it is a lie the engine drops on load
+    // (loadPuzzle only reads `unlimbered` when the type has bUnlimber), and
+    // the board would show a marker the fight does not have.
+    u.unlimbered = (document.getElementById('u-unlimbered').checked
+      && E.DATA.units[sel.value].bUnlimber) || undefined;
     render();   // the wrapped render() is what records undo history
   }
 
@@ -530,6 +537,7 @@
       hp: document.getElementById('u-hp').value,
       general: document.getElementById('u-general').checked,
       anchored: document.getElementById('u-anchored').checked,
+      unlimbered: document.getElementById('u-unlimbered').checked,
       type: sel.value,
       promos: checkedPromos(),
     };
@@ -539,6 +547,7 @@
     document.getElementById('u-hp').value = t.hp;
     document.getElementById('u-general').checked = t.general;
     document.getElementById('u-anchored').checked = t.anchored;
+    document.getElementById('u-unlimbered').checked = t.unlimbered;
     sel.value = t.type;
     refreshPromoList();
     Array.prototype.forEach.call(promoList.querySelectorAll('input'), function (cb) {
@@ -653,6 +662,7 @@
           general: document.getElementById('u-general').checked
             || promos.some(function (pr) { return /_LEADER$/.test(pr); }) || undefined,
           anchored: (document.getElementById('u-anchored').checked && E.DATA.units[sel.value].bAnchor) || undefined,
+          unlimbered: (document.getElementById('u-unlimbered').checked && E.DATA.units[sel.value].bUnlimber) || undefined,
         });
         // deliberately NOT selected: the panel stays a brush, so the next
         // thing you do — flip to Red, pick a different unit — configures the
@@ -711,6 +721,7 @@
         if (u.promotions) o.promotions = u.promotions;
         if (u.general) o.general = true;
         if (u.anchored) o.anchored = true;
+        if (u.unlimbered) o.unlimbered = true;
         return o;
       }),
     };
@@ -1027,6 +1038,9 @@
         else S.push('<text x="' + bx + '" y="' + (by + 1) + '" text-anchor="middle" dominant-baseline="middle" font-size="9" fill="#14161c">★</text>');
       });
       if (u.anchored) S.push('<text x="' + (x - SIZE * 0.44) + '" y="' + (y + SIZE * 0.05) + '" text-anchor="middle" font-size="13" pointer-events="none">⚓</text>');
+      // a set-up siege engine, marked like the anchor: an author needs to see
+      // at a glance which onager can actually fire on turn one
+      if (u.unlimbered) S.push('<text x="' + (x - SIZE * 0.44) + '" y="' + (y + SIZE * 0.05) + '" text-anchor="middle" font-size="13" pointer-events="none">⚙</text>');
       if (u.hp != null) S.push('<text x="' + x + '" y="' + (y + SIZE * 0.86) + '" text-anchor="middle" font-size="11" font-weight="bold" fill="#fff" stroke="' + BOARD_BG + '" stroke-width="2.5" paint-order="stroke" font-family="system-ui">' + u.hp + '</text>');
       if (i === selectedUnit) {
         S.push('<circle cx="' + x + '" cy="' + (y + SIZE * 0.24) + '" r="' + SIZE * 0.62 +
@@ -1072,7 +1086,8 @@
     });
     units = (saved.units || []).map(function (u) {
       return { player: u.player, type: u.type, q: u.q, r: u.r, hp: u.hp,
-        promotions: u.promotions, general: u.general, anchored: u.anchored };
+        promotions: u.promotions, general: u.general, anchored: u.anchored,
+        unlimbered: u.unlimbered };
     });
     targets = (saved.objective && saved.objective.kind === 'killList')
       ? (saved.objective.targets || []) : [];

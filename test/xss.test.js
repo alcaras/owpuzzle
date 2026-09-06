@@ -65,3 +65,31 @@ test('poolOrders: automatic par+slack, or the author\'s own number floored at pa
   assert.equal(E.poolOrders({ orders: 6, pool: 6 }), 6, 'a pool equal to par is legal — no slack');
   assert.equal(E.poolOrders({ orders: 6, pool: 4 }), 6, 'a pool below par is floored at par');
 });
+
+// The fingerprint must cover everything the editor can PAINT, or an author can
+// change the board after test play and the changed-board check waves it
+// through. `unlimbered` became paintable when the set-up checkbox landed
+// (2026-09-05), and a set-up siege engine is a different unit in the fight: it
+// fires on turn one, where a limbered one cannot fire at all.
+test('a set-up siege engine moves the fingerprint; a limbered one never did', () => {
+  const E = require(path.join(__dirname, '..', 'web', 'engine.js'));
+  const base = { orders: 3, radius: 2, objective: { kind: 'killAll' },
+    units: [{ player: 0, type: 'UNIT_ONAGER', q: 0, r: 0 },
+            { player: 1, type: 'UNIT_ARCHER', q: 2, r: 0 }] };
+  const setUp = JSON.parse(JSON.stringify(base)); setUp.units[0].unlimbered = true;
+  assert.notEqual(E.puzzleHash(setUp), E.puzzleHash(base),
+    'setting up an onager must read as a different fight');
+  // ...and a board with none hashes exactly as it always did — the term is
+  // only appended when set, so the library is not re-hashed wholesale
+  assert.equal(E.puzzleHash(base),
+    E.puzzleHash(Object.assign({}, base, { units: base.units.map(u =>
+      Object.assign({}, u, { unlimbered: false })) })),
+    'unlimbered:false must hash identically to absent');
+
+  // the engine only honours the flag on a type that can carry it, so the
+  // editor gates the checkbox the same way (bUnlimber, as anchored uses bAnchor)
+  // the XML gives these as 1/absent, not true/false — the editor gates on
+  // truthiness for exactly that reason
+  assert.ok(E.DATA.units.UNIT_ONAGER.bUnlimber, 'onagers set up');
+  assert.ok(!E.DATA.units.UNIT_ARCHER.bUnlimber, 'archers do not');
+});

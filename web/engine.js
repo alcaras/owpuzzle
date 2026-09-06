@@ -1588,9 +1588,15 @@
   // JSON.stringify then reports a change that never happened.
   function puzzleHash(p) {
     function tidyUnit(u) {
+      // A set-up siege engine is a different unit in the fight — it can fire on
+      // turn one, where a limbered one cannot fire at all — so it belongs in
+      // the fingerprint now that the editor can paint it (the rule above: the
+      // hash must cover everything an author can change, or they can edit
+      // after test play and the changed-board check passes). Appended only
+      // when set, so every board without one keeps the hash it has always had.
       return [u.player, u.type, u.q, u.r, u.hp == null ? -1 : u.hp,
         (u.promotions || []).slice().sort().join('+'), u.general ? 1 : 0,
-        u.anchored ? 1 : 0, u.name || ''].join(':');
+        u.anchored ? 1 : 0, u.name || ''].join(':') + (u.unlimbered ? ':setup' : '');
     }
     function tidyTile(t) {
       // road and owner change gameplay (road movement, iHomeModifier) — the
