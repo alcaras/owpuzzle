@@ -384,7 +384,10 @@ function buildModel(state, T, pool, opts) {
     m.addCon('zx' + b.id, [[1, z], [-1, X(b)]], '<=', 0);
     for (const c of b.escape) {
       const terms = [];
-      const r = E.unitAt(state, unkey(c).q, unkey(c).r);
+      // the red that holds the escape tile: a stacked tile is met by its
+      // defender (E.tileDefender), never the first unit in array order
+      const r = E.tileDefender ? E.tileDefender(state, unkey(c).q, unkey(c).r, null)
+        : E.unitAt(state, unkey(c).q, unkey(c).r);
       if (r && r.player !== 0 && r.hp > 0) {
         const a = 'a' + r.id + '_' + b.id; m.addVar(a, { binary: true }); terms.push([1, a]);
         m.addCon('al' + a, [[1, TB(b)], [-1, TAU(r)]], '<=', -G, [a]);   // still alive when the push fires

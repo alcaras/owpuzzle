@@ -98,8 +98,8 @@ function blowTable(state, opts) {
         const helper = blueDamaging.find(h => h.id !== u.id && h.type !== u.type) || blueDamaging.find(h => h.id !== u.id);
         if (helper) {
           const hw = E.unitById(work, helper.id);
-          const occ = E.unitAt(work, o.q, o.r);
-          const df = occ && occ.player !== me ? 0 : dmgWith(hw, o.q, o.r);
+          const hostile = E.unitsAt(work, o.q, o.r).some(x => x.player !== me);   // any hostile on the tile, not the first in array order
+          const df = hostile ? 0 : dmgWith(hw, o.q, o.r);
           if (df > b.dmg) b.flank = { o: key(o.q, o.r), dmg: df };
         }
       }
@@ -112,8 +112,7 @@ function blowTable(state, opts) {
         for (let d = 0; d < 6; d++) {
           const n = { q: seat.q + DIRS[d].q, r: seat.r + DIRS[d].r };
           if (!E.tileAt(work, n.q, n.r)) continue;
-          const occ = E.unitAt(work, n.q, n.r);
-          if (occ && occ.player !== me) continue;
+          if (E.unitsAt(work, n.q, n.r).some(x => x.player !== me)) continue;
           const ds = dmgWith(hw, n.q, n.r);
           if (ds > b.dmg) { b.same = { dmg: ds }; break; }
         }
@@ -210,17 +209,16 @@ function blowTable(state, opts) {
     const passable = [];
     const bodies = state.units.filter(x => x.player === me && x.hp > 0 && x.id !== b.unit);
     for (const c of cands) {
-      if (E.unitAt(state, c.q, c.r) && E.unitAt(state, c.q, c.r).player !== me) { passable.push(c); continue; } // a red stands there; if it dies the tile may open
+      if (E.unitsAt(state, c.q, c.r).some(x => x.player !== me)) { passable.push(c); continue; } // a red stands there; if it dies the tile may open
       const sim = E.cloneState(state);
       const w = E.unitById(sim, b.unit); w.q = seat.q; w.r = seat.r; w.cooldown = null;
       let bi = 0;
       for (const o of cands) {
-        if (o === c || E.unitAt(sim, o.q, o.r)) continue;
+        if (o === c || E.unitsAt(sim, o.q, o.r).length) continue;
         const body = bodies[bi++]; if (!body) break;
         const bw = E.unitById(sim, body.id); bw.q = o.q; bw.r = o.r;
       }
-      const occ = E.unitAt(sim, c.q, c.r);
-      if (occ) { const ow = E.unitById(sim, occ.id); ow.q = -999; ow.r = -999; }
+      E.unitsAt(sim, c.q, c.r).forEach(occ => { const ow = E.unitById(sim, occ.id); ow.q = -999; ow.r = -999; });   // every occupant, not the first
       let after; try { after = E.doAttack(sim, b.unit, b.target); } catch (e) { continue; }
       const t2 = E.unitById(after, b.target);
       if (t2.q === c.q && t2.r === c.r) passable.push(c);

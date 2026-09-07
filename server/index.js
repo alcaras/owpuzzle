@@ -422,8 +422,22 @@ app.post('/api/submit', (req, res) => {
     return res.status(400).json({ error: 'capture objective needs an enemy city tile' });
   }
   // does it even load? (broken tiles/targets throw) — cheap, synchronous
-  try { E.loadPuzzle(p); } catch (e) {
+  let loaded;
+  try { loaded = E.loadPuzzle(p); } catch (e) {
     return res.status(400).json({ error: 'puzzle does not load: ' + e.message });
+  }
+  // Two units may share a tile only where the game lets them stand together
+  // (Tile.canBothUnitsOccupy, Tile.cs:10428: allies, exactly one able to
+  // damage). The editor enforces the same rule; this is the gate for a
+  // board that did not come through it.
+  for (let i = 0; i < loaded.units.length; i++) {
+    for (let j = i + 1; j < loaded.units.length; j++) {
+      const a = loaded.units[i], b = loaded.units[j];
+      if (a.q === b.q && a.r === b.r && !E.canBothOccupy(loaded, a, b)) {
+        return res.status(400).json({ error: 'two units cannot share tile ' + a.q + ',' + a.r +
+          ' (' + a.type + ' and ' + b.type + ')' });
+      }
+    }
   }
   const slug = (p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) +
     '-' + crypto.randomBytes(3).toString('hex'));

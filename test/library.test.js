@@ -22,17 +22,33 @@ test('every unit type exists in the game data', () => {
   }
 });
 
-test('no two units share a tile, and every unit stands on a real tile', () => {
+test('two units share a tile only where canBothOccupy allows it [Tile.cs:10428], and every unit stands on a real tile', () => {
   for (const p of PUZZLES) {
     const s = E.loadPuzzle(p);
-    const seen = new Set();
+    const seen = new Map();
     for (const u of s.units) {
       const k = u.q + ',' + u.r;
-      assert.ok(!seen.has(k), `${p.id}: two units on ${k}`);
-      seen.add(k);
+      for (const o of seen.get(k) || []) {
+        assert.notEqual(u.player, o.player, `${p.id}: hostile units on ${k}`);
+        assert.ok(E.canBothOccupy(s, u, o), `${p.id}: ${u.type} and ${o.type} cannot share ${k}`);
+      }
+      seen.set(k, (seen.get(k) || []).concat([u]));
       assert.ok(E.tileAt(s, u.q, u.r), `${p.id}: unit off the board at ${k}`);
     }
   }
+});
+
+test('a stacked pair hashes the same whichever is first in the array', () => {
+  // tidyUnit sorts the unit strings, so the editor rebuilding a stack from
+  // autosave in the other order must not read as an edit — pinned now that
+  // the editor can author a stack.
+  const a = { player: 0, type: 'UNIT_SCOUT', q: 0, r: 0 };
+  const b = { player: 0, type: 'UNIT_HORSEMAN', q: 0, r: 0 };
+  const base = { orders: 3, radius: 2, objective: { kind: 'killAll' }, tiles: [],
+    units: [a, b, { player: 1, type: 'UNIT_ARCHER', q: 1, r: 0 }] };
+  const swapped = Object.assign({}, base, { units: [b, a, base.units[2]] });
+  assert.equal(E.puzzleHash(base), E.puzzleHash(swapped));
+  assert.ok(E.canBothOccupy(E.loadPuzzle(base), E.loadPuzzle(base).units[0], E.loadPuzzle(base).units[1]));
 });
 
 test('both sides are represented', () => {

@@ -79,9 +79,16 @@ test('a placed unit can be selected and edited, and placing does not select', ()
   assert.ok(/function selectUnit\(/.test(EDITOR), 'the editor should have a unit selection');
   assert.ok(/function applyPanelToSelected\(/.test(EDITOR),
     'panel changes should write back to the selected unit');
-  assert.ok(/selectUnit\(idx === selectedUnit \? -1 : idx\)/.test(EDITOR),
+  // a click on an occupied tile selects the occupant (or, since 2026-09-07,
+  // stacks on it when Tile.canBothUnitsOccupy allows — a horseman on its own
+  // scout); a click on the selected unit walks the stack and back to placing
+  assert.ok(/selectUnit\(occ\[0\]\)/.test(EDITOR),
     'clicking a placed unit should select it, not delete it');
-  assert.ok(/selectUnit\(-1\);\n        return;/.test(EDITOR),
+  assert.ok(/E\.canBothOccupy\(pseudo, c2, pseudo\.units\[i\]\)/.test(EDITOR),
+    'stacking in the editor must ask the engine, not a unit-type list');
+  assert.ok(/selectUnit\(at \+ 1 < occ\.length \? occ\[at \+ 1\] : -1\)/.test(EDITOR),
+    'clicking the selected unit should move on through the stack, then back to placing');
+  assert.ok(/units\.push\(cand\);[^]*?selectUnit\(-1\);\n\s+return;/.test(EDITOR),
     'placing a unit must leave nothing selected, or the panel stops being a brush');
   // deletion has to remain possible, just deliberate
   assert.ok(/btn-unit-delete/.test(EDITOR), 'there should be an explicit delete control');

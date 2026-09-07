@@ -598,11 +598,34 @@
     if (hint) {
       hint.textContent = idx >= 0
         ? 'or press Esc to go back to placing'
-        : 'click a unit to edit it; click empty ground to place one';
+        : 'click a unit to edit it; click empty ground \u2014 or a friendly scout \u2014 to place one';
     }
     layoutPanel(idx >= 0);
     refreshModeLine();
     render();
+  }
+
+  // the unit the panel describes, standing on tile t — what a click places
+  function unitFromPanel(t) {
+    var promos = checkedPromos();
+    var hp = parseInt(document.getElementById('u-hp').value, 10);
+    return {
+      player: +document.getElementById('u-side').value,
+      type: sel.value,
+      q: t.q, r: t.r,
+      hp: isNaN(hp) ? undefined : hp,
+      promotions: promos.length ? promos : undefined,
+      // A leader effect only exists in the game because a general is
+      // attached to the unit (Unit.cs:2274 hasGeneral), so picking one
+      // makes the unit a general. Without this, an author gets a unit
+      // that reads as a general and grants a leader's flanking bonus but
+      // is invisible to everything that asks "is this a general" —
+      // king-of-the-hill shipped that way and its Hecklers did nothing.
+      general: document.getElementById('u-general').checked
+        || promos.some(function (pr) { return /_LEADER$/.test(pr); }) || undefined,
+      anchored: (document.getElementById('u-anchored').checked && E.DATA.units[sel.value].bAnchor) || undefined,
+      unlimbered: (document.getElementById('u-unlimbered').checked && E.DATA.units[sel.value].bUnlimber) || undefined,
+    };
   }
 
   function onTileClick(t, evt, pt) {
@@ -638,47 +661,57 @@
       return;
     }
     if (mode === 'units') {
-      var idx = units.findIndex(function (u) { return u.q === t.q && u.r === t.r; });
-      if (idx >= 0) {
-        // select it; deleting is now an explicit button, so a misclick on a
-        // finished unit no longer destroys it
-        selectUnit(idx === selectedUnit ? -1 : idx);
-        return;
-      } else {
-        var promos = checkedPromos();
-        var hp = parseInt(document.getElementById('u-hp').value, 10);
-        units.push({
-          player: +document.getElementById('u-side').value,
-          type: sel.value,
-          q: t.q, r: t.r,
-          hp: isNaN(hp) ? undefined : hp,
-          promotions: promos.length ? promos : undefined,
-          // A leader effect only exists in the game because a general is
-          // attached to the unit (Unit.cs:2274 hasGeneral), so picking one
-          // makes the unit a general. Without this, an author gets a unit
-          // that reads as a general and grants a leader's flanking bonus but
-          // is invisible to everything that asks "is this a general" —
-          // king-of-the-hill shipped that way and its Hecklers did nothing.
-          general: document.getElementById('u-general').checked
-            || promos.some(function (pr) { return /_LEADER$/.test(pr); }) || undefined,
-          anchored: (document.getElementById('u-anchored').checked && E.DATA.units[sel.value].bAnchor) || undefined,
-          unlimbered: (document.getElementById('u-unlimbered').checked && E.DATA.units[sel.value].bUnlimber) || undefined,
-        });
-        // deliberately NOT selected: the panel stays a brush, so the next
-        // thing you do — flip to Red, pick a different unit — configures the
-        // NEXT placement rather than rewriting the one just stamped. Selecting
-        // here turned the e2e's blue swordsman into a red archer.
-        selectUnit(-1);
+      var occ = [];
+      units.forEach(function (u, i) { if (u.q === t.q && u.r === t.r) occ.push(i); });
+      // The selection lives on this tile: a click walks the stack — next
+      // occupant, then back to placing — so every unit on a shared tile can
+      // be reached without moving the other one off first.
+      if (occ.indexOf(selectedUnit) >= 0) {
+        var at = occ.indexOf(selectedUnit);
+        selectUnit(at + 1 < occ.length ? occ[at + 1] : -1);
         return;
       }
-      render();
+      var cand = unitFromPanel(t);
+      // Two units may share a tile when the game says so — Tile.canBothUnitsOccupy
+      // (Tile.cs:10428-10477): allies only, and exactly one of them able to
+      // damage, which is what lets a horseman start on its own scout.
+      // canBothOccupy compares ids first, and editor units carry none, so the
+      // pseudo state gives every occupant its index and the candidate -1.
+      if (occ.length) {
+        var pseudo = { tiles: tiles, units: units.map(function (u, i) { return Object.assign({ id: i }, u); }) };
+        var c2 = Object.assign({ id: -1 }, cand);
+        var stackable = occ.every(function (i) { return E.canBothOccupy(pseudo, c2, pseudo.units[i]); });
+        if (!stackable) {
+          // select it; deleting is now an explicit button, so a misclick on a
+          // finished unit no longer destroys it
+          selectUnit(occ[0]);
+          return;
+        }
+      }
+      units.push(cand);
+      // deliberately NOT selected: the panel stays a brush, so the next
+      // thing you do — flip to Red, pick a different unit — configures the
+      // NEXT placement rather than rewriting the one just stamped. Selecting
+      // here turned the e2e's blue swordsman into a red archer.
+      selectUnit(-1);
       return;
     }
     if (mode === 'targets') {
-      var i2 = units.findIndex(function (u) { return u.q === t.q && u.r === t.r && u.player === 1; });
-      if (i2 >= 0) {
-        var at = targets.indexOf(i2);
-        if (at >= 0) targets.splice(at, 1); else targets.push(i2);
+      // A stacked red tile is met by its best defender (E.tileDefender), so
+      // the unit that can damage is the one an author almost always means;
+      // repeated clicks walk the stack — spearman, then the scout under it,
+      // then none — so the other one is still reachable.
+      var reds = [];
+      units.forEach(function (u, i) { if (u.q === t.q && u.r === t.r && u.player === 1) reds.push(i); });
+      reds.sort(function (a, b) { return (E.canDamage(units[b]) ? 1 : 0) - (E.canDamage(units[a]) ? 1 : 0); });
+      if (reds.length) {
+        var k = -1;
+        reds.forEach(function (i, ri) { if (k < 0 && targets.indexOf(i) >= 0) k = ri; });
+        if (k < 0) targets.push(reds[0]);
+        else {
+          targets.splice(targets.indexOf(reds[k]), 1);
+          if (k + 1 < reds.length) targets.push(reds[k + 1]);
+        }
         render();
       }
     }
@@ -1021,8 +1054,15 @@
         S.push('<line x1="' + (x + SIZE * Math.cos(a1)) + '" y1="' + (y + SIZE * Math.sin(a1)) + '" x2="' + (x + SIZE * Math.cos(a2)) + '" y2="' + (y + SIZE * Math.sin(a2)) + '" stroke="#4696eb" stroke-width="8" stroke-linecap="round" pointer-events="none"/>');
       });
     });
+    // A tile can hold two units (E.canBothOccupy). Draw them side by side,
+    // exactly as the player does (app.js stackAt), so both are visible and
+    // the selection ring lands on the one that is selected.
+    var stackAt = {};
+    units.forEach(function (u, i) { (stackAt[u.q + ',' + u.r] = stackAt[u.q + ',' + u.r] || []).push(i); });
     units.forEach(function (u, i) {
       var x = cx(u), y = cy(u);
+      var mates = stackAt[u.q + ',' + u.r];
+      if (mates.length > 1) x += (mates[0] === i ? -1 : 1) * SIZE * 0.3;
       S.push('<g pointer-events="none">');
       S.push('<circle cx="' + x + '" cy="' + (y + SIZE * 0.24) + '" r="' + SIZE * 0.52 + '" fill="' + PCOL[u.player] + '" stroke="' + BOARD_BG + '" stroke-width="1.6"/>');
       var ic = unitIcon(u.type);

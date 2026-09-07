@@ -144,10 +144,14 @@ all ask `unitsAt` now. An attack on a stacked tile meets its BEST defender —
 Unit.cs:6262-6276): one that can damage beats one that cannot, then the higher
 defence where it stands, so a scout under a spearman is not a target. (This
 was listed here as deliberately unimplemented until 2026-09-05, on the
-grounds that our attacks name a unit id; it is implemented now.) Authoring stays
-one-per-tile — the editor selects the occupant instead of stacking on it, and
-`test/library.test.js` still asserts no two units share a tile — so stacks
-arise only in play.
+grounds that our attacks name a unit id; it is implemented now.) Since
+2026-09-07 an author may stack too: the editor places a unit on an occupied
+tile when `canBothOccupy` allows it for every occupant (a horseman on its own
+scout) and selects the occupant otherwise, a click on a stacked tile cycles
+through it, `/api/submit` refuses any pair the rule forbids, and
+`test/library.test.js` asserts the same rule over the shipped boards. The
+solverengine's "what stands there" questions ask `unitsAt`/`tileDefender`
+for the same reason.
 
 This is also why the coverage audit grew a staleness check for the UNIT list:
 `bBlocks` was acknowledged as "every unit blocks its tile in a puzzle", which
