@@ -51,6 +51,7 @@ All verified against the game's source (see CLAUDE.md for where it lives).
 | **Seat manufacture** | Killing a unit creates the flank seat for the next kill. This is the key to Aran's *Left flank, right flank*. |
 | **Tile reuse** | One unit takes a seat, routs away, a second walks in. A single tile serves two units in a turn. |
 | **Flanking** | An ally on the tile **directly opposite** cancels the counterattack and adds an *additive* percent (COMMANDER_LEADER +100%). It is not a doubling. |
+| **Rivers and zone of control** | An enemy across a river does not put a tile in its zone of control — but a unit beside an enemy, even across the river, cannot cross a river into another enemy's zone of control (Unit.cs:7694). A land step keeps the ordinary rule on both tiles. |
 | **Polearm walls** | Spear/pike/conscript/hoplite/phalangite are immune to ROUT — they break chains — and they pin cavalry that ignores zone of control. |
 | **Height** | A shot reaches `range + max(fromHeight − toHeight, 0)`. Hills give **no defence bonus**. |
 | **Line of sight** | Mountains block shots; units never do. |

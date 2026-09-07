@@ -309,6 +309,24 @@ line reached the same ceiling without the idea the puzzle was built around.
 
 ## In flight (2026-09-01)
 
+- **ZOC across rivers (2026-09-07, committed, NOT deployed).** An author's
+  warrior crossed a river into a red column beside a red warrior. The game
+  refuses it: `Unit.isValidMovementDirection` (Unit.cs:7690-7697) tests the
+  NEXT tile with rivers respected and the CURRENT tile with
+  `bIgnoreRiver = isRiver(stepDirection)` (Tile.cs:10128), so a unit beside
+  an enemy — even across the river — cannot cross a river into another
+  enemy's ZOC. `inEnemyZOC` takes an `ignoreRiver` flag, `moveSearch` asks
+  it the game's way; `test/rules/zoc.test.js` has six cited tests and the
+  harness (`tools/ground.sh`, now with `--srivers` and a per-direction step
+  probe) agrees on all seven scenarios. Blast radius measured by replaying
+  every stored solved line (`tools/snarf_attempts.sh` +
+  `tools/replay_attempts.js`, with `ENGINE=` for the baseline): the rule
+  breaks 13 of pinball-37c1a3's 23 solves and 12 of the retired
+  behind-enemy-lines-6adfe1's 38; horsing-around's par-11 lines still solve
+  but now cost 13 orders. king-of-the-hill's 63 failing solves pre-date it
+  (the 2026-09-02 ruler change). Which boards to correct is Dominik's call;
+  see the report of 2026-09-07 before deploying.
+
 - **The ILP position solver landed as `tools/solverengine/`** (blowtable, model,
   lp + cpsat.py, solve) with `tools/ilp_fight.js` as its puzzle driver and
   `test/solverengine.test.js` (structural tests always; `npm run test:ilp` for

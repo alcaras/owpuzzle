@@ -896,14 +896,18 @@
     return false;
   }
 
-  function inEnemyZOC(state, u, q, r) {
+  // Tile.isHostileZOC (Tile.cs:10107-10142). A river edge is skipped unless
+  // ignoreRiver (bIgnoreRiver, Tile.cs:10128): every caller but the
+  // pathfinder's river-crossing test leaves it off, so an enemy across the
+  // river does not normally put a tile in its zone of control.
+  function inEnemyZOC(state, u, q, r, ignoreRiver) {
     // Unit.hasIgnoreZOC (Unit.cs:7013): the unit's OWN flag counts as well as
     // any effect granting it. Palton cavalry carry bIgnoreZOC on the unit.
     var ignores = info(u).bIgnoreZOC || hasEffectFlag(u, 'bIgnoreZOC');
     var here = tileAt(state, q, r);
     if (here && here.city != null) return false;   // city tiles are never in ZOC (Tile.cs:10070)
     for (var d = 0; d < 6; d++) {
-      if (riverBetween(state, { q: q, r: r }, { q: q + DIRS[d].q, r: r + DIRS[d].r })) continue;
+      if (!ignoreRiver && riverBetween(state, { q: q, r: r }, { q: q + DIRS[d].q, r: r + DIRS[d].r })) continue;
       var nt = tileAt(state, q + DIRS[d].q, r + DIRS[d].r);
       if (!nt) continue;
       if (here && isWaterTile(here) !== isWaterTile(nt)) continue; // no ZOC across the shoreline (Tile.cs:10044)
@@ -929,9 +933,13 @@
   // Dijkstra over total movement cost; steps = ceil(cost / full movement);
   // orders charged per step, doubled past the fatigue limit (march only).
   // Returns [{q, r, cost, steps, orders, forced}].
-  // ZOC rule (Unit.isValidMovementDirection, Unit.cs:7685): a step from one
-  // hostile-ZOC tile to another hostile-ZOC tile is forbidden; entering ZOC
-  // does NOT stop movement.
+  // ZOC rule (Unit.isValidMovementDirection, Unit.cs:7690-7697): a step from
+  // one hostile-ZOC tile to another hostile-ZOC tile is forbidden; entering
+  // ZOC does NOT stop movement. The next tile is always tested with rivers
+  // respected; the current tile is tested with bIgnoreRiver = "does this step
+  // cross a river" — so a unit beside an enemy, even one across the river,
+  // cannot cross a river into another enemy's zone of control, while a land
+  // step keeps "rivers block ZOC" on both tiles.
   function reachableTiles(state, u) {
     return moveSearch(state, u).list;
   }
@@ -981,6 +989,7 @@
       var cur = frontier.splice(bi, 1)[0];
       if (best[key(cur.q, cur.r)] < cur.cost) continue;
       var curZOC = inEnemyZOC(state, u, cur.q, cur.r);
+      var curHeldAcrossRiver = null;   // the bIgnoreRiver variant, computed once per node when a crossing needs it
       for (var d = 0; d < 6; d++) {
         var nq = cur.q + DIRS[d].q, nr = cur.r + DIRS[d].r;
         var t = tileAt(state, nq, nr);
@@ -993,7 +1002,17 @@
         if (unitsAt(state, nq, nr).some(function (o) {
           return o.player !== u.player && info(o).bBlocks;
         })) continue;
-        if (curZOC && inEnemyZOC(state, u, nq, nr)) continue; // ZOC -> ZOC step
+        // ZOC -> ZOC step (Unit.cs:7690-7697): the next tile with rivers
+        // respected; the current tile ignoring rivers when the step crosses
+        // one (pCurrentTile.isHostileZOC(this, pCurrentTile.isRiver(eDirection)))
+        if (inEnemyZOC(state, u, nq, nr)) {
+          var curHeld = curZOC;
+          if (riverBetween(state, cur, { q: nq, r: nr })) {
+            if (curHeldAcrossRiver === null) curHeldAcrossRiver = inEnemyZOC(state, u, cur.q, cur.r, true);
+            curHeld = curHeldAcrossRiver;
+          }
+          if (curHeld) continue;
+        }
         var tileCost = moveCostInto(state, u, cur, { q: nq, r: nr });
         if (tileCost === Infinity) continue;
         // PathFinder.getTileMoveCost: clamp so the step ends exactly on the
