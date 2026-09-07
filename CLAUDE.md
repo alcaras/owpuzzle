@@ -324,8 +324,14 @@ line reached the same ceiling without the idea the puzzle was built around.
   breaks 13 of pinball-37c1a3's 23 solves and 12 of the retired
   behind-enemy-lines-6adfe1's 38; horsing-around's par-11 lines still solve
   but now cost 13 orders. king-of-the-hill's 63 failing solves pre-date it
-  (the 2026-09-02 ruler change). Which boards to correct is Dominik's call;
-  see the report of 2026-09-07 before deploying.
+  (the 2026-09-02 ruler change). Re-proved under the rule: horsing-around's
+  260 holds and its par is 13 (deploy_fight complete, verify2 agrees, no
+  stored line under 13); pinball's 260 is best-known and an 11-order line
+  exists that was legal before the rule too; king's 18 is still achievable
+  (tightness unproven at 17); left-flank and behind-enemy-lines-91b3f8
+  unchanged. Dominik's decision, 2026-09-07: horsing-around par 11 -> 13 and
+  pinball par 13 -> 11, written into the community rows in place
+  (`UPDATE puzzles SET json`, solves kept); deployed the same day.
 
 - **The ILP position solver landed as `tools/solverengine/`** (blowtable, model,
   lp + cpsat.py, solve) with `tools/ilp_fight.js` as its puzzle driver and
