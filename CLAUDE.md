@@ -329,9 +329,11 @@ line reached the same ceiling without the idea the puzzle was built around.
   stored line under 13); pinball's 260 is best-known and an 11-order line
   exists that was legal before the rule too; king's 18 is still achievable
   (tightness unproven at 17); left-flank and behind-enemy-lines-91b3f8
-  unchanged. Dominik's decision, 2026-09-07: horsing-around par 11 -> 13 and
-  pinball par 13 -> 11, written into the community rows in place
-  (`UPDATE puzzles SET json`, solves kept); deployed the same day.
+  unchanged. Pushed 2026-09-07, NOT yet deployed and no par corrected: if
+  the rule ships, horsing-around's par 11 becomes unreachable and must go to
+  13 (in place, `UPDATE puzzles SET json` on the community row, so solves
+  survive); pinball's par could drop to 11 (pre-existing, not caused by the
+  rule). Decision pending.
 
 - **The ILP position solver landed as `tools/solverengine/`** (blowtable, model,
   lp + cpsat.py, solve) with `tools/ilp_fight.js` as its puzzle driver and
