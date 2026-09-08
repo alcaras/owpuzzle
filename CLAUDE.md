@@ -335,11 +335,13 @@ line reached the same ceiling without the idea the puzzle was built around.
   stored line under 13); pinball's 260 is best-known and an 11-order line
   exists that was legal before the rule too; king's 18 is still achievable
   (tightness unproven at 17); left-flank and behind-enemy-lines-91b3f8
-  unchanged. Pushed 2026-09-07, NOT yet deployed and no par corrected: if
-  the rule ships, horsing-around's par 11 becomes unreachable and must go to
-  13 (in place, `UPDATE puzzles SET json` on the community row, so solves
-  survive); pinball's par could drop to 11 (pre-existing, not caused by the
-  rule). Decision pending.
+  unchanged. **The rule IS deployed** (checked 2026-09-07 evening: the
+  served engine.js passed all twelve zoc.test.js cases; the earlier "not
+  deployed" note here was stale). horsing-around's par went 11 → 13 the
+  same evening, in place (`UPDATE puzzles SET json` on community row 43,
+  the fold path's own method): its 29 solves survived and the pool is 20
+  under either par. Pinball's par could still drop to 11 (pre-existing,
+  not caused by the rule) — a records-queue matter, left open.
 
 - **The ILP position solver landed as `tools/solverengine/`** (blowtable, model,
   lp + cpsat.py, solve) with `tools/ilp_fight.js` as its puzzle driver and
