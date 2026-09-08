@@ -38,6 +38,18 @@ test('two units share a tile only where canBothOccupy allows it [Tile.cs:10428],
   }
 });
 
+// A red unit that starts hidden would be a plain killable body here and an
+// untargetable one in the game (Unit.cs:8637, Tile.cs:10514) — the vision
+// side of stealth is unimplemented, so the editor and the server refuse such
+// a board and the library must never hold one. A red scout on open ground
+// is fine and is what an author placing one wants: a body to stand in a tile.
+test('no red unit starts the turn hidden [vision-side stealth is unimplemented; Unit.cs:8637]', () => {
+  for (const p of PUZZLES) {
+    const ghosts = E.hiddenAtStart(E.loadPuzzle(p));
+    assert.deepEqual(ghosts.map(u => u.type + '@' + u.q + ',' + u.r), [], `${p.id}: a red unit starts hidden`);
+  }
+});
+
 test('a stacked pair hashes the same whichever is first in the array', () => {
   // tidyUnit sorts the unit strings, so the editor rebuilding a stack from
   // autosave in the other order must not read as an edit — pinned now that

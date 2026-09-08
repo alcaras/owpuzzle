@@ -213,6 +213,22 @@
     });
   }
 
+  // Red units that begin the turn hidden where they stand. The engine models
+  // hidden-ness only where the game resolves it without a viewer (above);
+  // the vision half — a hidden hostile cannot be targeted (Unit.cs:8637) and
+  // does not occupy its tile for the mover (Tile.cs:10514) — is NOT
+  // implemented, so a red scout in trees would be a plain killable body here
+  // and an untouchable ghost in the game. A board is refused rather than
+  // shipped wrong: the editor, the server and the library test all ask this.
+  // A red unit in the open is fine — it is a body that denies its tile as a
+  // destination without blocking passage (bBlocks, Tile.cs:10516), which is
+  // what an author placing one wants.
+  function hiddenAtStart(state) {
+    return state.units.filter(function (u) {
+      return u.player === 1 && u.hp > 0 && isHiddenAt(state, u, tileAt(state, u.q, u.r));
+    });
+  }
+
   // Unit.bounce (Unit.cs:8181): relocate a unit whose tile was taken. The
   // game first looks ONLY at adjacent tiles that keep the unit hidden
   // (pRequiresHidden caps that pass at range 1, Game.cs:10317), then takes
@@ -1971,7 +1987,7 @@
     modify: modify, tileAt: tileAt, unitAt: unitAt, unitsAt: unitsAt, unitById: unitById,
     canBothOccupy: canBothOccupy, canEndOn: canEndOn,
     effectsOf: effectsOf, isMelee: isMelee, rangeMax: rangeMax, hpMax: hpMax,
-    canAct: canAct, canMove: canMove, canAttack: canAttack, isHiddenAt: isHiddenAt, inEnemyZOC: inEnemyZOC, attackStrength: attackStrength, defendStrength: defendStrength, tileDefender: tileDefender,
+    canAct: canAct, canMove: canMove, canAttack: canAttack, isHiddenAt: isHiddenAt, hiddenAtStart: hiddenAtStart, inEnemyZOC: inEnemyZOC, attackStrength: attackStrength, defendStrength: defendStrength, tileDefender: tileDefender,
     canMarch: canMarch, doMarch: doMarch, canUnlimber: canUnlimber, doUnlimber: doUnlimber,
     canSwap: canSwap, doSwap: doSwap,
     canAnchor: canAnchor, doAnchor: doAnchor, waterControlled: waterControlled,

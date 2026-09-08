@@ -75,9 +75,15 @@ the engine implements hidden-ness only where the C# tests it with
   Unit.cs:3941); enemy territory offers no cover (Unit.cs:3535-3541).
 
 Deliberately NOT implemented (vision-side, would matter only for a *red* scout
-in trees): blue being unable to target it, and blue moving through it. Scouts
-also cannot attack at all — no bMelee, no range — which is the game's rule,
-not an omission. See `test/rules/stealth.test.js`.
+in trees): blue being unable to target it (Unit.cs:8637), and blue moving
+onto it (Tile.cs:10514). So a board must not START with a hidden red unit:
+`hiddenAtStart` is refused at editor placement, on Test play, on Submit, in
+`/api/submit`, and by `test/library.test.js` (2026-09-07, an author asked
+for enemy scouts). A red scout on open ground is allowed and is what the
+author wanted — a body that denies its tile as a destination but, having no
+`bBlocks`, is walked through (Tile.cs:10516), gives no ZOC, and must die on a
+killAll. Scouts also cannot attack at all — no bMelee, no range — which is
+the game's rule, not an omission. See `test/rules/stealth.test.js`.
 
 ## What a blow costs the unit throwing it
 

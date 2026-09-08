@@ -672,6 +672,18 @@
         return;
       }
       var cand = unitFromPanel(t);
+      // A red unit that would start hidden — a scout (or tactician-led
+      // archer) in trees or jungle outside blue territory — is refused. The
+      // engine models hidden-ness only for shoves and the ambush bonus; in
+      // the game blue could neither target nor be stopped by it, and a board
+      // that says otherwise is wrong the day it ships. On open ground a red
+      // scout is a body: blue may walk through it (it does not block) but
+      // cannot end on it, and must kill it on a killAll.
+      if (cand.player === 1 && E.isHiddenAt({ tiles: tiles, units: units }, cand, t)) {
+        out('\u2717 A red ' + cand.type.replace('UNIT_', '').toLowerCase().replace(/_/g, ' ') +
+          ' would start hidden there. Enemy units must stand where they can be seen: open ground, or trees inside your own territory.');
+        return;
+      }
       // Two units may share a tile when the game says so — Tile.canBothUnitsOccupy
       // (Tile.cs:10428-10477): allies only, and exactly one of them able to
       // damage, which is what lets a horseman start on its own scout.
@@ -801,8 +813,22 @@
     box.appendChild(go);
     ta.focus();
   };
+  // The placement check above can be painted around — trees brushed under a
+  // red scout, blue territory cleared from beneath it — so the same rule is
+  // asked again on the way to test play and to the server, which refuses
+  // such a board too (E.hiddenAtStart).
+  function hiddenRedProblem(p) {
+    var ghosts;
+    try { ghosts = E.hiddenAtStart(E.loadPuzzle(p)); } catch (e) { return null; }
+    if (!ghosts.length) return null;
+    var g = ghosts[0];
+    return '\u2717 The red ' + g.type.replace('UNIT_', '').toLowerCase().replace(/_/g, ' ') + ' at ' + g.q + ',' + g.r +
+      ' would start hidden. Enemy units must stand where they can be seen: move it to open ground, or put the tile inside your own territory.';
+  }
   document.getElementById('btn-test').onclick = function () {
     if (!units.some(function (u) { return u.player === 0; })) return out('Place at least one blue unit first.');
+    var ghost = hiddenRedProblem(buildPuzzle());
+    if (ghost) return out(ghost);
     try {
       localStorage.setItem('owpuzzle-draft', JSON.stringify(buildPuzzle()));
     } catch (e) {
@@ -857,6 +883,8 @@
 
   document.getElementById('btn-submit').onclick = function () {
     var p = buildPuzzle();
+    var ghost = hiddenRedProblem(p);
+    if (ghost) return out(ghost);
     // A submission must come with the author's own solution: play it through
     // Test play first. That gives the reviewer a known-good line, the kill
     // total and the order count — the things the editor cannot compute.

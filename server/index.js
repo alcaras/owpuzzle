@@ -439,6 +439,16 @@ app.post('/api/submit', (req, res) => {
       }
     }
   }
+  // A red unit that starts hidden (a scout in trees or jungle outside blue
+  // territory) is a body the engine lets blue kill and the game does not
+  // even let blue target; the vision side of stealth is unimplemented. Refuse
+  // the board — the editor says the same thing at placement.
+  const ghosts = E.hiddenAtStart(loaded);
+  if (ghosts.length) {
+    const g = ghosts[0];
+    return res.status(400).json({ error: 'the red ' + g.type.replace('UNIT_', '').toLowerCase() +
+      ' at ' + g.q + ',' + g.r + ' would start hidden; enemy units must stand where they can be seen' });
+  }
   const slug = (p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) +
     '-' + crypto.randomBytes(3).toString('hex'));
   p.id = slug;

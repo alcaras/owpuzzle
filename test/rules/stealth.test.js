@@ -138,3 +138,37 @@ test('attacking from hiding carries an ambush bonus [HIDDEN_ATTACK_MODIFIER, Uni
   `);
   assert.equal(mods(open, open.blue(), open.red())['att:attacking from hiding'], undefined);
 });
+
+// The vision half of stealth — a hidden hostile cannot be targeted
+// (Unit.canAttackUnit, Unit.cs:8637) and does not occupy its tile for the
+// mover (Tile.canUnitOccupy, Tile.cs:10514) — is NOT implemented, so a red
+// unit that starts hidden is refused by the editor and the server rather
+// than shipped as a body blue can kill. hiddenAtStart is that gate.
+test('hiddenAtStart flags a red scout in trees and nothing else [Unit.cs:8637 unimplemented, so the board is refused]', () => {
+  const g = setup(`
+    tile 1,0 VEGETATION_TREES
+    tile 2,0 VEGETATION_JUNGLE
+    tile 3,0 VEGETATION_TREES own=0
+    tile 4,0 VEGETATION_TREES
+    blue SCOUT 4,0
+    red SCOUT 1,0
+    red ARCHER 2,0 promo=EFFECTUNIT_TACTICIAN_RANGED
+    red SCOUT 3,0
+    red SCOUT 0,0
+    red MILITIA -1,0
+  `);
+  const ghosts = E.hiddenAtStart(g.state).map((u) => u.type + '@' + u.q + ',' + u.r).sort();
+  assert.deepEqual(ghosts, ['UNIT_ARCHER@2,0', 'UNIT_SCOUT@1,0'],
+    'trees and jungle hide; blue territory, open ground, a militia and a BLUE scout do not');
+});
+
+test('a red scout on open ground is a body: blue walks through it (no bBlocks, Tile.cs:10516) but cannot end on it (hostiles never share, Tile.cs:10432)', () => {
+  const g = setup(`
+    blue HORSEMAN 0,0
+    red SCOUT 1,0
+  `);
+  const reach = E.reachableTiles(g.state, g.blue()).map((t) => t.q + ',' + t.r);
+  assert.ok(reach.indexOf('1,0') < 0, 'the scout denies its tile as a destination');
+  assert.ok(reach.indexOf('2,0') >= 0, 'but does not block the path beyond it');
+  assert.deepEqual(E.hiddenAtStart(g.state), [], 'and in the open it is not hidden');
+});
